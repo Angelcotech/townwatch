@@ -1,10 +1,15 @@
 """
-Extract structured votes and decisions from scanned meeting minutes PDFs.
+Extract structured votes and decisions from meeting-minutes PDFs.
 
-Grovetown minutes are image-only PDFs (no extractable text). We pass the
-raw PDF bytes to Claude as a multimodal document block; Claude reads
-each page visually and returns a strict JSON object matching the
-Pydantic schema below.
+Tiered approach (June pattern):
+  1. pdfplumber → text layer (digital PDFs, free, instant)
+  2. ocrmypdf + pdfplumber (scanned PDFs, local CPU, no API cost)
+  3. Claude vision on the raw PDF (fallback when Tiers 1-2 fail)
+
+When text extraction succeeds, we call Claude Haiku 4.5 with the text.
+When it fails, we fall back to Sonnet 4.6 with the PDF as a document
+block. Either path returns the same Pydantic-validated structure, so
+downstream callers don't care which tier ran.
 
 Five extraction priorities (in order):
   1. Substantive decisions (ordinances, resolutions, zoning, contracts)
@@ -12,9 +17,6 @@ Five extraction priorities (in order):
   3. Recusals — declared conflicts of interest (gold)
   4. Public comment per item (speakers + stance)
   5. Plain-English summaries (citizen-readable)
-
-Procedural items (approval of prior minutes, calls to order, recesses)
-are deliberately skipped — they're noise.
 """
 
 from __future__ import annotations
@@ -26,7 +28,8 @@ from typing import Literal
 import anthropic
 from pydantic import BaseModel, Field
 
-from ..config import ANTHROPIC_API_KEY, ANTHROPIC_MODEL
+from ..config import ANTHROPIC_API_KEY
+from .pdf_text import extract_text
 
 
 # =====================================================================
@@ -112,14 +115,10 @@ class MeetingExtraction(BaseModel):
 
 
 # =====================================================================
-# Extraction prompt
+# Prompts
 # =====================================================================
 
-EXTRACTION_INSTRUCTIONS = """\
-You are extracting structured data from a scanned City Council meeting minutes PDF.
-
-Read the entire document carefully and return the structured output described by the schema.
-
+_RULES = """\
 WHAT TO EXTRACT
 - Substantive decisions: ordinances, resolutions, zoning changes, contracts, appointments, budget actions
 - Individual votes (who voted yes/no/abstain/recused)
@@ -140,28 +139,74 @@ RULES
 4. Recusal language to watch for: "recuse", "abstain due to conflict", "left the room", "did not participate", "declared a conflict", or similar. When someone recused on an item, mark their individual_vote as "conflict_recusal" AND add an entry in recusals.
 5. Roll-call votes: if individual votes are listed, transcribe them. If only a tally is given (e.g. "Motion passed 4-0"), distribute votes among present members and mark absent members as "absent".
 6. Public comment stance: use your judgment based on what they said. Use "unclear" if it's not obvious.
-7. Source page: PDF page (1-indexed) where the item begins.
+7. Source page: PDF page (1-indexed) where the item begins. The text below contains "--- PAGE BREAK ---" markers; count pages starting from 1.
 8. If a field is illegible or unclear, use null/None. Do not guess.
 9. extraction_confidence: "high" if every item was clear, "medium" if some details were unclear, "low" if significant content was illegible.
+"""
+
+TEXT_INSTRUCTIONS = f"""\
+You are extracting structured data from City Council meeting minutes. The text below was produced by OCR or extracted from the PDF's text layer. Some OCR errors are possible — read carefully, especially numbers and names.
+
+Read the entire document and return the structured output described by the schema.
+
+{_RULES}
+
+MEETING MINUTES TEXT (page breaks marked):
+"""
+
+VISION_INSTRUCTIONS = f"""\
+You are extracting structured data from a scanned City Council meeting minutes PDF.
+
+Read the entire document carefully and return the structured output described by the schema.
+
+{_RULES}
 
 Now extract from the attached PDF.
 """
 
+# Models — text path uses fast/cheap Haiku, vision fallback uses capable Sonnet
+TEXT_MODEL = "claude-haiku-4-5"
+VISION_MODEL = "claude-sonnet-4-6"
+
 
 # =====================================================================
-# API call
+# API calls
 # =====================================================================
 
-def extract_from_pdf(pdf_path: Path) -> MeetingExtraction:
+def extract_from_pdf(pdf_path: Path) -> tuple[MeetingExtraction, str]:
     """
-    Send a PDF to Claude and return a parsed MeetingExtraction.
-    Raises on API/parse errors — caller decides what to do.
+    Returns (extraction, method) where method is 'text_layer' | 'ocr' | 'vision'.
+
+    Tries text-based extraction (Tier 1 + Tier 2) first. Only falls back
+    to Claude vision when local text extraction yields nothing usable.
     """
+    text_result = extract_text(pdf_path)
+    if text_result.text:
+        return _extract_from_text(text_result.text), text_result.method
+    return _extract_from_pdf_vision(pdf_path), "vision"
+
+
+def _extract_from_text(text: str) -> MeetingExtraction:
+    """Cheap path: Haiku reads OCR text + emits structured JSON."""
+    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+    response = client.messages.parse(
+        model=TEXT_MODEL,
+        max_tokens=16384,
+        messages=[{
+            "role": "user",
+            "content": TEXT_INSTRUCTIONS + "\n" + text,
+        }],
+        output_format=MeetingExtraction,
+    )
+    return response.parsed_output
+
+
+def _extract_from_pdf_vision(pdf_path: Path) -> MeetingExtraction:
+    """Fallback: Claude reads the scanned PDF directly via multimodal vision."""
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
     pdf_b64 = base64.standard_b64encode(pdf_path.read_bytes()).decode("utf-8")
-
     response = client.messages.parse(
-        model=ANTHROPIC_MODEL,
+        model=VISION_MODEL,
         max_tokens=16384,
         thinking={"type": "adaptive"},
         output_config={"effort": "high"},
@@ -176,10 +221,9 @@ def extract_from_pdf(pdf_path: Path) -> MeetingExtraction:
                         "data": pdf_b64,
                     },
                 },
-                {"type": "text", "text": EXTRACTION_INSTRUCTIONS},
+                {"type": "text", "text": VISION_INSTRUCTIONS},
             ],
         }],
         output_format=MeetingExtraction,
     )
-
     return response.parsed_output

@@ -49,8 +49,9 @@ def main() -> int:
     print(f"  {len(r.content):,} bytes → {pdf_path}")
     print()
 
-    print("Sending to Claude...")
-    result = extract_from_pdf(pdf_path)
+    print("Extracting...")
+    result, method = extract_from_pdf(pdf_path)
+    print(f"  → method: {method}")
     print()
 
     # Pretty-print summary

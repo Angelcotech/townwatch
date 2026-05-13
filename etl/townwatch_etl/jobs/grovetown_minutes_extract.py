@@ -78,10 +78,10 @@ class GrovetownMinutesExtract(IngestJob):
             f.write(r.content)
             pdf_path = Path(f.name)
 
-        # Extract via Claude
-        print(f"     pdf={len(r.content):,} bytes → Claude...")
-        extraction = extract_from_pdf(pdf_path)
-        print(f"     extracted {len(extraction.agenda_items)} items, confidence={extraction.meeting.extraction_confidence}")
+        # Extract via tiered pipeline (text layer → OCR → vision fallback)
+        print(f"     pdf={len(r.content):,} bytes → extracting...")
+        extraction, method = extract_from_pdf(pdf_path)
+        print(f"     method={method}  items={len(extraction.agenda_items)}  confidence={extraction.meeting.extraction_confidence}")
 
         # Persist the raw extraction so a re-run never needs another API call
         self._attach_raw_payload(meeting["minutes_url"], extraction)
