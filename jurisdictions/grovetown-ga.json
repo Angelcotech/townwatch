@@ -162,6 +162,12 @@
       "explanation": "Columbia County does not publish bulk parcel data.",
       "user_facing_message": "Property records are available on a per-parcel lookup basis.",
       "remediation": "Per-official lookup via qPublic by owner name."
+    },
+    {
+      "category": "shielded_property_holdings",
+      "explanation": "Property held in LLCs, trusts, or out-of-state entities is not directly visible from county assessor records.",
+      "user_facing_message": "Property holdings shown reflect parcels owned in this person's direct name. Properties held in LLCs, trusts, or out-of-state entities are not currently visible to this platform.",
+      "remediation": "Phase 2: cross-reference with Georgia Secretary of State Corporate Registry (ecorp.sos.ga.gov) for LLCs where this official is the registered agent or organizer, plus mailing-address matching on parcel records."
     }
   ]
 }
