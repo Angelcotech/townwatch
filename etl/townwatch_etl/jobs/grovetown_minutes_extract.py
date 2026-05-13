@@ -83,6 +83,9 @@ class GrovetownMinutesExtract(IngestJob):
         extraction = extract_from_pdf(pdf_path)
         print(f"     extracted {len(extraction.agenda_items)} items, confidence={extraction.meeting.extraction_confidence}")
 
+        # Persist the raw extraction so a re-run never needs another API call
+        self._attach_raw_payload(meeting["minutes_url"], extraction)
+
         # Update meeting row with attendance/notes
         self._update_meeting(self.meeting_id, extraction)
 
@@ -147,11 +150,15 @@ class GrovetownMinutesExtract(IngestJob):
 
     def _update_meeting(self, meeting_id: int, extraction: MeetingExtraction) -> None:
         assert self.conn is not None
-        attendance_summary = (
-            f"present: {', '.join(extraction.attendance.present)}"
-            + (f" | absent: {', '.join(extraction.attendance.absent)}"
-               if extraction.attendance.absent else "")
-        )
+        parts = []
+        if extraction.attendance.present:
+            parts.append(f"present: {', '.join(extraction.attendance.present)}")
+        if extraction.attendance.absent:
+            parts.append(f"absent: {', '.join(extraction.attendance.absent)}")
+        parts.append(f"extraction_confidence={extraction.meeting.extraction_confidence}")
+        if extraction.extraction_notes:
+            parts.append(f"notes: {extraction.extraction_notes}")
+        attendance_summary = " | ".join(parts)
         self.conn.execute(
             """
             UPDATE meeting
@@ -161,6 +168,19 @@ class GrovetownMinutesExtract(IngestJob):
             WHERE id = %s
             """,
             ("minutes_published", attendance_summary, meeting_id),
+        )
+
+    def _attach_raw_payload(self, record_url: str, extraction: MeetingExtraction) -> None:
+        """Update the data_source row with the full extraction JSON + record_url."""
+        assert self.conn is not None and self.data_source_id is not None
+        self.conn.execute(
+            """
+            UPDATE data_source
+            SET record_url = %s,
+                raw_payload = %s::jsonb
+            WHERE id = %s
+            """,
+            (record_url, extraction.model_dump_json(), self.data_source_id),
         )
 
     def _insert_motion(self, *, meeting_id: int, item: AgendaItem) -> int | None:
