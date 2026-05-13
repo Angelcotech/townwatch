@@ -28,6 +28,39 @@ import psycopg
 SIMILARITY_THRESHOLD = 0.65  # pg_trgm similarity; tuned during real ingest
 
 
+# Common elected-office titles to strip when a source includes them as prefixes
+# ("Mayor Pro-Tem Eric Blair" → "Eric Blair"). Order matters: longer phrases first.
+_TITLE_PATTERNS = [
+    "Mayor Pro-Tem",
+    "Mayor Pro Tem",
+    "Vice Mayor",
+    "Council Member",
+    "Councilmember",
+    "Councilman",
+    "Councilwoman",
+    "Alderman",
+    "Alderwoman",
+    "Commissioner",
+    "Supervisor",
+    "Chair",
+    "Vice Chair",
+    "Mayor",
+]
+
+
+def strip_title(name: str) -> str:
+    """Remove a leading elected-office title from a name string.
+    'Councilmember A. Richard Bowman' → 'A. Richard Bowman'
+    """
+    s = name.strip()
+    s_lower = s.lower()
+    for title in _TITLE_PATTERNS:
+        prefix = title.lower() + " "
+        if s_lower.startswith(prefix):
+            return s[len(title):].strip()
+    return s
+
+
 @dataclass
 class OfficialCandidate:
     official_id: int
@@ -46,6 +79,59 @@ def find_by_alias(
         (alias_name,),
     ).fetchone()
     return row["official_id"] if row else None
+
+
+def find_by_last_name_active_at(
+    conn: psycopg.Connection,
+    name_chunk: str,
+    *,
+    jurisdiction_id: int,
+    as_of_date,
+) -> list[tuple[int, str]]:
+    """
+    Find officials in this jurisdiction whose last_name matches the last word
+    of name_chunk AND who held a term covering as_of_date.
+
+    If no date-bounded matches exist, fall back to officials with that last_name
+    in this jurisdiction at any time. Phase 1 jurisdiction configs often store
+    a placeholder term start_date because actual election dates aren't yet known.
+
+    Returns (official_id, canonical_name) tuples — caller decides how to handle
+    multiple matches (typically: disambiguate by first initial).
+    """
+    last_name_candidate = name_chunk.strip().split()[-1]
+
+    rows = conn.execute(
+        """
+        SELECT DISTINCT o.id, o.canonical_name
+        FROM official o
+        JOIN term t            ON t.official_id = o.id
+        JOIN seat s            ON s.id = t.seat_id
+        JOIN governing_body gb ON gb.id = s.governing_body_id
+        WHERE gb.jurisdiction_id = %s
+          AND LOWER(o.last_name) = LOWER(%s)
+          AND t.start_date <= %s
+          AND (t.end_date IS NULL OR t.end_date >= %s)
+        """,
+        (jurisdiction_id, last_name_candidate, as_of_date, as_of_date),
+    ).fetchall()
+    if rows:
+        return [(r["id"], r["canonical_name"]) for r in rows]
+
+    # Fallback: any term in this jurisdiction with this last_name
+    rows = conn.execute(
+        """
+        SELECT DISTINCT o.id, o.canonical_name
+        FROM official o
+        JOIN term t            ON t.official_id = o.id
+        JOIN seat s            ON s.id = t.seat_id
+        JOIN governing_body gb ON gb.id = s.governing_body_id
+        WHERE gb.jurisdiction_id = %s
+          AND LOWER(o.last_name) = LOWER(%s)
+        """,
+        (jurisdiction_id, last_name_candidate),
+    ).fetchall()
+    return [(r["id"], r["canonical_name"]) for r in rows]
 
 
 def find_candidates(

@@ -178,13 +178,13 @@ class GrovetownOfficials(IngestJob):
             )
             return
 
-        # We don't know the actual term start from this source — use today as
-        # "as of this scrape, currently seated." Backfill from election records
-        # in a later pass.
+        # We don't know the actual term start from this source. Use a placeholder
+        # well in the past (2020-01-01) so historical votes can still be linked
+        # back to the official. Backfill from election records in a later pass.
         self.insert("term", {
             "official_id":  official_id,
             "seat_id":      seat_id,
-            "start_date":   date.today(),
+            "start_date":   date(2020, 1, 1),
             "how_seated":   "elected",
             "ballot_name":  person["raw_name"],
             "is_current":   True,
