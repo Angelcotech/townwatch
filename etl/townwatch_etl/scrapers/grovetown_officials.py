@@ -6,8 +6,8 @@ and emits a structured JSON record to stdout. This is the Phase 1
 proof — verify the parse works against the live page before wiring
 into the IngestJob class.
 
-Run:
-    python -m etl.scrapers.grovetown_officials
+Run standalone:
+    python -m townwatch_etl.scrapers.grovetown_officials
 """
 
 from __future__ import annotations

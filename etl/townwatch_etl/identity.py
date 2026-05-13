@@ -159,18 +159,22 @@ def create_official(
     photo_url: str | None = None,
     bio_text: str | None = None,
     official_website: str | None = None,
+    email: str | None = None,
+    phone: str | None = None,
 ) -> int:
     """Explicit creation of a canonical official. Callers must decide when to do this."""
     row = conn.execute(
         """
         INSERT INTO official
             (canonical_name, first_name, middle_name, last_name, suffix,
-             party_affiliation, photo_url, bio_text, official_website, data_source_id)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+             party_affiliation, photo_url, bio_text, official_website,
+             email, phone, data_source_id)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING id
         """,
         (canonical_name, first_name, middle_name, last_name, suffix,
-         party_affiliation, photo_url, bio_text, official_website, data_source_id),
+         party_affiliation, photo_url, bio_text, official_website,
+         email, phone, data_source_id),
     ).fetchone()
     assert row is not None
     return row["id"]

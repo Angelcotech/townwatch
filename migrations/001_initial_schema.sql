@@ -4,8 +4,10 @@
 
 -- ============================================================
 -- EXTENSIONS
+-- PostGIS deferred — added in a future migration when spatial
+-- queries become required (Census TIGER boundaries, parcel maps).
+-- For Phase 1, boundaries are stored as JSONB (GeoJSON shape).
 -- ============================================================
-CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
@@ -47,7 +49,7 @@ CREATE TABLE jurisdiction (
     state_abbr          CHAR(2)     NOT NULL,
     county_fips         CHAR(5),
     population          INTEGER,
-    boundary            GEOGRAPHY(MULTIPOLYGON, 4326),
+    boundary            JSONB,         -- GeoJSON MultiPolygon; promote to geography column when PostGIS lands
     tiger_vintage_year  SMALLINT,
     created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -57,7 +59,7 @@ CREATE TABLE jurisdiction (
 CREATE INDEX idx_jurisdiction_state_fips   ON jurisdiction (state_fips);
 CREATE INDEX idx_jurisdiction_county_fips  ON jurisdiction (county_fips);
 CREATE INDEX idx_jurisdiction_name_trgm    ON jurisdiction USING GIN (display_name gin_trgm_ops);
-CREATE INDEX idx_jurisdiction_boundary     ON jurisdiction USING GIST (boundary);
+-- Spatial index on boundary deferred to PostGIS migration
 
 
 -- ============================================================
@@ -99,7 +101,7 @@ CREATE TABLE seat (
     name                    TEXT        NOT NULL,
     seat_type               TEXT        NOT NULL,  -- 'ward','at_large','district','appointed','ex_officio'
     district_name           TEXT,
-    district_boundary       GEOGRAPHY(MULTIPOLYGON, 4326),
+    district_boundary       JSONB,         -- GeoJSON MultiPolygon; promote when PostGIS lands
     is_leadership           BOOLEAN     NOT NULL DEFAULT false,
     election_cycle_years    INTEGER[],
     term_length_years       SMALLINT,
@@ -111,7 +113,7 @@ CREATE TABLE seat (
 
 CREATE INDEX idx_seat_governing_body     ON seat (governing_body_id);
 CREATE INDEX idx_seat_type               ON seat (seat_type);
-CREATE INDEX idx_seat_district_boundary  ON seat USING GIST (district_boundary);
+-- Spatial index on district_boundary deferred to PostGIS migration
 
 
 -- ============================================================
@@ -346,7 +348,7 @@ CREATE TABLE property_record (
     owner_name_raw          TEXT,          -- exact string from assessor (preserved for audit)
     ownership_type          TEXT,          -- 'sole','joint','trust','llc','other'
     deed_recorded_date      DATE,
-    location                GEOGRAPHY(POINT, 4326),
+    location                JSONB,         -- GeoJSON Point [lon, lat]; promote when PostGIS lands
     created_at              TIMESTAMPTZ   NOT NULL DEFAULT now(),
     data_source_id          INTEGER       NOT NULL REFERENCES data_source (id),
     UNIQUE (official_id, parcel_id, assessment_year)
@@ -356,6 +358,6 @@ CREATE INDEX idx_pr_official      ON property_record (official_id);
 CREATE INDEX idx_pr_official_year ON property_record (official_id, assessment_year DESC);
 CREATE INDEX idx_pr_parcel        ON property_record (parcel_id);
 CREATE INDEX idx_pr_year          ON property_record (assessment_year);
-CREATE INDEX idx_pr_location      ON property_record USING GIST (location);
+-- Spatial index on location deferred to PostGIS migration
 CREATE INDEX idx_pr_owner_name    ON property_record (owner_name_raw);
 CREATE INDEX idx_pr_total_value   ON property_record (assessed_value_total DESC);
