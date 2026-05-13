@@ -1,0 +1,167 @@
+{
+  "schema_version": "0.1",
+  "config_meta": {
+    "generated_at": "2026-05-13",
+    "generated_by": "manual_recon",
+    "last_verified": "2026-05-13",
+    "review_frequency_days": 90
+  },
+
+  "jurisdiction": {
+    "name": "Grovetown",
+    "display_name": "Grovetown",
+    "type": "city",
+    "state": "GA",
+    "state_fips": "13",
+    "county": "Columbia County",
+    "county_fips": "13073",
+    "place_fips": "1335716",
+    "gnis_id": "356123",
+    "population": 18414,
+    "population_year": 2024,
+    "official_website": "https://cityofgrovetown.com",
+    "city_hall_address": "103 Old Wrightsboro Road, Grovetown, GA 30813",
+    "city_hall_phone": "(706) 863-4576",
+    "form_of_government": "mayor_council_at_large"
+  },
+
+  "governing_bodies": [
+    {
+      "name": "City Council",
+      "body_type": "city_council",
+      "seat_count": 5,
+      "seats": [
+        { "name": "Mayor",              "seat_type": "at_large", "is_leadership": true,  "term_length_years": 4 },
+        { "name": "Council Member 1",   "seat_type": "at_large", "is_leadership": false, "term_length_years": 4 },
+        { "name": "Council Member 2",   "seat_type": "at_large", "is_leadership": false, "term_length_years": 4 },
+        { "name": "Council Member 3",   "seat_type": "at_large", "is_leadership": false, "term_length_years": 4 },
+        { "name": "Council Member 4",   "seat_type": "at_large", "is_leadership": false, "term_length_years": 4 }
+      ],
+      "election_cycle_pattern": "staggered_2yr",
+      "meeting_frequency": "monthly",
+      "website_url": "https://cityofgrovetown.com/198/City-Council"
+    },
+    {
+      "name": "Planning Commission",
+      "body_type": "planning_commission",
+      "seat_count": null,
+      "meeting_frequency": "monthly",
+      "website_url": "https://cityofgrovetown.com/AgendaCenter"
+    },
+    {
+      "name": "Board of Zoning Appeals",
+      "body_type": "other",
+      "seat_count": null,
+      "meeting_frequency": "as_needed",
+      "website_url": "https://cityofgrovetown.com/AgendaCenter"
+    }
+  ],
+
+  "data_sources": {
+    "officials_roster": {
+      "status": "found",
+      "source": "city_website",
+      "url": "https://cityofgrovetown.com/198/City-Council",
+      "ingest_method": "scrape",
+      "format": "html",
+      "update_frequency": "as_needed",
+      "notes": "Roster of current Mayor + Council. GMA page has stale data — city site is source of truth."
+    },
+
+    "meeting_agendas_minutes": {
+      "status": "found",
+      "source": "civicengage_agenda_center",
+      "url": "https://cityofgrovetown.com/AgendaCenter",
+      "ingest_method": "scrape",
+      "format": "pdf",
+      "archive_depth_years": 14,
+      "earliest_year": 2012,
+      "url_pattern": "https://cityofgrovetown.com/AgendaCenter/ViewFile/{Agenda|Minutes|ArchivedAgenda}/_MMDDYYYY-{id}",
+      "bodies_covered": ["City Council", "Planning Commission", "Board of Zoning Appeals"],
+      "notes": "13+ years of archived PDFs. CivicEngage/CivicPlus platform — consistent URL pattern enables automation."
+    },
+
+    "property_records": {
+      "status": "partial",
+      "source": "qpublic_columbia_county",
+      "url": "https://qpublic.schneidercorp.com/Application.aspx?App=ColumbiaCountyGA&PageType=Search",
+      "gis_portal": "https://maps.columbiacountyga.gov/",
+      "ingest_method": "per_parcel_lookup",
+      "format": "html",
+      "bulk_data_available": false,
+      "notes": "Per-parcel lookup by owner name works. No bulk download or API. Bulk access requires direct request to Columbia County or scraping (against ToS)."
+    },
+
+    "campaign_finance": {
+      "status": "not_available",
+      "source": "city_clerk_paper_records",
+      "url": null,
+      "ingest_method": "open_records_request",
+      "transition_date": "2027-01-01",
+      "future_source": "https://ethics.ga.gov",
+      "gap_explanation": "Georgia municipal candidates file paper records with the City Clerk until December 31, 2026. After January 2027, filings move to the state ethics commission portal at ethics.ga.gov.",
+      "user_action_path": "Open records request to Grovetown City Clerk, (706) 863-4576",
+      "notes": "FollowTheMoney.org has zero Grovetown municipal coverage. This is a documented gap."
+    },
+
+    "annual_audits": {
+      "status": "found",
+      "source": "georgia_doaa",
+      "url": "https://www.audits2.ga.gov/reports/search/",
+      "ingest_method": "search_then_download",
+      "format": "pdf",
+      "update_frequency": "annual",
+      "notes": "Georgia Department of Audits and Accounts. State-mandated annual filing per O.C.G.A. § 36-81-7."
+    },
+
+    "bond_disclosures": {
+      "status": "unverified",
+      "source": "msrb_emma",
+      "url": "https://emma.msrb.org/",
+      "ingest_method": "api_or_browse",
+      "format": "pdf",
+      "notes": "EMMA browse blocked during automated recon. Manual verification needed. Grovetown's size suggests they may issue via county authority rather than direct."
+    },
+
+    "state_open_data": {
+      "status": "found",
+      "source": "open_georgia",
+      "url": "https://www.open.georgia.gov",
+      "supplementary": [
+        "https://gdac.georgia.gov/data-downloads-0",
+        "https://data-georgia-dca.opendata.arcgis.com/"
+      ],
+      "notes": "State-level spending and local-government financial filings. Useful supplementary source."
+    }
+  },
+
+  "sunshine_law": {
+    "state_statute": "O.C.G.A. § 50-14-1 et seq. (Georgia Open Meetings Act)",
+    "open_records_statute": "O.C.G.A. § 50-18-70 et seq.",
+    "agenda_notice_hours": 24,
+    "meeting_notice_hours": 24,
+    "records_response_business_days": 3,
+    "notes": "Georgia Open Records Act requires response within 3 business days. Open Meetings Act requires 24-hour notice and posted agendas."
+  },
+
+  "known_gaps": [
+    {
+      "category": "campaign_finance",
+      "explanation": "Local race filings held as paper records at Grovetown City Hall until Jan 2027.",
+      "user_facing_message": "Campaign contributions for Grovetown candidates are not yet digitally available. Georgia is transitioning local filings to the state ethics portal effective January 2027.",
+      "remediation": "Open records request to City Clerk."
+    },
+    {
+      "category": "personal_financial_disclosure",
+      "explanation": "Georgia does not require local elected officials to file personal financial disclosures.",
+      "user_facing_message": "Georgia state law does not require Grovetown officials to disclose personal assets, investments, or income sources.",
+      "remediation": "None — gap exists at the state law level."
+    },
+    {
+      "category": "bulk_property_data",
+      "explanation": "Columbia County does not publish bulk parcel data.",
+      "user_facing_message": "Property records are available on a per-parcel lookup basis.",
+      "remediation": "Per-official lookup via qPublic by owner name."
+    }
+  ]
+}
