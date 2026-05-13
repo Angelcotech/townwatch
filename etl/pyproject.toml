@@ -2,10 +2,12 @@
 name = "townwatch-etl"
 version = "0.1.0"
 description = "TownWatch ETL pipeline — ingests public records into Postgres"
-requires-python = ">=3.11"
+requires-python = ">=3.9"
 dependencies = [
     "psycopg[binary]>=3.2",
-    "anthropic>=0.40",
+    "anthropic>=0.45",
+    "pydantic>=2.0",
+    "eval_type_backport>=0.2",  # PEP 604 syntax on Python <3.10
     "httpx>=0.27",
     "beautifulsoup4>=4.12",
     "pdfplumber>=0.11",
