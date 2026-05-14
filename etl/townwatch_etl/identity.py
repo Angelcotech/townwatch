@@ -283,3 +283,138 @@ def add_alias(
         """,
         (official_id, alias_name, source_system, data_source_id),
     )
+
+
+# =====================================================================
+# CachedResolver — batch-job identity resolution
+# =====================================================================
+
+class CachedResolver:
+    """
+    In-memory identity resolver for batch jobs.
+
+    Loads all aliases + last-name → official_id mappings at construction.
+    Resolution is O(1) thereafter. Newly discovered aliases get recorded
+    to both the DB and the cache so subsequent lookups stay consistent.
+
+    Typical usage inside an IngestJob:
+        self.resolver = CachedResolver(
+            self.conn,
+            jurisdiction_id=jid,
+            data_source_id=self.data_source_id,
+            source_system=self.source_name,
+        )
+        for name in names:
+            oid = self.resolver.resolve(name)
+
+    Designed to be the default identity-resolution surface for any job
+    that resolves more than a handful of names — eliminates the per-name
+    network round-trip that dominates Railway-Postgres batch jobs.
+    """
+
+    def __init__(
+        self,
+        conn: psycopg.Connection,
+        *,
+        jurisdiction_id: int | None = None,
+        data_source_id: int | None = None,
+        source_system: str = "cached_resolver",
+    ) -> None:
+        self.conn = conn
+        self.jurisdiction_id = jurisdiction_id
+        self.data_source_id = data_source_id
+        self.source_system = source_system
+        self._alias_map: dict[str, int] = {}
+        self._last_name_map: dict[str, list[int]] = {}
+        self.refresh()
+
+    def refresh(self) -> None:
+        """Re-load caches from DB. Call after bulk official creation."""
+        self._alias_map.clear()
+        self._last_name_map.clear()
+
+        for r in self.conn.execute(
+            "SELECT alias_name, official_id FROM official_alias"
+        ).fetchall():
+            self._alias_map[r["alias_name"].lower()] = r["official_id"]
+
+        if self.jurisdiction_id is None:
+            rows = self.conn.execute(
+                "SELECT id, LOWER(last_name) AS ln FROM official"
+            ).fetchall()
+        else:
+            rows = self.conn.execute("""
+                SELECT DISTINCT o.id, LOWER(o.last_name) AS ln
+                FROM official o
+                LEFT JOIN term t       ON t.official_id = o.id
+                LEFT JOIN seat s       ON s.id = t.seat_id
+                LEFT JOIN governing_body gb ON gb.id = s.governing_body_id
+                WHERE gb.jurisdiction_id = %s OR gb.id IS NULL
+            """, (self.jurisdiction_id,)).fetchall()
+
+        for r in rows:
+            ln = r["ln"]
+            if ln and r["id"] not in self._last_name_map.get(ln, []):
+                self._last_name_map.setdefault(ln, []).append(r["id"])
+
+        # Also include all officials regardless of term (historical)
+        for r in self.conn.execute(
+            "SELECT id, LOWER(last_name) AS ln FROM official"
+        ).fetchall():
+            ln = r["ln"]
+            if ln and r["id"] not in self._last_name_map.get(ln, []):
+                self._last_name_map.setdefault(ln, []).append(r["id"])
+
+    def resolve(self, source_name: str) -> int | None:
+        """Return official_id or None. Pure in-memory after initial refresh."""
+        if not source_name:
+            return None
+
+        oid = self._alias_map.get(source_name.lower())
+        if oid is not None:
+            return oid
+
+        stripped = strip_title(source_name)
+        oid = self._alias_map.get(stripped.lower())
+        if oid is not None:
+            self._record_alias(oid, source_name)
+            return oid
+
+        tokens = stripped.split()
+        if not tokens:
+            return None
+        last_name = tokens[-1].lower()
+        candidates = self._last_name_map.get(last_name, [])
+        if len(candidates) == 1:
+            oid = candidates[0]
+            self._record_alias(oid, source_name)
+            return oid
+        return None
+
+    def record_alias(self, official_id: int, alias_name: str) -> None:
+        """Explicit external alias addition. Idempotent."""
+        self._record_alias(official_id, alias_name)
+
+    def register_new_official(
+        self, official_id: int, *, canonical_name: str, last_name: str
+    ) -> None:
+        """Caller created a new official mid-run; update caches without re-querying."""
+        self._alias_map[canonical_name.lower()] = official_id
+        ln = (last_name or "").lower()
+        if ln and official_id not in self._last_name_map.get(ln, []):
+            self._last_name_map.setdefault(ln, []).append(official_id)
+
+    def _record_alias(self, official_id: int, alias_name: str) -> None:
+        key = alias_name.lower()
+        if key in self._alias_map:
+            return
+        if self.data_source_id is None:
+            return  # caller hasn't wired provenance yet; cache-only
+        add_alias(
+            self.conn,
+            official_id=official_id,
+            alias_name=alias_name,
+            source_system=self.source_system,
+            data_source_id=self.data_source_id,
+        )
+        self._alias_map[key] = official_id

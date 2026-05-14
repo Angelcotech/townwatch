@@ -95,6 +95,53 @@ class IngestJob(ABC):
         assert row is not None
         return row["id"]
 
+    def bulk_insert(self, table: str, rows: list[dict[str, Any]]) -> int:
+        """
+        Insert many rows in a single round trip using psycopg3 pipelined executemany.
+
+        All rows must share the same column set. data_source_id is auto-attached
+        to every row if not already present. Returns the count of rows inserted.
+
+        Use this whenever an IngestJob writes >50 rows of the same shape — it's
+        ~50-100x faster than calling self.insert() in a loop because the trip
+        latency across the public Railway URL no longer dominates.
+        """
+        assert self.conn is not None
+        if not rows:
+            return 0
+        if self.data_source_id is None:
+            raise RuntimeError("Call open_run() before bulk_insert()")
+
+        # Ensure every row has data_source_id
+        for row in rows:
+            row.setdefault("data_source_id", self.data_source_id)
+
+        # Use the union of keys (in stable order) so caller can omit nullable cols
+        cols: list[str] = []
+        seen: set[str] = set()
+        for row in rows:
+            for k in row.keys():
+                if k not in seen:
+                    seen.add(k)
+                    cols.append(k)
+
+        placeholders = ", ".join(["%s"] * len(cols))
+        col_list = ", ".join(cols)
+
+        if DRY_RUN:
+            print(f"[DRY_RUN] BULK INSERT {table} ({col_list}) × {len(rows)} rows")
+            self.rows_skipped += len(rows)
+            return 0
+
+        values = [tuple(r.get(c) for c in cols) for r in rows]
+        with self.conn.cursor() as cur:
+            cur.executemany(
+                f"INSERT INTO {table} ({col_list}) VALUES ({placeholders})",
+                values,
+            )
+        self.rows_written += len(rows)
+        return len(rows)
+
     def upsert(self, table: str, data: dict[str, Any], conflict_cols: list[str]) -> int | None:
         """
         Insert with ON CONFLICT DO UPDATE. Useful for idempotent re-runs.
