@@ -1,104 +1,97 @@
 """
 Pattern: reconsidered_motion
 
-Detects motions whose titles are highly similar within a one-year window
-in the same governing body — typically the same proposal returning after
-modification, postponement, or developer push-back. The Dodge Lane
-rezoning is the canonical example: PUD → R-2 → R-2 reconsideration
-across 4 months.
+Detects when the SAME parcel/property is voted on multiple times in the
+same governing body within a year. This is the developer-push-back signal:
+a property gets tabled, then comes back with watered-down terms, then
+denied, then re-petitioned. The Dodge Lane PUD → R-2 → R-2 reconsideration
+sequence is the canonical example.
 
-Severity:
-  - 3 if 3+ versions of the same motion within 12 months
-  - 2 if 2 versions within 6 months with same parties involved
-  - 1 if 2 highly similar motions within 12 months
+Key distinction from development_bundle_push: this catches the SAME parcel
+voted on multiple times. Bundle pushes have DIFFERENT parcels with shared
+ordinance numbering.
+
+Detection rule:
+  - Extract parcel IDs and street addresses from motion titles and descriptions
+  - Group motions by extracted parcel/address
+  - Flag any parcel with 2+ motions in the same body within 365 days
 """
 
 from __future__ import annotations
+
+import re
+from collections import defaultdict
 
 import psycopg
 
 from .base import Finding, Pattern
 
 
-SIMILARITY_THRESHOLD = 0.55  # pg_trgm threshold; tuned to catch reconsiderations
+# Parcel ID patterns: "Parcel ID 070 009", "Parcel No. 063 013", "Parcel G06 107A"
+_PARCEL_RE = re.compile(
+    r"Parcel\s*(?:ID|No\.?|#)?\s*([A-Z]?\s?\d{2,4}[\s\-]\d{2,4}[A-Z]?)",
+    re.IGNORECASE,
+)
+
+# Street address pattern: "1110 Dodge Lane", "210 E Robinson Avenue"
+_ADDRESS_RE = re.compile(
+    r"\b(\d{1,5})\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+(Lane|Ln|Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Court|Ct|Way|Boulevard|Blvd|Circle|Cir|Place|Pl|Parkway|Pkwy|Highway|Hwy)\b",
+    re.IGNORECASE,
+)
+
+
+def _extract_identifiers(text: str) -> set[str]:
+    """Return normalized parcel IDs and street addresses found in text."""
+    out: set[str] = set()
+    if not text:
+        return out
+    for m in _PARCEL_RE.finditer(text):
+        parcel = re.sub(r"\s+", " ", m.group(1).strip().upper())
+        out.add(f"parcel:{parcel}")
+    for m in _ADDRESS_RE.finditer(text):
+        addr = f"{m.group(1)} {m.group(2)} {m.group(3)}".upper()
+        addr = re.sub(r"\s+", " ", addr).strip()
+        out.add(f"addr:{addr}")
+    return out
 
 
 class ReconsideredMotion(Pattern):
     pattern_id = "reconsidered_motion"
 
     def detect(self, conn: psycopg.Connection) -> list[Finding]:
-        # Find all pairs of motions in the same governing body within 365 days
-        # whose titles are highly similar. Group by the cluster, then summarize.
-        rows = conn.execute(
-            """
-            WITH pairs AS (
-                SELECT
-                    m1.id    AS motion1_id, mt1.meeting_date AS date1, m1.title AS title1,
-                    m2.id    AS motion2_id, mt2.meeting_date AS date2, m2.title AS title2,
-                    similarity(m1.title, m2.title) AS sim,
-                    mt1.governing_body_id AS body_id
-                FROM motion m1
-                JOIN meeting mt1 ON mt1.id = m1.meeting_id
-                JOIN motion m2   ON m2.id > m1.id
-                JOIN meeting mt2 ON mt2.id = m2.meeting_id
-                WHERE mt1.governing_body_id = mt2.governing_body_id
-                  AND similarity(m1.title, m2.title) > %s
-                  AND ABS(mt2.meeting_date - mt1.meeting_date) BETWEEN 1 AND 365
-            )
-            SELECT *, gb.name AS body_name, gb.jurisdiction_id, j.display_name AS jurisdiction_name
-            FROM pairs p
-            JOIN governing_body gb ON gb.id = p.body_id
+        rows = conn.execute("""
+            SELECT m.id AS motion_id, m.title, m.description, m.motion_number,
+                   mtg.meeting_date, mtg.governing_body_id,
+                   gb.name AS body_name,
+                   gb.jurisdiction_id,
+                   j.display_name AS jurisdiction_name
+            FROM motion m
+            JOIN meeting mtg ON mtg.id = m.meeting_id
+            JOIN governing_body gb ON gb.id = mtg.governing_body_id
             JOIN jurisdiction j ON j.id = gb.jurisdiction_id
-            ORDER BY sim DESC, date1 ASC
-            """,
-            (SIMILARITY_THRESHOLD,),
-        ).fetchall()
+            WHERE m.motion_type IN ('zoning_change', 'ordinance', 'resolution')
+            ORDER BY mtg.meeting_date
+        """).fetchall()
 
-        # Cluster pairs into groups by transitive closure on motion IDs
-        # (so 3 motions appearing in 2 pairs become one cluster of 3)
-        from collections import defaultdict
-        adj: dict[int, set[int]] = defaultdict(set)
-        motion_info: dict[int, dict] = {}
+        # Group motions by (body, identifier)
+        groups: dict[tuple[int, str], list[dict]] = defaultdict(list)
         for r in rows:
-            adj[r["motion1_id"]].add(r["motion2_id"])
-            adj[r["motion2_id"]].add(r["motion1_id"])
-            motion_info[r["motion1_id"]] = {
-                "date": r["date1"], "title": r["title1"],
-                "body_id": r["body_id"], "body_name": r["body_name"],
-                "jurisdiction_id": r["jurisdiction_id"],
-                "jurisdiction_name": r["jurisdiction_name"],
-            }
-            motion_info[r["motion2_id"]] = {
-                "date": r["date2"], "title": r["title2"],
-                "body_id": r["body_id"], "body_name": r["body_name"],
-                "jurisdiction_id": r["jurisdiction_id"],
-                "jurisdiction_name": r["jurisdiction_name"],
-            }
-
-        visited: set[int] = set()
-        clusters: list[list[int]] = []
-        for node in adj:
-            if node in visited:
-                continue
-            stack = [node]
-            comp: list[int] = []
-            while stack:
-                cur = stack.pop()
-                if cur in visited:
-                    continue
-                visited.add(cur)
-                comp.append(cur)
-                stack.extend(adj[cur])
-            if len(comp) >= 2:
-                clusters.append(sorted(comp, key=lambda m: motion_info[m]["date"]))
+            text = f"{r['title']} {r['description'] or ''}"
+            for ident in _extract_identifiers(text):
+                groups[(r["governing_body_id"], ident)].append(dict(r))
 
         findings: list[Finding] = []
-        for cluster in clusters:
-            info_list = [motion_info[m] for m in cluster]
-            count = len(cluster)
-            first_date = info_list[0]["date"]
-            last_date = info_list[-1]["date"]
-            span_days = (last_date - first_date).days
+        for (body_id, ident), motions in groups.items():
+            if len(motions) < 2:
+                continue
+            # Sort by date and find any window where 2+ motions are within 365 days
+            motions.sort(key=lambda m: m["meeting_date"])
+            first, last = motions[0]["meeting_date"], motions[-1]["meeting_date"]
+            span_days = (last - first).days
+            if span_days > 730:  # don't flag if spread over 2+ years (probably unrelated)
+                # Try the most recent dense cluster
+                continue
+            count = len(motions)
 
             severity = 0
             if count >= 3 and span_days <= 365:
@@ -107,22 +100,24 @@ class ReconsideredMotion(Pattern):
                 severity = 2
             elif count >= 2:
                 severity = 1
+            if severity == 0:
+                continue
 
-            # Title cleanup — use the shortest title as representative
-            representative = min(info_list, key=lambda i: len(i["title"]))["title"]
-            short = representative[:140] + ("..." if len(representative) > 140 else "")
+            label = ident.split(":", 1)[1]
+            kind = ident.split(":", 1)[0]  # 'parcel' or 'addr'
 
             title = (
-                f"Same matter voted on {count} times in {span_days} days "
-                f"({first_date} → {last_date}): \"{short}\""
+                f"{kind.title()} {label}: voted on {count} times across "
+                f"{span_days} days in {motions[0]['body_name']} "
+                f"({first} → {last})."
             )
             explanation = (
-                "Motions with highly similar titles appearing repeatedly within a year "
-                "in the same body usually indicate a proposal being pushed through "
-                "iteration: tabled, modified, denied-then-reconsidered, or coming "
-                "back with watered-down terms. Repeat attempts on the same matter "
-                "are worth examining: who is the petitioner driving the persistence, "
-                "and what changed between attempts?"
+                "When the same parcel or property is voted on multiple times "
+                "within a year, it usually indicates a proposal being pushed "
+                "through iteration — tabled, modified, denied then reconsidered, "
+                "or returning with watered-down terms. The petitioner's "
+                "persistence matters: who keeps bringing this back, and what "
+                "changed between attempts?"
             )
 
             findings.append(Finding(
@@ -130,18 +125,25 @@ class ReconsideredMotion(Pattern):
                 severity=severity,
                 title=title,
                 explanation=explanation,
-                jurisdiction_id=info_list[0]["jurisdiction_id"],
-                governing_body_id=info_list[0]["body_id"],
-                subject_motion_id=cluster[0],
+                jurisdiction_id=motions[0]["jurisdiction_id"],
+                governing_body_id=body_id,
+                subject_motion_id=motions[0]["motion_id"],
                 evidence=[
-                    {"motion_id": m, "date": str(motion_info[m]["date"]), "title": motion_info[m]["title"]}
-                    for m in cluster
+                    {
+                        "motion_id": m["motion_id"],
+                        "date": str(m["meeting_date"]),
+                        "title": m["title"],
+                        "motion_number": m["motion_number"],
+                    }
+                    for m in motions
                 ],
                 metrics={
+                    "identifier_type": kind,
+                    "identifier": label,
                     "motion_count": count,
                     "span_days": span_days,
-                    "first_date": str(first_date),
-                    "last_date": str(last_date),
+                    "first_date": str(first),
+                    "last_date": str(last),
                 },
             ))
         return findings

@@ -17,6 +17,7 @@ import sys
 from ..db import connect
 from ..ingest_base import IngestJob
 from ..patterns.base import write_findings
+from ..patterns.development_bundle import DevelopmentBundle
 from ..patterns.reconsidered_motion import ReconsideredMotion
 from ..patterns.recusal_absence import RecusalAbsence
 from ..patterns.unanimity_rate import UnanimityRate
@@ -26,6 +27,7 @@ ALL_PATTERNS = [
     UnanimityRate(),
     RecusalAbsence(),
     ReconsideredMotion(),
+    DevelopmentBundle(),
 ]
 
 
