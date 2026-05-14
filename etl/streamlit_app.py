@@ -1,9 +1,11 @@
 """
 TownWatch — Phase 1 prototype dashboard.
 
-Quick Streamlit interface over the live Postgres data. Goal: see what
-view shapes actually answer real questions before building the Next.js
-production UI.
+Profile-first: the Official Profile is the central experience. Everything
+else (votes, motions, findings, decisions) is a SECTION inside a profile.
+
+Landing page: roster (current + historical + candidates).
+Click any official → full profile.
 
 Run:
     cd etl
@@ -13,6 +15,7 @@ Run:
 
 from __future__ import annotations
 
+import json
 from datetime import date
 from typing import Any
 
@@ -23,668 +26,468 @@ import streamlit as st
 from townwatch_etl.db import connect
 
 
-# ---------------------------------------------------------------------
-# Page config
-# ---------------------------------------------------------------------
+# =====================================================================
+# Page config + styling
+# =====================================================================
 
 st.set_page_config(
     page_title="TownWatch — Grovetown, GA",
-    page_icon="🔍",
+    page_icon="🏛",
     layout="wide",
 )
 
 NAVY = "#1A2B4A"
-ACCENT = "#7AAEDB"
+LIGHT_BG = "#FAFAF7"
+CARD_BORDER = "#E5E7EB"
 
 st.markdown(
     f"""
     <style>
-      .block-container {{ padding-top: 1.5rem; }}
-      h1, h2, h3 {{ color: {NAVY}; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }}
-      .stMetric {{ background: #F8F9FB; padding: 1rem; border-radius: 8px; }}
+      .stApp {{ background: {LIGHT_BG}; }}
+      .block-container {{ padding-top: 2rem; padding-bottom: 4rem; max-width: 1200px; }}
+      h1, h2, h3, h4 {{ color: {NAVY}; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: -0.01em; }}
+      h1 {{ font-size: 2rem; font-weight: 700; }}
+      h2 {{ font-size: 1.4rem; font-weight: 600; margin-top: 2rem; }}
+      h3 {{ font-size: 1.1rem; font-weight: 600; }}
+      .official-card {{
+        background: white;
+        border: 1px solid {CARD_BORDER};
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 0.5rem;
+        cursor: pointer;
+      }}
+      .official-name {{ font-size: 1.05rem; font-weight: 600; color: {NAVY}; }}
+      .official-meta {{ font-size: 0.85rem; color: #555; margin-top: 0.25rem; }}
+      .stat-pill {{
+        display: inline-block;
+        background: #F3F4F6;
+        padding: 2px 10px;
+        border-radius: 99px;
+        font-size: 0.85rem;
+        margin-right: 0.5rem;
+        color: {NAVY};
+      }}
+      .finding-card {{
+        background: white;
+        border-left: 4px solid {NAVY};
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
+        border-radius: 4px;
+      }}
+      .stMetric {{ background: white; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid {CARD_BORDER}; }}
+      [data-testid="stMetricLabel"] {{ font-size: 0.8rem; color: #6B7280; }}
+      [data-testid="stMetricValue"] {{ color: {NAVY}; font-weight: 600; }}
     </style>
     """,
     unsafe_allow_html=True,
 )
 
 
-# ---------------------------------------------------------------------
+# =====================================================================
+# Navigation state
+# =====================================================================
+
+if "view" not in st.session_state:
+    st.session_state.view = "roster"  # "roster" | "profile"
+if "selected_official_id" not in st.session_state:
+    st.session_state.selected_official_id = None
+
+
+def go_to_profile(official_id: int) -> None:
+    st.session_state.view = "profile"
+    st.session_state.selected_official_id = official_id
+
+
+def go_to_roster() -> None:
+    st.session_state.view = "roster"
+    st.session_state.selected_official_id = None
+
+
+# =====================================================================
 # Data loaders
-# ---------------------------------------------------------------------
+# =====================================================================
 
 @st.cache_data(ttl=300)
-def load_motions() -> pd.DataFrame:
+def load_roster() -> pd.DataFrame:
     with connect() as conn:
         rows = conn.execute("""
             SELECT
-                m.id AS motion_id,
-                m.title,
-                m.motion_number,
-                m.motion_type,
-                m.outcome,
-                m.description,
-                m.vote_tally_yes,
-                m.vote_tally_no,
-                m.vote_tally_abstain,
-                m.vote_tally_absent,
-                mtg.meeting_date,
-                mtg.meeting_type,
-                gb.name AS body_name,
-                j.display_name AS jurisdiction
-            FROM motion m
-            JOIN meeting mtg ON mtg.id = m.meeting_id
-            JOIN governing_body gb ON gb.id = mtg.governing_body_id
-            JOIN jurisdiction j ON j.id = gb.jurisdiction_id
-            ORDER BY mtg.meeting_date DESC, m.id DESC
+                o.id, o.canonical_name, o.first_name, o.last_name,
+                o.party_affiliation,
+                COUNT(DISTINCT v.id) AS votes,
+                MIN(mtg.meeting_date) AS first_vote,
+                MAX(mtg.meeting_date) AS last_vote,
+                BOOL_OR(t.is_current) AS is_current,
+                (
+                    SELECT s.name FROM term t2
+                    JOIN seat s ON s.id = t2.seat_id
+                    WHERE t2.official_id = o.id AND t2.is_current = true
+                    LIMIT 1
+                ) AS current_seat
+            FROM official o
+            LEFT JOIN vote v ON v.official_id = o.id
+            LEFT JOIN motion m ON m.id = v.motion_id
+            LEFT JOIN meeting mtg ON mtg.id = m.meeting_id
+            LEFT JOIN term t ON t.official_id = o.id
+            GROUP BY o.id, o.canonical_name, o.first_name, o.last_name, o.party_affiliation
+            HAVING COUNT(DISTINCT v.id) > 0 OR BOOL_OR(t.is_current) IS TRUE
+            ORDER BY BOOL_OR(t.is_current) DESC NULLS LAST, COUNT(DISTINCT v.id) DESC
         """).fetchall()
     df = pd.DataFrame([dict(r) for r in rows])
     if not df.empty:
-        df["meeting_date"] = pd.to_datetime(df["meeting_date"])
-        df["year"] = df["meeting_date"].dt.year
+        df["first_vote"] = pd.to_datetime(df["first_vote"], errors="coerce")
+        df["last_vote"] = pd.to_datetime(df["last_vote"], errors="coerce")
+        df["years"] = (df["last_vote"] - df["first_vote"]).dt.days / 365.25
+        df["years"] = df["years"].fillna(0).round(1)
+        df["is_current"] = df["is_current"].fillna(False)
     return df
 
 
 @st.cache_data(ttl=300)
-def load_votes_for_official(official_id: int) -> pd.DataFrame:
+def load_db_stats() -> dict[str, Any]:
     with connect() as conn:
-        rows = conn.execute("""
-            SELECT
-                m.id AS motion_id,
-                m.title,
-                m.motion_type,
-                m.outcome,
-                v.vote_value,
-                v.notes,
-                mtg.meeting_date
-            FROM vote v
-            JOIN motion m ON m.id = v.motion_id
-            JOIN meeting mtg ON mtg.id = m.meeting_id
-            WHERE v.official_id = %s
-            ORDER BY mtg.meeting_date DESC
+        return {
+            "officials":  conn.execute("SELECT COUNT(*) AS n FROM official").fetchone()["n"],
+            "votes":      conn.execute("SELECT COUNT(*) AS n FROM vote").fetchone()["n"],
+            "motions":    conn.execute("SELECT COUNT(*) AS n FROM motion").fetchone()["n"],
+            "meetings":   conn.execute("SELECT COUNT(*) AS n FROM meeting").fetchone()["n"],
+            "findings":   conn.execute("SELECT COUNT(*) AS n FROM finding").fetchone()["n"],
+            "earliest":   conn.execute("SELECT MIN(meeting_date) AS d FROM meeting").fetchone()["d"],
+            "latest":     conn.execute("SELECT MAX(meeting_date) AS d FROM meeting").fetchone()["d"],
+        }
+
+
+@st.cache_data(ttl=300)
+def load_official_record(official_id: int) -> dict[str, Any]:
+    with connect() as conn:
+        official = conn.execute("""
+            SELECT o.id, o.canonical_name, o.first_name, o.last_name, o.party_affiliation,
+                   o.email, o.phone, o.official_website, o.bio_text,
+                   COUNT(DISTINCT v.id) AS votes,
+                   MIN(mtg.meeting_date) AS first_vote,
+                   MAX(mtg.meeting_date) AS last_vote,
+                   BOOL_OR(t.is_current) AS is_current
+            FROM official o
+            LEFT JOIN vote v ON v.official_id = o.id
+            LEFT JOIN motion m ON m.id = v.motion_id
+            LEFT JOIN meeting mtg ON mtg.id = m.meeting_id
+            LEFT JOIN term t ON t.official_id = o.id
+            WHERE o.id = %s
+            GROUP BY o.id
+        """, (official_id,)).fetchone()
+        if not official:
+            return {}
+
+        terms = conn.execute("""
+            SELECT t.id, t.start_date, t.end_date, t.how_seated, t.is_current,
+                   s.name AS seat_name, gb.name AS body_name, j.display_name AS jurisdiction
+            FROM term t
+            JOIN seat s ON s.id = t.seat_id
+            JOIN governing_body gb ON gb.id = s.governing_body_id
+            JOIN jurisdiction j ON j.id = gb.jurisdiction_id
+            WHERE t.official_id = %s
+            ORDER BY t.start_date DESC
         """, (official_id,)).fetchall()
-    df = pd.DataFrame([dict(r) for r in rows])
-    if not df.empty:
-        df["meeting_date"] = pd.to_datetime(df["meeting_date"])
-    return df
 
-
-@st.cache_data(ttl=300)
-def load_official_breakdown(official_id: int) -> pd.DataFrame:
-    """Per-motion-type yes-rate breakdown for one official."""
-    with connect() as conn:
-        rows = conn.execute("""
-            SELECT
-                m.motion_type,
-                COUNT(*) AS total,
-                SUM(CASE WHEN v.vote_value = 'yes' THEN 1 ELSE 0 END) AS yes_count,
-                SUM(CASE WHEN v.vote_value = 'no' THEN 1 ELSE 0 END) AS no_count,
-                SUM(CASE WHEN v.vote_value = 'abstain' THEN 1 ELSE 0 END) AS abstain_count,
-                SUM(CASE WHEN v.vote_value = 'conflict_recusal' THEN 1 ELSE 0 END) AS recusal_count
+        breakdown = conn.execute("""
+            SELECT m.motion_type,
+                   COUNT(*) AS total,
+                   SUM(CASE WHEN v.vote_value = 'yes' THEN 1 ELSE 0 END) AS yes_count,
+                   SUM(CASE WHEN v.vote_value = 'no' THEN 1 ELSE 0 END) AS no_count,
+                   SUM(CASE WHEN v.vote_value = 'abstain' THEN 1 ELSE 0 END) AS abstain_count,
+                   SUM(CASE WHEN v.vote_value = 'conflict_recusal' THEN 1 ELSE 0 END) AS recusal_count
             FROM vote v
             JOIN motion m ON m.id = v.motion_id
             WHERE v.official_id = %s
             GROUP BY m.motion_type
             ORDER BY total DESC
         """, (official_id,)).fetchall()
-    return pd.DataFrame([dict(r) for r in rows])
 
+        findings = conn.execute("""
+            SELECT pattern_id, severity, title, explanation, metrics
+            FROM finding
+            WHERE subject_official_id = %s
+            ORDER BY severity DESC
+        """, (official_id,)).fetchall()
 
-@st.cache_data(ttl=300)
-def load_officials() -> pd.DataFrame:
-    with connect() as conn:
-        rows = conn.execute("""
-            SELECT
-                o.id, o.canonical_name, o.first_name, o.last_name,
-                COUNT(v.id) AS vote_count
-            FROM official o
-            LEFT JOIN vote v ON v.official_id = o.id
-            GROUP BY o.id, o.canonical_name, o.first_name, o.last_name
-            ORDER BY vote_count DESC
-        """).fetchall()
-    return pd.DataFrame([dict(r) for r in rows])
+        aliases = conn.execute("""
+            SELECT alias_name, source_system FROM official_alias
+            WHERE official_id = %s ORDER BY alias_name
+        """, (official_id,)).fetchall()
 
+        # Per-motion-type drill-down
+        detail = conn.execute("""
+            SELECT m.id AS motion_id, m.motion_type, m.title, m.description, m.outcome,
+                   m.vote_tally_yes, m.vote_tally_no, m.motion_number,
+                   v.vote_value, v.notes, mtg.meeting_date
+            FROM vote v
+            JOIN motion m ON m.id = v.motion_id
+            JOIN meeting mtg ON mtg.id = m.meeting_id
+            WHERE v.official_id = %s
+            ORDER BY mtg.meeting_date DESC
+        """, (official_id,)).fetchall()
 
-@st.cache_data(ttl=300)
-def load_jurisdiction_summary() -> dict[str, Any]:
-    with connect() as conn:
-        meetings = conn.execute("SELECT COUNT(*) AS n FROM meeting").fetchone()["n"]
-        motions = conn.execute("SELECT COUNT(*) AS n FROM motion").fetchone()["n"]
-        votes = conn.execute("SELECT COUNT(*) AS n FROM vote").fetchone()["n"]
-        recusals = conn.execute(
-            "SELECT COUNT(*) AS n FROM vote WHERE vote_value = 'conflict_recusal'"
-        ).fetchone()["n"]
-        date_range = conn.execute("""
-            SELECT MIN(meeting_date) AS earliest, MAX(meeting_date) AS latest
-            FROM meeting
-        """).fetchone()
     return {
-        "meetings": meetings,
-        "motions": motions,
-        "votes": votes,
-        "recusals": recusals,
-        "earliest": date_range["earliest"],
-        "latest": date_range["latest"],
+        "official": dict(official),
+        "terms": [dict(t) for t in terms],
+        "breakdown": [dict(b) for b in breakdown],
+        "findings": [dict(f) for f in findings],
+        "aliases": [dict(a) for a in aliases],
+        "detail": [dict(d) for d in detail],
     }
 
 
-# ---------------------------------------------------------------------
-# Sidebar — filters
-# ---------------------------------------------------------------------
+# =====================================================================
+# UI components
+# =====================================================================
 
-motions = load_motions()
-summary = load_jurisdiction_summary()
-officials = load_officials()
-
-st.sidebar.title("🔍 TownWatch")
-st.sidebar.markdown(f"**Grovetown, GA** · {summary['earliest']} → {summary['latest']}")
-st.sidebar.markdown("---")
-
-# Motion type filter
-st.sidebar.subheader("Motion types")
-all_types = sorted(motions["motion_type"].dropna().unique()) if not motions.empty else []
-selected_types = st.sidebar.multiselect("Filter", all_types, default=all_types)
-
-# Year range filter
-years = motions["year"].dropna().astype(int).unique() if not motions.empty else []
-if len(years) > 0:
-    year_min, year_max = int(min(years)), int(max(years))
-    year_range = st.sidebar.slider("Year range", year_min, year_max, (year_min, year_max))
-else:
-    year_range = (2012, 2026)
-
-# Outcome filter
-st.sidebar.subheader("Outcome")
-all_outcomes = sorted(motions["outcome"].dropna().unique()) if not motions.empty else []
-selected_outcomes = st.sidebar.multiselect("Filter", all_outcomes, default=all_outcomes)
-
-# Apply filters
-filtered = motions[
-    motions["motion_type"].isin(selected_types)
-    & motions["outcome"].isin(selected_outcomes)
-    & (motions["year"] >= year_range[0])
-    & (motions["year"] <= year_range[1])
-]
-
-
-# ---------------------------------------------------------------------
-# Header
-# ---------------------------------------------------------------------
-
-st.title("TownWatch — Grovetown, GA")
-st.caption("Phase 1 prototype · live Postgres data · for design exploration only")
-
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("Meetings", f"{summary['meetings']:,}")
-c2.metric("Motions extracted", f"{summary['motions']:,}")
-c3.metric("Individual votes", f"{summary['votes']:,}")
-c4.metric("Recusals", f"{summary['recusals']:,}")
-
-
-# ---------------------------------------------------------------------
-# Tabs
-# ---------------------------------------------------------------------
-
-tab0, tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "🔎 Findings",
-    "📅 Decision Timeline",
-    "🏗 Money & Development",
-    "👤 Per-Official",
-    "⚠️ Recusals & Conflicts",
-    "🔮 Post-Office Patterns",
-])
-
-# ---------- Tab 0: Auto-Detected Findings ----------
-
-with tab0:
-    st.subheader("Patterns automatically detected from the data")
-    st.caption(
-        "Each finding is a sentence-level pattern surfaced by a deterministic detector "
-        "running against the indexed public record. Severity is a structural signal, "
-        "not a verdict. The data is the source of truth — citizens verify and conclude."
-    )
-
-    with connect() as conn:
-        findings_rows = conn.execute("""
-            SELECT f.id, f.pattern_id, f.severity, f.title, f.explanation,
-                   f.metrics, f.evidence, f.detected_at,
-                   o.canonical_name AS official_name,
-                   gb.name AS body_name,
-                   j.display_name AS jurisdiction
-            FROM finding f
-            LEFT JOIN official o      ON o.id = f.subject_official_id
-            LEFT JOIN governing_body gb ON gb.id = f.governing_body_id
-            LEFT JOIN jurisdiction j  ON j.id = f.jurisdiction_id
-            ORDER BY f.severity DESC, f.pattern_id, f.id
-        """).fetchall()
-
-    if not findings_rows:
-        st.info("No findings yet. Run `python -m townwatch_etl.jobs.run_patterns`.")
-    else:
-        # Filter chips
-        all_patterns = sorted(set(r["pattern_id"] for r in findings_rows))
-        st.markdown("**Filter by pattern:**")
-        cols = st.columns(len(all_patterns) + 1)
-        if "patterns_selected" not in st.session_state:
-            st.session_state.patterns_selected = set(all_patterns)
-        for i, p in enumerate(all_patterns):
-            count = sum(1 for r in findings_rows if r["pattern_id"] == p)
-            with cols[i]:
-                if st.checkbox(f"{p} ({count})", value=p in st.session_state.patterns_selected, key=f"pat_{p}"):
-                    st.session_state.patterns_selected.add(p)
-                else:
-                    st.session_state.patterns_selected.discard(p)
-
-        min_sev = st.slider("Minimum severity", 1, 5, 2)
-
-        filtered_findings = [
-            r for r in findings_rows
-            if r["pattern_id"] in st.session_state.patterns_selected
-            and r["severity"] >= min_sev
-        ]
-
-        st.markdown(f"**Showing {len(filtered_findings)} of {len(findings_rows)} findings**")
-        st.markdown("---")
-
-        severity_colors = {5: "🔴", 4: "🟠", 3: "🟡", 2: "🔵", 1: "⚪️"}
-
-        for f in filtered_findings:
-            severity_icon = severity_colors.get(f["severity"], "⚪️")
-            subject_chip = ""
-            if f["official_name"]:
-                subject_chip = f"`{f['official_name']}` · "
-            elif f["body_name"]:
-                subject_chip = f"`{f['body_name']}` · "
-
-            st.markdown(
-                f"### {severity_icon} {f['title']}"
-            )
-            st.caption(f"{subject_chip}pattern: `{f['pattern_id']}` · severity {f['severity']}")
-            if f["explanation"]:
-                with st.expander("Why this is flagged"):
-                    st.write(f["explanation"])
-
-            if f["evidence"]:
-                with st.expander(f"Evidence ({len(f['evidence'])} records)"):
-                    for e in f["evidence"][:20]:
-                        st.markdown(f"- **{e.get('date', '')}** · {e.get('title', '')}")
-            if f["metrics"]:
-                with st.expander("Metrics"):
-                    st.json(f["metrics"])
-            st.markdown("---")
-
-# ---------- Tab 1: Decision Timeline ----------
-
-with tab1:
-    st.subheader("Every substantive vote, plotted in time")
-    st.caption("Each dot is one motion. Color = type. Hover for details.")
-
-    if not filtered.empty:
-        fig = px.scatter(
-            filtered,
-            x="meeting_date",
-            y="motion_type",
-            color="motion_type",
-            symbol="outcome",
-            hover_data={
-                "title": True,
-                "motion_number": True,
-                "vote_tally_yes": True,
-                "vote_tally_no": True,
-                "outcome": True,
-                "meeting_date": "|%Y-%m-%d",
-                "motion_type": False,
-            },
-            height=520,
+def render_header() -> None:
+    stats = load_db_stats()
+    col_title, col_action = st.columns([3, 1])
+    with col_title:
+        st.markdown("# 🏛 TownWatch — Grovetown, GA")
+        st.caption(
+            f"Indexed: {stats['earliest']} → {stats['latest']} · "
+            f"{stats['officials']} officials · {stats['motions']:,} motions · "
+            f"{stats['votes']:,} votes · {stats['findings']} findings"
         )
-        fig.update_layout(
-            xaxis_title=None,
-            yaxis_title=None,
-            showlegend=True,
-            legend_title=None,
-            plot_bgcolor="white",
-            margin=dict(l=10, r=10, t=10, b=10),
-        )
-        fig.update_xaxes(gridcolor="#EEE", showline=True, linecolor="#DDD")
-        fig.update_yaxes(gridcolor="#F5F5F5", showline=True, linecolor="#DDD")
-        st.plotly_chart(fig, use_container_width=True)
-
-        # Density chart underneath
-        st.subheader("Motion density by year & type")
-        density = (
-            filtered.groupby(["year", "motion_type"])
-            .size()
-            .reset_index(name="count")
-        )
-        fig2 = px.bar(
-            density, x="year", y="count", color="motion_type",
-            height=280,
-        )
-        fig2.update_layout(
-            plot_bgcolor="white",
-            margin=dict(l=10, r=10, t=10, b=10),
-            xaxis_title=None, yaxis_title="Motions",
-        )
-        st.plotly_chart(fig2, use_container_width=True)
-
-        st.subheader(f"Records ({len(filtered):,})")
-        display = filtered[[
-            "meeting_date", "motion_number", "motion_type", "outcome",
-            "vote_tally_yes", "vote_tally_no", "title",
-        ]].copy()
-        display["meeting_date"] = display["meeting_date"].dt.strftime("%Y-%m-%d")
-        st.dataframe(display, use_container_width=True, hide_index=True)
-    else:
-        st.info("No motions match the current filters.")
+    with col_action:
+        if st.session_state.view == "profile":
+            if st.button("← Back to roster", use_container_width=True):
+                go_to_roster()
+                st.rerun()
 
 
-# ---------- Tab 2: Money & Development ----------
+def render_roster() -> None:
+    df = load_roster()
+    if df.empty:
+        st.info("No officials in the database yet.")
+        return
 
-with tab2:
-    st.subheader("Decisions that shape tax burden and development")
-    st.caption(
-        "Zoning changes, contracts, budget amendments, and ordinances — the votes "
-        "most likely to affect what your neighborhood looks like and what your tax bill says."
-    )
+    current = df[df["is_current"] == True]  # noqa: E712
+    historical = df[df["is_current"] != True]  # noqa: E712
 
-    money_types = {"zoning_change", "contract_approval", "budget_amendment", "ordinance"}
-    money = motions[motions["motion_type"].isin(money_types)]
+    # ---- Current officials ----
+    st.markdown("## Current officials")
+    st.caption(f"{len(current)} active member" + ("s" if len(current) != 1 else ""))
 
-    if not money.empty:
-        c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Zoning changes (14 yrs)", int((money["motion_type"] == "zoning_change").sum()))
-        c2.metric("Contracts approved", int((money["motion_type"] == "contract_approval").sum()))
-        c3.metric("Budget amendments", int((money["motion_type"] == "budget_amendment").sum()))
-        c4.metric("Ordinances", int((money["motion_type"] == "ordinance").sum()))
+    if not current.empty:
+        cols = st.columns(min(len(current), 4))
+        for i, (_, row) in enumerate(current.iterrows()):
+            with cols[i % len(cols)]:
+                _render_official_card(row, current=True)
 
-        # Timeline
-        fig = px.scatter(
-            money,
-            x="meeting_date",
-            y="motion_type",
-            color="motion_type",
-            symbol="outcome",
-            hover_data={
-                "title": True, "motion_number": True,
-                "vote_tally_yes": True, "vote_tally_no": True,
-                "outcome": True,
-                "meeting_date": "|%Y-%m-%d",
-                "motion_type": False,
-            },
-            height=460,
-        )
-        fig.update_layout(
-            plot_bgcolor="white",
-            margin=dict(l=10, r=10, t=10, b=10),
-            xaxis_title=None, yaxis_title=None,
-            legend_title=None,
-        )
-        st.plotly_chart(fig, use_container_width=True)
+    # ---- Historical officials ----
+    st.markdown("## Historical officials")
+    st.caption(f"{len(historical)} past member" + ("s" if len(historical) != 1 else ""))
 
-        # Year-by-year intensity
-        density = money.groupby(["year", "motion_type"]).size().reset_index(name="count")
-        fig2 = px.bar(density, x="year", y="count", color="motion_type", height=260)
-        fig2.update_layout(plot_bgcolor="white", xaxis_title=None, yaxis_title="Per year")
-        st.plotly_chart(fig2, use_container_width=True)
+    if not historical.empty:
+        cols = st.columns(4)
+        for i, (_, row) in enumerate(historical.iterrows()):
+            with cols[i % 4]:
+                _render_official_card(row, current=False)
 
-        st.subheader("Recent zoning + annexation activity")
-        zoning = money[money["motion_type"].isin({"zoning_change", "ordinance"})].head(20)
-        for _, row in zoning.iterrows():
-            with st.expander(f"{row['meeting_date'].strftime('%Y-%m-%d')} · {row['title'][:90]}"):
-                st.write(row["description"] or "")
-                st.caption(
-                    f"{row['motion_type']} · {row['outcome']} · "
-                    f"vote {row['vote_tally_yes']}-{row['vote_tally_no']}"
-                )
-    else:
-        st.info("No money/development motions in current filter range.")
-
-
-# ---------- Tab 3: Per-Official ----------
-
-with tab3:
-    if not officials.empty:
-        opt = officials[officials["vote_count"] > 0].copy()
-        opt["label"] = opt.apply(
-            lambda r: f"{r['canonical_name']} ({r['vote_count']:,} votes)",
-            axis=1,
-        )
-        choice = st.selectbox("Choose an official", opt["label"].tolist())
-        chosen_id = int(opt[opt["label"] == choice]["id"].iloc[0])
-        chosen_name = opt[opt["label"] == choice]["canonical_name"].iloc[0]
-
-        votes_df = load_votes_for_official(chosen_id)
-        breakdown = load_official_breakdown(chosen_id)
-
-        # ===== Headline statistics =====
-        st.title(chosen_name)
-
-        total_votes = len(votes_df)
-        first_vote = votes_df["meeting_date"].min() if not votes_df.empty else None
-        latest_vote = votes_df["meeting_date"].max() if not votes_df.empty else None
-        years_served = (
-            round((latest_vote - first_vote).days / 365.25, 1)
-            if first_vote is not None else 0
-        )
-        overall_yes_pct = (
-            int((votes_df["vote_value"] == "yes").sum() * 100 / max(total_votes, 1))
-            if total_votes else 0
-        )
-        recusal_count = int((votes_df["vote_value"] == "conflict_recusal").sum())
-        dissent_count = int((votes_df["vote_value"] == "no").sum())
-
-        c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Years in record", f"{years_served}")
-        c2.metric("Total votes", f"{total_votes:,}")
-        c3.metric("Yes rate overall", f"{overall_yes_pct}%")
-        c4.metric("Recusals", f"{recusal_count}")
-
-        # ===== Topical breakdown — the centerpiece =====
-        st.subheader("Voting record by topic")
-        if not breakdown.empty:
-            bd = breakdown.copy()
-            bd["yes_pct"] = (bd["yes_count"] * 100 / bd["total"]).round(0).astype(int)
-
-            display_bd = bd[["motion_type", "yes_pct", "total", "yes_count", "no_count", "abstain_count", "recusal_count"]].rename(
-                columns={
-                    "motion_type": "Topic",
-                    "yes_pct": "% Yes",
-                    "total": "Total Votes",
-                    "yes_count": "Yes",
-                    "no_count": "No",
-                    "abstain_count": "Abstain",
-                    "recusal_count": "Recusal",
-                }
-            )
-            st.dataframe(
-                display_bd,
-                use_container_width=True,
-                hide_index=True,
-                column_config={
-                    "% Yes": st.column_config.ProgressColumn(
-                        "% Yes",
-                        format="%d%%",
-                        min_value=0,
-                        max_value=100,
-                    ),
-                },
-            )
-
-            # ===== Drill-down: every vote in every category, with full detail =====
-            st.subheader("Decisions by topic")
-            st.caption(
-                "Each row is one motion this official voted on. Look for dissents "
-                "(no/abstain/recusal — rare events) and read the descriptions for the actual decisions."
-            )
-
-            # Need full vote+motion rows joined for the drill-down
-            with connect() as conn:
-                detail_rows = conn.execute("""
-                    SELECT m.motion_type, m.title, m.description, m.outcome,
-                           m.vote_tally_yes, m.vote_tally_no, m.motion_number,
-                           v.vote_value, v.notes, mtg.meeting_date
-                    FROM vote v
-                    JOIN motion m ON m.id = v.motion_id
-                    JOIN meeting mtg ON mtg.id = m.meeting_id
-                    WHERE v.official_id = %s
-                    ORDER BY mtg.meeting_date DESC
-                """, (chosen_id,)).fetchall()
-            detail_df = pd.DataFrame([dict(r) for r in detail_rows])
-
-            # Sort categories by total votes desc
-            for _, row in bd.iterrows():
-                mtype = row["motion_type"]
-                count = int(row["total"])
-                yes_pct = int(row["yes_pct"])
-                dissents = int(row["no_count"]) + int(row["abstain_count"]) + int(row["recusal_count"])
-
-                label = f"{mtype}  —  {count} votes  ·  {yes_pct}% yes"
-                if dissents > 0:
-                    label += f"  ·  ⓘ {dissents} dissent" + ("s" if dissents != 1 else "")
-
-                with st.expander(label):
-                    cat = detail_df[detail_df["motion_type"] == mtype].copy()
-                    if cat.empty:
-                        st.caption("No detail rows.")
-                        continue
-
-                    # Show dissents first (they're the interesting events)
-                    cat["is_dissent"] = cat["vote_value"].isin(["no", "abstain", "conflict_recusal"])
-                    cat = cat.sort_values(["is_dissent", "meeting_date"], ascending=[False, False])
-
-                    for _, m in cat.iterrows():
-                        vote_emoji = {
-                            "yes": "✓",
-                            "no": "✗",
-                            "abstain": "○",
-                            "conflict_recusal": "⚠",
-                            "absent": "—",
-                        }.get(m["vote_value"], "?")
-                        date_str = m["meeting_date"].strftime("%Y-%m-%d")
-                        outcome_tag = f" → {m['outcome']}" if m["outcome"] != "passed" else ""
-                        tally = f"({m['vote_tally_yes']}-{m['vote_tally_no']})"
-
-                        header = f"**{vote_emoji} {date_str}** · {m['title']} {tally}{outcome_tag}"
-                        st.markdown(header)
-                        if m["description"]:
-                            st.caption(m["description"])
-                        if m["notes"]:
-                            st.info(f"📌 {m['notes']}")
-                        st.markdown("---")
-
-        # ===== Vote timeline =====
-        st.subheader("Voting record over time")
-        if not votes_df.empty:
-            fig = px.scatter(
-                votes_df, x="meeting_date", y="motion_type",
-                color="vote_value", symbol="vote_value",
-                hover_data={"title": True, "outcome": True, "meeting_date": "|%Y-%m-%d", "motion_type": False},
-                height=380,
-            )
-            fig.update_layout(
-                plot_bgcolor="white",
-                margin=dict(l=10, r=10, t=10, b=10),
-                xaxis_title=None, yaxis_title=None,
-            )
-            st.plotly_chart(fig, use_container_width=True)
-
-        # ===== Raw data (the receipts) =====
-        with st.expander(f"📋 Show all {total_votes:,} individual votes (raw data)"):
-            display = votes_df[["meeting_date", "motion_type", "vote_value", "outcome", "title"]].copy()
-            display["meeting_date"] = display["meeting_date"].dt.strftime("%Y-%m-%d")
-            st.dataframe(display, use_container_width=True, hide_index=True)
-    else:
-        st.info("No officials with votes yet.")
-
-
-# ---------- Tab 4: Recusals & Conflicts ----------
-
-with tab4:
-    st.subheader("Every declared conflict, every recusal")
-    st.caption(
-        "When an official declines to vote due to a conflict of interest, it's "
-        "recorded in the minutes. These are the moments officials themselves "
-        "tell you a conflict exists."
-    )
-
-    with connect() as conn:
-        recusal_rows = conn.execute("""
-            SELECT
-                o.canonical_name,
-                m.title,
-                m.motion_type,
-                m.outcome,
-                v.notes,
-                mtg.meeting_date
-            FROM vote v
-            JOIN official o ON o.id = v.official_id
-            JOIN motion m ON m.id = v.motion_id
-            JOIN meeting mtg ON mtg.id = m.meeting_id
-            WHERE v.vote_value = 'conflict_recusal'
-            ORDER BY mtg.meeting_date DESC
-        """).fetchall()
-
-    if recusal_rows:
-        for r in recusal_rows:
-            with st.expander(f"{r['meeting_date']} · {r['canonical_name']} recused on '{r['title'][:80]}'"):
-                st.write(f"**Motion type:** {r['motion_type']}")
-                st.write(f"**Outcome:** {r['outcome']}")
-                if r["notes"]:
-                    st.write(f"**Reason:** {r['notes']}")
-    else:
-        st.info(
-            "**No recusals recorded yet in the extracted data.**\n\n"
-            "This either means no Grovetown official has declared a financial conflict "
-            "on any motion in the indexed period, or those declarations weren't captured "
-            "in the minutes format. As the data grows, this view becomes a key indicator."
-        )
-
-
-# ---------- Tab 5: Post-Office Patterns ----------
-
-with tab5:
-    st.subheader("Post-Office Benefit Watch")
-    st.caption("Detect cases where former officials benefited from votes they helped pass.")
-
-    st.warning(
-        "🔮 **Coming in Phase 1.5** — requires historical official records and "
-        "GA Secretary of State Corporate Registry cross-referencing. The schema "
-        "supports this query today; we need to backfill former councilmembers "
-        "(Trudeau, Martin, Fisher, Jones, Smith, and others observed in extraction) "
-        "and ingest LLC-to-individual mappings before the detection runs."
-    )
-
-    st.markdown("---")
-    st.subheader("Unresolved names from extracted minutes")
-    st.caption(
-        "Officials referenced in voting records who don't yet have canonical records. "
-        "These are likely former councilmembers. Backfilling them unlocks 8+ years "
-        "of voting history retroactively."
-    )
-
-    # Pull unresolved names from extraction notes / raw payloads
-    with connect() as conn:
-        # Best signal: aliases referenced in raw_payload but not yet in official table
-        unresolved = conn.execute("""
-            SELECT raw_payload->'agenda_items' AS items, m.meeting_date
-            FROM data_source ds
-            JOIN meeting m ON m.data_source_id IS NOT NULL  -- ignore
-            WHERE ds.source_name LIKE '%AgendaCenter%claude_extract'
-              AND ds.raw_payload IS NOT NULL
-            LIMIT 5
-        """).fetchall()
+    # ---- Candidates section (data not yet ingested) ----
+    st.markdown("## Candidates")
+    st.caption("Upcoming and recently-filed candidates for Grovetown offices")
 
     st.info(
-        "Names like 'Dennis Trudeau', 'Sylvia Martin', 'Deborah Fisher', "
-        "'Gary E. Jones', 'Ceretta Smith' appeared in extracted minutes "
-        "without matching official records. Backfill these to unlock their "
-        "complete voting histories."
+        "**Mayor — Special Election, November 2026**\n\n"
+        "The Mayor seat is currently vacant. Council voted (Apr 13, 2026) "
+        "to call a special election to fill the unexpired term. Qualifying "
+        "fee set at **$612**.\n\n"
+        "Candidate filings are not yet tracked in TownWatch. "
+        "We'll list candidates here as they file with the City Clerk."
     )
 
-# Footer
+
+def _render_official_card(row: pd.Series, *, current: bool) -> None:
+    label = "Current" if current else "Historical"
+    seat_or_status = row.get("current_seat") or label
+    years_part = f" · {row['years']}yr" if row["years"] else ""
+    if st.button(
+        f"**{row['canonical_name']}**\n\n"
+        f"{seat_or_status} · {int(row['votes']):,} votes{years_part}",
+        key=f"official_{row['id']}",
+        use_container_width=True,
+    ):
+        go_to_profile(int(row["id"]))
+        st.rerun()
+
+
+def render_profile(official_id: int) -> None:
+    rec = load_official_record(official_id)
+    if not rec:
+        st.error("Official not found.")
+        return
+
+    o = rec["official"]
+    terms = rec["terms"]
+    breakdown = rec["breakdown"]
+    findings = rec["findings"]
+    aliases = rec["aliases"]
+    detail = rec["detail"]
+
+    # ---- Header ----
+    st.markdown(f"# {o['canonical_name']}")
+    current_term = next((t for t in terms if t["is_current"]), None)
+    if current_term:
+        st.caption(
+            f"{current_term['seat_name']} · {current_term['body_name']} · "
+            f"{current_term['jurisdiction']} · current"
+        )
+    elif terms:
+        t = terms[0]
+        st.caption(
+            f"Formerly: {t['seat_name']} · {t['body_name']} · "
+            f"{t['jurisdiction']}"
+        )
+    else:
+        st.caption("No term record on file — historical vote record only.")
+
+    # ---- Headline stats ----
+    total_votes = int(o["votes"] or 0)
+    if total_votes > 0 and o["first_vote"] and o["last_vote"]:
+        years = round((o["last_vote"] - o["first_vote"]).days / 365.25, 1)
+    else:
+        years = 0
+    yes_count = sum(int(b["yes_count"]) for b in breakdown)
+    yes_pct = int(yes_count * 100 / max(total_votes, 1)) if total_votes else 0
+    recusals = sum(int(b["recusal_count"]) for b in breakdown)
+    no_count = sum(int(b["no_count"]) for b in breakdown)
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Years in record", f"{years}")
+    c2.metric("Total votes", f"{total_votes:,}")
+    c3.metric("Yes rate", f"{yes_pct}%")
+    c4.metric("Recusals", f"{recusals}")
+
+    # ---- Flagged findings about this person ----
+    if findings:
+        st.markdown("## Findings flagged for this official")
+        for f in findings:
+            with st.container():
+                st.markdown(
+                    f'<div class="finding-card"><strong>{f["title"]}</strong><br>'
+                    f'<span style="font-size:0.8rem;color:#6B7280;">'
+                    f'pattern: {f["pattern_id"]} · severity {f["severity"]}'
+                    f'</span></div>',
+                    unsafe_allow_html=True,
+                )
+                if f.get("explanation"):
+                    with st.expander("Why this is flagged"):
+                        st.write(f["explanation"])
+
+    # ---- Voting record by topic ----
+    if breakdown:
+        st.markdown("## Voting record by topic")
+        bd_df = pd.DataFrame(breakdown)
+        bd_df["yes_pct"] = (bd_df["yes_count"] * 100 / bd_df["total"]).round(0).astype(int)
+        display = bd_df[[
+            "motion_type", "yes_pct", "total",
+            "yes_count", "no_count", "abstain_count", "recusal_count",
+        ]].rename(columns={
+            "motion_type": "Topic",
+            "yes_pct": "% Yes",
+            "total": "Total",
+            "yes_count": "Yes",
+            "no_count": "No",
+            "abstain_count": "Abstain",
+            "recusal_count": "Recusal",
+        })
+        st.dataframe(
+            display, use_container_width=True, hide_index=True,
+            column_config={
+                "% Yes": st.column_config.ProgressColumn(
+                    "% Yes", format="%d%%", min_value=0, max_value=100,
+                ),
+            },
+        )
+
+    # ---- Decisions by topic (drill-down) ----
+    if detail:
+        st.markdown("## Decisions by topic")
+        st.caption(
+            "Every vote this official cast, grouped by topic. Dissents "
+            "(no / abstain / recusal — the rare events) sort to the top of each group."
+        )
+        detail_df = pd.DataFrame(detail)
+        for _, row in pd.DataFrame(breakdown).iterrows():
+            mtype = row["motion_type"]
+            count = int(row["total"])
+            yes_pct = int(row["yes_count"] * 100 / max(count, 1))
+            dissents = int(row["no_count"]) + int(row["abstain_count"]) + int(row["recusal_count"])
+            label = f"{mtype}  ·  {count} votes  ·  {yes_pct}% yes"
+            if dissents > 0:
+                label += f"  ·  ⓘ {dissents} dissent" + ("s" if dissents != 1 else "")
+
+            with st.expander(label):
+                cat = detail_df[detail_df["motion_type"] == mtype].copy()
+                if cat.empty:
+                    st.caption("No detail rows.")
+                    continue
+                cat["is_dissent"] = cat["vote_value"].isin(["no", "abstain", "conflict_recusal"])
+                cat = cat.sort_values(["is_dissent", "meeting_date"], ascending=[False, False])
+
+                for _, m in cat.iterrows():
+                    emoji = {
+                        "yes": "✓", "no": "✗", "abstain": "○",
+                        "conflict_recusal": "⚠", "absent": "—",
+                    }.get(m["vote_value"], "?")
+                    date_str = m["meeting_date"].strftime("%Y-%m-%d") if hasattr(m["meeting_date"], "strftime") else str(m["meeting_date"])
+                    outcome_tag = f" → {m['outcome']}" if m["outcome"] != "passed" else ""
+                    tally = f"({m['vote_tally_yes']}-{m['vote_tally_no']})"
+                    st.markdown(f"**{emoji} {date_str}** · {m['title']} {tally}{outcome_tag}")
+                    if m["description"]:
+                        st.caption(m["description"])
+                    if m["notes"]:
+                        st.info(f"📌 {m['notes']}")
+                    st.markdown("---")
+
+    # ---- Career history (terms) ----
+    if terms:
+        st.markdown("## Career on this body")
+        for t in terms:
+            tag = " (current)" if t["is_current"] else ""
+            end = t["end_date"] or "present"
+            st.markdown(f"- **{t['seat_name']}** · {t['start_date']} → {end}{tag}")
+
+    # ---- Property holdings (placeholder) ----
+    st.markdown("## Property & business interests")
+    st.warning(
+        "Property records and business affiliations are not yet captured for this official. "
+        "The platform supports both data categories — they require per-official lookups in "
+        "the county assessor (qPublic) and Georgia Secretary of State Corporate Registry."
+    )
+
+    # ---- Aliases (for audit) ----
+    if aliases and len(aliases) > 1:
+        with st.expander(f"Name variations recorded ({len(aliases)})"):
+            for a in aliases:
+                st.markdown(f"- `{a['alias_name']}` · via {a['source_system']}")
+
+    # ---- What's missing ----
+    st.markdown("## What's missing on this profile")
+    gaps = [
+        "**Personal financial disclosure** — Georgia does not require local officials to file.",
+        "**Property records** — available per-parcel via Columbia County qPublic; not yet ingested for this person.",
+        "**Business affiliations** — searchable in GA Corporate Registry; not yet cross-referenced.",
+        "**Campaign contributions** — paper records held by Grovetown City Clerk until Jan 2027; "
+        "state portal (ethics.ga.gov) will absorb local filings thereafter.",
+    ]
+    for g in gaps:
+        st.markdown(f"- {g}")
+
+
+# =====================================================================
+# Main
+# =====================================================================
+
+render_header()
 st.markdown("---")
-st.caption(
-    "TownWatch is a prototype civic accountability platform. Data shown is sourced "
-    "from public records (city website agendas/minutes via CivicEngage AgendaCenter, "
-    "Columbia County assessor via qPublic, and Georgia DOAA). "
-    "Documented gaps are surfaced honestly — see the jurisdiction config for what's missing and why."
-)
+
+if st.session_state.view == "profile" and st.session_state.selected_official_id:
+    render_profile(st.session_state.selected_official_id)
+else:
+    render_roster()
