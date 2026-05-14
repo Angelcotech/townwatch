@@ -1,15 +1,12 @@
 """
-Grovetown AgendaCenter — meeting inventory scraper.
+CivicEngage AgendaCenter — meeting inventory scraper.
 
-The CivicEngage AgendaCenter exposes a year-filtered list of meetings via
-an AJAX endpoint. We POST {year, catID} to /AgendaCenter/UpdateCategoryList
-and parse the returned HTML fragment for meeting rows.
+Generic to any CivicEngage / CivicPlus AgendaCenter installation. The
+caller supplies base_url and a {category_id: body_name} map drawn from
+the jurisdiction config.
 
-City Council catID = 2.
-Available years for Grovetown: 2012 through current.
-
-Run standalone:
-    python -m townwatch_etl.scrapers.grovetown_agendacenter
+Run standalone (Grovetown example):
+    python -m townwatch_etl.scrapers.civicengage_agendacenter grovetown-ga
 """
 
 from __future__ import annotations
@@ -26,30 +23,17 @@ import httpx
 from bs4 import BeautifulSoup
 
 
-BASE_URL = "https://cityofgrovetown.com"
-INVENTORY_ENDPOINT = f"{BASE_URL}/AgendaCenter/UpdateCategoryList"
 USER_AGENT = "TownWatch-ETL/0.1 (civic transparency research)"
-
-# Body categories — discovered from inspecting the AgendaCenter page
-CATEGORIES = {
-    2: "City Council",
-    5: "Planning Commission",
-    6: "Board of Zoning Appeals",
-}
-
-# Polite delay between requests so we don't hammer the server
 REQUEST_DELAY_SECS = 1.0
 
-# Meeting type inferred from the description text
 TYPE_PATTERNS = [
-    (re.compile(r"\bwork session\b", re.I),    "workshop"),
-    (re.compile(r"\bspecial(\s+called)?\b", re.I), "special"),
-    (re.compile(r"\bemergency\b", re.I),       "emergency"),
-    (re.compile(r"\bexecutive session\b", re.I),"executive_session"),
+    (re.compile(r"\bwork session\b", re.I),         "workshop"),
+    (re.compile(r"\bspecial(\s+called)?\b", re.I),  "special"),
+    (re.compile(r"\bemergency\b", re.I),            "emergency"),
+    (re.compile(r"\bexecutive session\b", re.I),    "executive_session"),
 ]
 DEFAULT_TYPE = "regular"
 
-# URL pattern: _MMDDYYYY-{agendaID}
 DATE_ID_RE = re.compile(r"_(\d{2})(\d{2})(\d{4})-(\d+)")
 
 
@@ -65,11 +49,12 @@ class MeetingRecord:
     minutes_url: str | None
 
 
-def fetch_year(category_id: int, year: int) -> str:
-    """Fetch the HTML fragment for one (body, year) combination."""
+def fetch_year(base_url: str, category_id: int, year: int) -> str:
+    """Fetch the HTML fragment for one (body, year) on a CivicEngage site."""
+    endpoint = f"{base_url}/AgendaCenter/UpdateCategoryList"
     with httpx.Client(timeout=30.0, headers={"User-Agent": USER_AGENT}) as client:
         r = client.post(
-            INVENTORY_ENDPOINT,
+            endpoint,
             data={"year": year, "catID": category_id},
             headers={
                 "X-Requested-With": "XMLHttpRequest",
@@ -80,17 +65,19 @@ def fetch_year(category_id: int, year: int) -> str:
         return r.text
 
 
-def parse_rows(html: str, category_id: int, category_name: str) -> list[MeetingRecord]:
-    """Parse meeting rows from a year fragment."""
+def parse_rows(
+    html: str,
+    base_url: str,
+    category_id: int,
+    category_name: str,
+) -> list[MeetingRecord]:
     soup = BeautifulSoup(html, "html.parser")
     out: list[MeetingRecord] = []
 
     for tr in soup.select("tr.catAgendaRow"):
-        # Find the agenda link with the canonical /_MMDDYYYY-{id} URL
         agenda_link = tr.find("a", href=re.compile(r"/AgendaCenter/ViewFile/Agenda/_\d{8}-\d+"))
         if agenda_link is None:
             continue
-
         m = DATE_ID_RE.search(agenda_link["href"])
         if not m:
             continue
@@ -98,10 +85,10 @@ def parse_rows(html: str, category_id: int, category_name: str) -> list[MeetingR
         meeting_date = date(int(yyyy), int(mm), int(dd))
 
         description = agenda_link.get_text(strip=True) or None
-        agenda_url = BASE_URL + agenda_link["href"]
+        agenda_url = base_url + agenda_link["href"]
 
         minutes_anchor = tr.find("a", href=re.compile(r"/AgendaCenter/ViewFile/Minutes/_\d{8}-\d+"))
-        minutes_url = BASE_URL + minutes_anchor["href"] if minutes_anchor else None
+        minutes_url = base_url + minutes_anchor["href"] if minutes_anchor else None
 
         meeting_type = DEFAULT_TYPE
         if description:
@@ -121,60 +108,59 @@ def parse_rows(html: str, category_id: int, category_name: str) -> list[MeetingR
             minutes_url=minutes_url,
         ))
 
-    # Newest first within the year — return chronological
     out.sort(key=lambda r: (r.meeting_date, r.agenda_id))
     return out
 
 
 def inventory(
-    category_ids: list[int] | None = None,
+    *,
+    base_url: str,
+    categories: dict[int, str],
     year_range: tuple[int, int] = (2012, datetime.now().year),
 ) -> Iterator[MeetingRecord]:
-    """Yield every meeting record across the specified bodies and years."""
-    cats = category_ids or list(CATEGORIES.keys())
+    """Yield every meeting record across the specified categories and years."""
     start_year, end_year = year_range
-
-    for cat_id in cats:
-        cat_name = CATEGORIES.get(cat_id, f"category_{cat_id}")
+    for cat_id, cat_name in categories.items():
         for year in range(start_year, end_year + 1):
             try:
-                html = fetch_year(cat_id, year)
+                html = fetch_year(base_url, cat_id, year)
             except Exception as e:
                 print(f"  ✗ fetch failed for catID={cat_id} year={year}: {e}", file=sys.stderr)
                 continue
-            rows = parse_rows(html, cat_id, cat_name)
+            rows = parse_rows(html, base_url, cat_id, cat_name)
             for row in rows:
                 yield row
             time.sleep(REQUEST_DELAY_SECS)
 
 
 def main() -> int:
-    all_records = list(inventory())
-    result = {
-        "scraped_at": datetime.now(timezone.utc).isoformat(),
-        "source_base": BASE_URL,
-        "category_ids": list(CATEGORIES.keys()),
-        "total_meetings": len(all_records),
-        "meetings_by_category": {
-            cat: sum(1 for r in all_records if r.category_name == cat)
-            for cat in set(r.category_name for r in all_records)
-        },
-        "meetings_with_minutes": sum(1 for r in all_records if r.minutes_url),
-        "meetings": [
-            {
-                "agenda_id": r.agenda_id,
-                "meeting_date": r.meeting_date.isoformat(),
-                "meeting_type": r.meeting_type,
-                "category": r.category_name,
-                "category_id": r.category_id,
-                "description": r.description,
-                "agenda_url": r.agenda_url,
-                "minutes_url": r.minutes_url,
-            }
-            for r in all_records
-        ],
+    from ..jurisdiction import load_config
+    if len(sys.argv) != 2:
+        print("usage: python -m townwatch_etl.scrapers.civicengage_agendacenter <jurisdiction-slug>", file=sys.stderr)
+        return 2
+    cfg = load_config(sys.argv[1])
+    hints = cfg.get("platform_hints", {})
+    base_url = hints.get("agenda_base_url")
+    if not base_url:
+        print("config missing platform_hints.agenda_base_url", file=sys.stderr)
+        return 1
+    categories = {
+        b["civicengage"]["category_id"]: b["name"]
+        for b in cfg.get("governing_bodies", [])
+        if "civicengage" in b and "category_id" in b["civicengage"]
     }
-    print(json.dumps(result, indent=2))
+    records = list(inventory(base_url=base_url, categories=categories))
+    summary = {
+        "jurisdiction": cfg["jurisdiction"]["display_name"],
+        "scraped_at": datetime.now(timezone.utc).isoformat(),
+        "total_meetings": len(records),
+        "meetings_by_category": {
+            cat: sum(1 for r in records if r.category_name == cat)
+            for cat in set(r.category_name for r in records)
+        },
+        "meetings_with_minutes": sum(1 for r in records if r.minutes_url),
+    }
+    print(json.dumps(summary, indent=2))
     return 0
 
 

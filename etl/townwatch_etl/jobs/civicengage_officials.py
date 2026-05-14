@@ -1,66 +1,83 @@
 """
-Grovetown current officials — ingest job.
+Ingest current officials from a CivicEngage council/board roster page.
 
-Loads the jurisdiction config (jurisdictions/grovetown-ga.json), scrapes
-the live City Council page, and writes:
-  - jurisdiction (idempotent)
-  - governing_body — City Council
-  - 5 seats (Mayor + Council Member 1-4)
-  - 4 officials (Mayor currently VACANT, no person created)
-  - 4 official_alias entries (the scraped name → canonical)
-  - 4 current terms
+Generic to any jurisdiction whose officials roster sits at a CivicEngage
+"telerik-reTable-2" 4-column table (Member, Position, Address, Phone).
+Loads the jurisdiction config to find the URL, body name, and seat list.
+
+Writes (idempotent on re-runs):
+  - jurisdiction
+  - governing_body (the body identified in config as the roster's body)
+  - seats (one per seat defined in the body config)
+  - officials + aliases (via identity resolution)
+  - current terms (start_date = 2020-01-01 placeholder)
 
 Run:
-    python -m townwatch_etl.jobs.grovetown_officials
+    python -m townwatch_etl.jobs.civicengage_officials --jurisdiction grovetown-ga
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from datetime import date
-from pathlib import Path
 from typing import Any
 
 from .. import identity
 from ..ingest_base import IngestJob
-from ..scrapers.grovetown_officials import scrape
+from ..jurisdiction import load_config
+from ..scrapers.civicengage_officials_table import scrape
 
 
-CONFIG_PATH = (
-    Path(__file__).resolve().parents[3] / "jurisdictions" / "grovetown-ga.json"
-)
-
-
-class GrovetownOfficials(IngestJob):
-    source_name = "cityofgrovetown.com"
+class CivicEngageOfficials(IngestJob):
     source_type = "scrape"
-    source_url = "https://cityofgrovetown.com/198/City-Council"
+
+    def __init__(self, slug: str) -> None:
+        super().__init__()
+        self.slug = slug
+        self.config = load_config(slug)
+        self.source_name = self._derive_source_name()
+        self.source_url = self.config["data_sources"]["officials_roster"]["url"]
+        # Pick the body whose website_url matches the officials_roster URL,
+        # falling back to first city_council body in config.
+        self.body_cfg = self._pick_body()
+
+    def _derive_source_name(self) -> str:
+        url = self.config["data_sources"]["officials_roster"]["url"]
+        from urllib.parse import urlparse
+        return urlparse(url).netloc
+
+    def _pick_body(self) -> dict[str, Any]:
+        roster_url = self.config["data_sources"]["officials_roster"]["url"]
+        for b in self.config.get("governing_bodies", []):
+            if b.get("website_url") == roster_url:
+                return b
+        for b in self.config.get("governing_bodies", []):
+            if b.get("body_type") == "city_council":
+                return b
+        raise ValueError(f"Could not pick a governing body for roster in {self.slug}")
+
+    # -- main flow ---------------------------------------------------------
 
     def ingest(self) -> None:
-        config = json.loads(CONFIG_PATH.read_text())
-        scraped = scrape()
+        scraped = scrape(self.source_url)
 
-        juris = self._ensure_jurisdiction(config["jurisdiction"])
-        body_cfg = next(
-            b for b in config["governing_bodies"] if b["body_type"] == "city_council"
-        )
-        body = self._ensure_governing_body(juris, body_cfg)
+        juris = self._ensure_jurisdiction(self.config["jurisdiction"])
+        body = self._ensure_governing_body(juris, self.body_cfg)
         seats: dict[str, int] = {
-            s["name"]: self._ensure_seat(body, s) for s in body_cfg["seats"]
+            s["name"]: self._ensure_seat(body, s) for s in self.body_cfg.get("seats", [])
         }
 
-        # Filter out the VACANT mayor row — no person to create
         people = [o for o in scraped["officials"] if not o["is_vacant"]]
-        # Deterministic alphabetical surname order for at-large seat assignment
         people.sort(key=lambda o: o["raw_name"].split()[-1].lower())
 
-        council_seat_names = [
-            "Council Member 1", "Council Member 2",
-            "Council Member 3", "Council Member 4",
+        non_leadership_seat_names = [
+            s["name"] for s in self.body_cfg.get("seats", []) if not s.get("is_leadership")
         ]
-        for idx, person in enumerate(people[:4]):
-            seat_id = seats[council_seat_names[idx]]
+
+        for idx, person in enumerate(people[: len(non_leadership_seat_names)]):
+            seat_id = seats[non_leadership_seat_names[idx]]
             official_id = self._ensure_official(person)
             self._ensure_current_term(official_id, seat_id, person)
 
@@ -126,18 +143,13 @@ class GrovetownOfficials(IngestJob):
     def _ensure_official(self, person: dict[str, Any]) -> int:
         assert self.conn is not None
         name = person["raw_name"]
-
-        # Match against existing aliases first
         existing = identity.find_by_alias(self.conn, name)
         if existing is not None:
             return existing
-
-        # New official — parse name parts naively
         parts = name.split()
         first = parts[0]
         last = parts[-1]
         middle = " ".join(parts[1:-1]) if len(parts) > 2 else None
-
         assert self.data_source_id is not None
         official_id = identity.create_official(
             self.conn,
@@ -158,7 +170,6 @@ class GrovetownOfficials(IngestJob):
         return official_id
 
     def _ensure_current_term(self, official_id: int, seat_id: int, person: dict[str, Any]) -> None:
-        """Create a current term if one doesn't already exist for this official+seat."""
         assert self.conn is not None
         row = self.conn.execute(
             """
@@ -171,16 +182,11 @@ class GrovetownOfficials(IngestJob):
         if row and row["is_current"]:
             return
         if row and not row["is_current"]:
-            # Re-activate prior term if same person reclaimed the seat
             self.conn.execute(
                 "UPDATE term SET is_current = true, end_date = NULL WHERE id = %s",
                 (row["id"],),
             )
             return
-
-        # We don't know the actual term start from this source. Use a placeholder
-        # well in the past (2020-01-01) so historical votes can still be linked
-        # back to the official. Backfill from election records in a later pass.
         self.insert("term", {
             "official_id":  official_id,
             "seat_id":      seat_id,
@@ -192,7 +198,10 @@ class GrovetownOfficials(IngestJob):
 
 
 def main() -> int:
-    result = GrovetownOfficials().run()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--jurisdiction", required=True, help="Slug of jurisdictions/<slug>.json")
+    args = parser.parse_args()
+    result = CivicEngageOfficials(args.jurisdiction).run()
     print(json.dumps(result, indent=2, default=str))
     return 0
 

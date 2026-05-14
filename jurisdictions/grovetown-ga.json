@@ -39,23 +39,34 @@
       ],
       "election_cycle_pattern": "staggered_2yr",
       "meeting_frequency": "monthly",
-      "website_url": "https://cityofgrovetown.com/198/City-Council"
+      "website_url": "https://cityofgrovetown.com/198/City-Council",
+      "civicengage": { "category_id": 2 }
     },
     {
       "name": "Planning Commission",
       "body_type": "planning_commission",
       "seat_count": null,
       "meeting_frequency": "monthly",
-      "website_url": "https://cityofgrovetown.com/AgendaCenter"
+      "website_url": "https://cityofgrovetown.com/AgendaCenter",
+      "civicengage": { "category_id": 5 }
     },
     {
       "name": "Board of Zoning Appeals",
       "body_type": "other",
       "seat_count": null,
       "meeting_frequency": "as_needed",
-      "website_url": "https://cityofgrovetown.com/AgendaCenter"
+      "website_url": "https://cityofgrovetown.com/AgendaCenter",
+      "civicengage": { "category_id": 6 }
     }
   ],
+
+  "platform_hints": {
+    "agenda_platform": "civicengage",
+    "agenda_base_url": "https://cityofgrovetown.com",
+    "officials_table_scraper": "civicengage_officials_table",
+    "property_platform": "qpublic_schneider",
+    "qpublic_app": "ColumbiaCountyGA"
+  },
 
   "data_sources": {
     "officials_roster": {

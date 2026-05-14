@@ -1,50 +1,58 @@
 """
-Grovetown property records — ingest from manual capture.
+qPublic property records — ingest from manual capture.
 
-qPublic (Columbia County GA assessor) is behind a Cloudflare bot
-challenge and Schneider Geospatial's ToS does not permit automated
-scraping. For Phase 1 we manually capture 4 records and ingest them
-through the same schema as any other property source. The 'How It Was
-Captured' is preserved in data_source so the audit trail is intact.
+qPublic (Schneider Geospatial) is behind a Cloudflare bot challenge and
+its ToS does not permit automated scraping. For Phase 1 we manually
+capture parcel records into a JSON template per jurisdiction and ingest
+them through the same schema as any automated source. The 'how it was
+captured' is preserved in data_source so the audit trail is intact.
 
-Input file:
-    jurisdictions/grovetown-ga-property-records.json
+Input file (per jurisdiction):
+    jurisdictions/<slug>-property-records.json
 
 Run:
-    python -m townwatch_etl.jobs.grovetown_property_records
+    python -m townwatch_etl.jobs.qpublic_property_records --jurisdiction grovetown-ga
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
-from pathlib import Path
 from typing import Any
 
 from .. import identity
 from ..ingest_base import IngestJob
+from ..jurisdiction import JURISDICTIONS_DIR, load_config
 
 
-INPUT_PATH = (
-    Path(__file__).resolve().parents[3]
-    / "jurisdictions"
-    / "grovetown-ga-property-records.json"
-)
-
-
-class GrovetownPropertyRecords(IngestJob):
-    source_name = "qpublic_columbia_county"
+class QPublicPropertyRecords(IngestJob):
     source_type = "manual"
-    source_url = "https://qpublic.schneidercorp.com/Application.aspx?App=ColumbiaCountyGA"
+
+    def __init__(self, slug: str) -> None:
+        super().__init__()
+        self.slug = slug
+        self.config = load_config(slug)
+        hints = self.config.get("platform_hints", {})
+        app = hints.get("qpublic_app", "")
+        self.source_name = f"qpublic_{app}" if app else "qpublic"
+        self.source_url = (
+            f"https://qpublic.schneidercorp.com/Application.aspx?App={app}"
+            if app else "https://qpublic.schneidercorp.com/"
+        )
+        self.input_path = JURISDICTIONS_DIR / f"{slug}-property-records.json"
 
     def ingest(self) -> None:
         assert self.conn is not None and self.data_source_id is not None
-        data = json.loads(INPUT_PATH.read_text())
+        if not self.input_path.exists():
+            raise FileNotFoundError(
+                f"property-records capture template not found: {self.input_path}"
+            )
+        data = json.loads(self.input_path.read_text())
         records = data.get("records", [])
 
         skipped = 0
         for rec in records:
-            # Skip records that haven't been captured yet
             if not rec.get("parcel_id") or not rec.get("assessment_year"):
                 print(f"  ⊘ skipping uncaptured: {rec.get('official_match_hint')}")
                 skipped += 1
@@ -56,7 +64,6 @@ class GrovetownPropertyRecords(IngestJob):
                 self.rows_skipped += 1
                 continue
 
-            # If the assessor's owner_name_raw is new, alias it back to the official
             owner_raw = rec.get("owner_name_raw")
             if owner_raw and owner_raw.strip().lower() != rec["official_match_hint"].strip().lower():
                 identity.add_alias(
@@ -94,7 +101,6 @@ class GrovetownPropertyRecords(IngestJob):
             print(f"\nWarning: {skipped}/{len(records)} record(s) skipped because parcel_id or assessment_year was blank.")
 
     def _resolve_official_or_warn(self, rec: dict[str, Any]) -> int | None:
-        """Find the official by the match hint. Warn if not found — never auto-create."""
         assert self.conn is not None
         hint = rec.get("official_match_hint")
         if not hint:
@@ -102,7 +108,6 @@ class GrovetownPropertyRecords(IngestJob):
             return None
         oid = identity.find_by_alias(self.conn, hint)
         if oid is None:
-            # Try fuzzy match
             cands = identity.find_candidates(self.conn, hint)
             print(f"  ✗ no exact alias match for '{hint}'. Candidates: {[(c.canonical_name, round(c.similarity, 2)) for c in cands[:3]]}")
             return None
@@ -110,7 +115,10 @@ class GrovetownPropertyRecords(IngestJob):
 
 
 def main() -> int:
-    result = GrovetownPropertyRecords().run()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--jurisdiction", required=True)
+    args = parser.parse_args()
+    result = QPublicPropertyRecords(args.jurisdiction).run()
     print(json.dumps(result, indent=2, default=str))
     return 0
 

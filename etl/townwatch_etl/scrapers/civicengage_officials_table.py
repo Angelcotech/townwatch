@@ -1,13 +1,13 @@
 """
-Grovetown, GA — current officials scraper (standalone, no DB).
+CivicEngage-pattern officials table scraper.
 
-Pulls the City Council roster from cityofgrovetown.com/198/City-Council
-and emits a structured JSON record to stdout. This is the Phase 1
-proof — verify the parse works against the live page before wiring
-into the IngestJob class.
+Generic to CivicEngage / CivicPlus city sites where the council/board
+roster is a 4-column HTML table (Member, Position, Address, Phone) with
+the telerik-reTable styling. The caller supplies the page URL from the
+jurisdiction config (data_sources.officials_roster.url).
 
 Run standalone:
-    python -m townwatch_etl.scrapers.grovetown_officials
+    python -m townwatch_etl.scrapers.civicengage_officials_table <jurisdiction-slug>
 """
 
 from __future__ import annotations
@@ -22,7 +22,6 @@ import httpx
 from bs4 import BeautifulSoup
 
 
-SOURCE_URL = "https://cityofgrovetown.com/198/City-Council"
 USER_AGENT = "TownWatch-ETL/0.1 (civic transparency research)"
 TABLE_CLASS = "telerik-reTable-2"
 
@@ -43,8 +42,7 @@ class ScrapeResult(TypedDict):
     officials: list[OfficialRecord]
 
 
-def fetch_html(url: str = SOURCE_URL) -> str:
-    """Fetch the council page HTML with a polite identifying User-Agent."""
+def fetch_html(url: str) -> str:
     with httpx.Client(
         headers={"User-Agent": USER_AGENT},
         follow_redirects=True,
@@ -56,16 +54,11 @@ def fetch_html(url: str = SOURCE_URL) -> str:
 
 
 def parse_officials(html: str) -> list[OfficialRecord]:
-    """Parse the council member table. Schema:
-    <table class="telerik-reTable-2">
-        <thead><tr><th>Member<th>Position<th>Address<th>Phone Number</tr></thead>
-        <tbody><tr><td>(name|VACANT)<td>(position)<td>(address)<td>(phone)</tr>...</tbody>
-    </table>
-    """
+    """Parse the 4-column council member table (Member, Position, Address, Phone)."""
     soup = BeautifulSoup(html, "html.parser")
     table = soup.find("table", class_=TABLE_CLASS)
     if table is None:
-        raise ValueError(f"Could not find council table with class={TABLE_CLASS}")
+        raise ValueError(f"Could not find officials table with class={TABLE_CLASS}")
 
     out: list[OfficialRecord] = []
     for row in table.select("tbody > tr"):
@@ -97,13 +90,11 @@ def parse_officials(html: str) -> list[OfficialRecord]:
 
 
 def parse_body_meta(html: str) -> dict[str, str]:
-    """Extract free-text context about the body (meeting schedule, governance description)."""
     soup = BeautifulSoup(html, "html.parser")
     meta: dict[str, str] = {}
 
     members_h2 = soup.find("h2", string=re.compile(r"Members", re.I))
     if members_h2:
-        # The paragraph directly after the Members heading describes governance
         p = members_h2.find_next("p")
         if p:
             meta["governance_description"] = _clean(p.get_text(" ", strip=True))
@@ -127,10 +118,10 @@ def _extract_eid(href: str) -> int | None:
     return int(m.group(1)) if m else None
 
 
-def scrape() -> ScrapeResult:
-    html = fetch_html()
+def scrape(url: str) -> ScrapeResult:
+    html = fetch_html(url)
     return ScrapeResult(
-        source_url=SOURCE_URL,
+        source_url=url,
         scraped_at=datetime.now(timezone.utc).isoformat(),
         body_meta=parse_body_meta(html),
         officials=parse_officials(html),
@@ -138,8 +129,17 @@ def scrape() -> ScrapeResult:
 
 
 def main() -> int:
+    from ..jurisdiction import load_config
+    if len(sys.argv) != 2:
+        print("usage: python -m townwatch_etl.scrapers.civicengage_officials_table <jurisdiction-slug>", file=sys.stderr)
+        return 2
+    cfg = load_config(sys.argv[1])
+    url = cfg.get("data_sources", {}).get("officials_roster", {}).get("url")
+    if not url:
+        print("config missing data_sources.officials_roster.url", file=sys.stderr)
+        return 1
     try:
-        result = scrape()
+        result = scrape(url)
     except Exception as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 1

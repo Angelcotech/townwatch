@@ -1,5 +1,10 @@
 """
-Grovetown meeting minutes — vote extraction.
+Meeting-minutes vote extraction.
+
+Jurisdiction-agnostic. Operates on any meeting in the DB by meeting_id,
+or in bulk across all meetings with minutes_url and no motions yet.
+The meeting's jurisdiction is derived from the meeting → governing_body
+→ jurisdiction chain.
 
 For one meeting (by meeting_id) or all eligible meetings:
   1. Download the minutes PDF
@@ -10,10 +15,13 @@ For one meeting (by meeting_id) or all eligible meetings:
 Idempotent: skips meetings that already have motions attached.
 
 Run a single meeting:
-    python -m townwatch_etl.jobs.grovetown_minutes_extract --meeting-id 174
+    python -m townwatch_etl.jobs.extract_minutes --meeting-id 174
 
 Run every meeting missing motions:
-    python -m townwatch_etl.jobs.grovetown_minutes_extract --all
+    python -m townwatch_etl.jobs.extract_minutes --all
+
+Run only meetings for one jurisdiction:
+    python -m townwatch_etl.jobs.extract_minutes --all --jurisdiction grovetown-ga
 """
 
 from __future__ import annotations
@@ -42,14 +50,16 @@ from ..ingest_base import IngestJob
 USER_AGENT = "TownWatch-ETL/0.1 (civic transparency research)"
 
 
-class GrovetownMinutesExtract(IngestJob):
-    source_name = "cityofgrovetown.com/AgendaCenter:claude_extract"
+class MinutesExtract(IngestJob):
     source_type = "scrape"
-    source_url = "https://cityofgrovetown.com/AgendaCenter"
 
     def __init__(self, meeting_id: int) -> None:
         super().__init__()
         self.meeting_id = meeting_id
+        # source_name + source_url are set per-meeting in ingest() so the
+        # provenance reflects the actual document being processed.
+        self.source_name = "minutes_extract"
+        self.source_url = None
 
     # ---- main flow -------------------------------------------------------
 
@@ -66,6 +76,15 @@ class GrovetownMinutesExtract(IngestJob):
         if self._already_extracted(self.meeting_id):
             print(f"  ⊘ meeting {self.meeting_id} already has motions — skipping")
             return
+
+        # Update provenance from the actual minutes URL for this meeting
+        from urllib.parse import urlparse
+        self.source_url = meeting["minutes_url"]
+        self.source_name = f"{urlparse(meeting['minutes_url']).netloc}/AgendaCenter:claude_extract"
+        self.conn.execute(
+            "UPDATE data_source SET source_name = %s, source_url = %s WHERE id = %s",
+            (self.source_name, self.source_url, self.data_source_id),
+        )
 
         print(f"  → meeting {meeting['meeting_date']} ({meeting['meeting_type']}) | {meeting['minutes_url']}")
 
@@ -397,32 +416,43 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--meeting-id", type=int, help="Process this single meeting")
     parser.add_argument("--all", action="store_true", help="Process all eligible meetings")
+    parser.add_argument("--jurisdiction", help="When used with --all, restrict to this slug")
     args = parser.parse_args()
 
     if not args.meeting_id and not args.all:
         parser.error("specify --meeting-id N or --all")
 
     if args.meeting_id:
-        result = GrovetownMinutesExtract(args.meeting_id).run()
+        result = MinutesExtract(args.meeting_id).run()
         print(json.dumps(result, indent=2, default=str))
         return 0
 
     # --all: pick every meeting with minutes_url but no motions yet
     from ..db import connect
+    sql = """
+        SELECT m.id, m.meeting_date, j.display_name AS jurisdiction
+        FROM meeting m
+        JOIN governing_body gb ON gb.id = m.governing_body_id
+        JOIN jurisdiction j ON j.id = gb.jurisdiction_id
+        WHERE m.minutes_url IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM motion mo WHERE mo.meeting_id = m.id)
+    """
+    params: list = []
+    if args.jurisdiction:
+        from ..jurisdiction import load_config
+        cfg = load_config(args.jurisdiction)
+        sql += " AND j.fips_code = %s"
+        params.append(cfg["jurisdiction"]["place_fips"])
+    sql += " ORDER BY m.meeting_date ASC"
+
     with connect() as conn:
-        rows = conn.execute("""
-            SELECT m.id, m.meeting_date
-            FROM meeting m
-            WHERE m.minutes_url IS NOT NULL
-              AND NOT EXISTS (SELECT 1 FROM motion mo WHERE mo.meeting_id = m.id)
-            ORDER BY m.meeting_date ASC
-        """).fetchall()
+        rows = conn.execute(sql, params).fetchall()
 
     print(f"Found {len(rows)} meeting(s) to extract")
     for r in rows:
-        print(f"\n--- meeting {r['id']} ({r['meeting_date']}) ---")
+        print(f"\n--- meeting {r['id']} ({r['meeting_date']}) {r['jurisdiction']} ---")
         try:
-            GrovetownMinutesExtract(r["id"]).run()
+            MinutesExtract(r["id"]).run()
         except Exception as e:
             print(f"   ✗ failed: {e}")
 
