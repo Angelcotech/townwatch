@@ -1,15 +1,16 @@
 """
 Extract structured votes and decisions from meeting-minutes PDFs.
 
-Tiered approach (June pattern):
+Two-tier approach:
   1. pdfplumber → text layer (digital PDFs, free, instant)
-  2. ocrmypdf + pdfplumber (scanned PDFs, local CPU, no API cost)
-  3. Claude vision on the raw PDF (fallback when Tiers 1-2 fail)
+  2. Claude vision on the raw PDF (everything else — scanned or fallback)
 
-When text extraction succeeds, we call Claude Haiku 4.5 with the text.
-When it fails, we fall back to Sonnet 4.6 with the PDF as a document
-block. Either path returns the same Pydantic-validated structure, so
-downstream callers don't care which tier ran.
+We deliberately do NOT use OCR (ocrmypdf/Tesseract) as a middle tier
+because OCR introduces character-level errors that cascade through
+identity resolution — every OCR typo becomes a duplicate "official"
+record. Claude vision reads the original glyphs and uses semantic
+context to disambiguate. Cost is higher per PDF but data integrity
+is the binding constraint, not cost.
 
 Five extraction priorities (in order):
   1. Substantive decisions (ordinances, resolutions, zoning, contracts)
@@ -175,15 +176,28 @@ VISION_MODEL = "claude-sonnet-4-6"
 
 def extract_from_pdf(pdf_path: Path) -> tuple[MeetingExtraction, str]:
     """
-    Returns (extraction, method) where method is 'text_layer' | 'ocr' | 'vision'.
+    Returns (extraction, method) where method is 'text_layer' or 'vision'.
 
-    Tries text-based extraction (Tier 1 + Tier 2) first. Only falls back
-    to Claude vision when local text extraction yields nothing usable.
+    Tier 1 only fires when the PDF has a real text layer (digital PDF).
+    Anything else — scanned, image-only, hybrid — goes straight to Claude
+    vision. We do NOT OCR locally; OCR errors break identity resolution.
     """
-    text_result = extract_text(pdf_path)
-    if text_result.text:
-        return _extract_from_text(text_result.text), text_result.method
+    text_result = extract_text_layer_only(pdf_path)
+    if text_result is not None:
+        return _extract_from_text(text_result), "text_layer"
     return _extract_from_pdf_vision(pdf_path), "vision"
+
+
+def extract_text_layer_only(pdf_path: Path) -> str | None:
+    """Tier 1 only: pdfplumber on the existing text layer. None if no real text."""
+    from .pdf_text import _extract_text_layer, CONTENT_CHAR_THRESHOLD
+    try:
+        text, _pages, content_chars = _extract_text_layer(pdf_path)
+    except Exception:
+        return None
+    if content_chars < CONTENT_CHAR_THRESHOLD:
+        return None
+    return text
 
 
 def _extract_from_text(text: str) -> MeetingExtraction:
