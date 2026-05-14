@@ -178,15 +178,39 @@ class MinutesExtract(IngestJob):
         if extraction.extraction_notes:
             parts.append(f"notes: {extraction.extraction_notes}")
         attendance_summary = " | ".join(parts)
+
+        staff_present = (
+            list(extraction.attendance.staff_present)
+            if extraction.attendance.staff_present else None
+        )
+        others_present = (
+            list(extraction.attendance.others_present)
+            if extraction.attendance.others_present else None
+        )
+        called_to_order = extraction.meeting.called_to_order_at
+        adjourned = extraction.meeting.adjourned_at
+
         self.conn.execute(
             """
             UPDATE meeting
-            SET status = %s,
-                attendance_notes = %s,
-                updated_at = now()
+            SET status              = %s,
+                attendance_notes    = %s,
+                called_to_order_at  = %s,
+                adjourned_at        = %s,
+                staff_present       = %s::jsonb,
+                others_present      = %s::jsonb,
+                updated_at          = now()
             WHERE id = %s
             """,
-            ("minutes_published", attendance_summary, meeting_id),
+            (
+                "minutes_published",
+                attendance_summary,
+                called_to_order,
+                adjourned,
+                json.dumps(staff_present) if staff_present is not None else None,
+                json.dumps(others_present) if others_present is not None else None,
+                meeting_id,
+            ),
         )
 
     def _attach_raw_payload(self, record_url: str, extraction: MeetingExtraction) -> None:
@@ -205,25 +229,36 @@ class MinutesExtract(IngestJob):
     def _insert_motion(self, *, meeting_id: int, item: AgendaItem) -> int | None:
         assert self.conn is not None
         title = item.title.strip()
-        # Compose description from verbatim + plain-English
         description_parts = []
         if item.motion_text_verbatim:
             description_parts.append(item.motion_text_verbatim.strip())
         description_parts.append(item.summary_plain_english.strip())
         description = "\n\n".join(description_parts)
 
+        locations = list(item.locations) if item.locations else None
+
         return self.insert("motion", {
-            "meeting_id":         meeting_id,
-            "motion_number":      item.item_number,
-            "title":              title,
-            "description":        description,
-            "motion_type":        item.motion_type,
-            "agenda_item_order":  None,
-            "outcome":            item.outcome,
-            "vote_tally_yes":     item.vote_tally.yes,
-            "vote_tally_no":      item.vote_tally.no,
-            "vote_tally_abstain": item.vote_tally.abstain,
-            "vote_tally_absent":  item.vote_tally.absent,
+            "meeting_id":           meeting_id,
+            "motion_number":        item.item_number,
+            "title":                title,
+            "description":          description,
+            "motion_type":          item.motion_type,
+            "agenda_item_order":    None,
+            "outcome":              item.outcome,
+            "vote_tally_yes":       item.vote_tally.yes,
+            "vote_tally_no":        item.vote_tally.no,
+            "vote_tally_abstain":   item.vote_tally.abstain,
+            "vote_tally_absent":    item.vote_tally.absent,
+            # New comprehensive fields
+            "petitioner_name":      item.petitioner,
+            "staff_recommender":    item.staff_recommender,
+            "presenter":            item.presenter,
+            "movant":               item.movant,
+            "seconder":             item.seconder,
+            "discussion_summary":   item.discussion_summary,
+            "dollar_amount":        item.dollar_amount,
+            "documents_referenced": json.dumps(item.documents_referenced) if item.documents_referenced else None,
+            "locations":            json.dumps(locations) if locations else None,
         })
 
     def _insert_votes(
