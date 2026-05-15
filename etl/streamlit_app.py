@@ -89,9 +89,13 @@ st.markdown(
 # =====================================================================
 
 if "view" not in st.session_state:
-    st.session_state.view = "roster"  # "roster" | "profile"
+    st.session_state.view = "roster"  # roster | profile | staff_profile | petitioner_profile
 if "selected_official_id" not in st.session_state:
     st.session_state.selected_official_id = None
+if "selected_staff_key" not in st.session_state:
+    st.session_state.selected_staff_key = None
+if "selected_petitioner" not in st.session_state:
+    st.session_state.selected_petitioner = None
 
 
 def go_to_profile(official_id: int) -> None:
@@ -99,9 +103,21 @@ def go_to_profile(official_id: int) -> None:
     st.session_state.selected_official_id = official_id
 
 
+def go_to_staff_profile(staff_key: str) -> None:
+    st.session_state.view = "staff_profile"
+    st.session_state.selected_staff_key = staff_key
+
+
+def go_to_petitioner_profile(name: str) -> None:
+    st.session_state.view = "petitioner_profile"
+    st.session_state.selected_petitioner = name
+
+
 def go_to_roster() -> None:
     st.session_state.view = "roster"
     st.session_state.selected_official_id = None
+    st.session_state.selected_staff_key = None
+    st.session_state.selected_petitioner = None
 
 
 # =====================================================================
@@ -127,7 +143,7 @@ def load_roster() -> pd.DataFrame:
                 ) AS current_seat
             FROM official o
             LEFT JOIN vote v ON v.official_id = o.id
-            LEFT JOIN motion m ON m.id = v.motion_id
+            LEFT JOIN motion m ON m.id = v.motion_id AND m.data_status = 'clean'
             LEFT JOIN meeting mtg ON mtg.id = m.meeting_id
             LEFT JOIN term t ON t.official_id = o.id
             GROUP BY o.id, o.canonical_name, o.first_name, o.last_name, o.party_affiliation
@@ -144,13 +160,156 @@ def load_roster() -> pd.DataFrame:
     return df
 
 
+def _parse_staff_entry(s: str) -> dict[str, Any]:
+    """Parse 'Title Name' staff string into structured parts."""
+    parts = s.strip().split()
+    if not parts:
+        return {"title": "Staff", "first_name": None, "last_name": s, "name": s}
+    if len(parts) >= 3:
+        return {
+            "title": " ".join(parts[:-2]),
+            "first_name": parts[-2],
+            "last_name": parts[-1],
+            "name": f"{parts[-2]} {parts[-1]}",
+        }
+    if len(parts) == 2:
+        return {"title": None, "first_name": parts[0], "last_name": parts[1], "name": s}
+    return {"title": None, "first_name": None, "last_name": parts[0], "name": s}
+
+
+@st.cache_data(ttl=300)
+def load_staff_roster() -> pd.DataFrame:
+    """Aggregate unique staff members from meeting.staff_present arrays."""
+    with connect() as conn:
+        rows = conn.execute("""
+            SELECT entry::text AS raw_entry, COUNT(DISTINCT mtg.id) AS meetings,
+                   MIN(mtg.meeting_date) AS first_seen,
+                   MAX(mtg.meeting_date) AS last_seen
+            FROM meeting mtg, jsonb_array_elements_text(mtg.staff_present) AS entry
+            WHERE mtg.staff_present IS NOT NULL
+            GROUP BY raw_entry
+            ORDER BY meetings DESC
+        """).fetchall()
+    aggregated: dict[tuple[str, str], dict[str, Any]] = {}
+    for r in rows:
+        raw = r["raw_entry"].strip('"')
+        parsed = _parse_staff_entry(raw)
+        key = ((parsed["first_name"] or "").lower(), (parsed["last_name"] or "").lower())
+        if key in aggregated:
+            agg = aggregated[key]
+            agg["meetings"] += int(r["meetings"])
+            agg["titles"].add(parsed["title"] or "Staff")
+            agg["raw_entries"].add(raw)
+            if r["first_seen"] < agg["first_seen"]:
+                agg["first_seen"] = r["first_seen"]
+            if r["last_seen"] > agg["last_seen"]:
+                agg["last_seen"] = r["last_seen"]
+        else:
+            aggregated[key] = {
+                "key": f"{key[0]}|{key[1]}",
+                "name": parsed["name"],
+                "first_name": parsed["first_name"],
+                "last_name": parsed["last_name"],
+                "titles": {parsed["title"] or "Staff"},
+                "raw_entries": {raw},
+                "meetings": int(r["meetings"]),
+                "first_seen": r["first_seen"],
+                "last_seen": r["last_seen"],
+            }
+    out = []
+    for a in aggregated.values():
+        a["title_summary"] = " · ".join(sorted(t for t in a["titles"] if t))
+        a["years"] = round((a["last_seen"] - a["first_seen"]).days / 365.25, 1) if a["last_seen"] != a["first_seen"] else 0
+        out.append(a)
+    df = pd.DataFrame(out)
+    if not df.empty:
+        df = df.sort_values("meetings", ascending=False)
+    return df
+
+
+@st.cache_data(ttl=300)
+def load_petitioner_roster() -> pd.DataFrame:
+    with connect() as conn:
+        rows = conn.execute("""
+            SELECT m.petitioner_name,
+                   COUNT(*) AS motions,
+                   COALESCE(SUM(m.dollar_amount), 0) AS total_dollar,
+                   MIN(mtg.meeting_date) AS first_seen,
+                   MAX(mtg.meeting_date) AS last_seen
+            FROM motion m
+            JOIN meeting mtg ON mtg.id = m.meeting_id
+            WHERE m.petitioner_name IS NOT NULL
+              AND m.data_status = 'clean'
+            GROUP BY m.petitioner_name
+            ORDER BY motions DESC
+        """).fetchall()
+    df = pd.DataFrame([dict(r) for r in rows])
+    if not df.empty:
+        df["first_seen"] = pd.to_datetime(df["first_seen"])
+        df["last_seen"] = pd.to_datetime(df["last_seen"])
+    return df
+
+
+@st.cache_data(ttl=300)
+def load_staff_member_record(first_name: str, last_name: str) -> dict[str, Any]:
+    """Look up everything we know about one staff member by name."""
+    with connect() as conn:
+        # Meetings attended (deserialize JSONB to find entries matching this person)
+        rows = conn.execute("""
+            SELECT mtg.id AS meeting_id, mtg.meeting_date, mtg.meeting_type,
+                   entry::text AS raw_entry,
+                   gb.name AS body_name
+            FROM meeting mtg, jsonb_array_elements_text(mtg.staff_present) AS entry
+            JOIN governing_body gb ON gb.id = mtg.governing_body_id
+            WHERE mtg.staff_present IS NOT NULL
+              AND LOWER(entry::text) LIKE %s
+              AND LOWER(entry::text) LIKE %s
+            ORDER BY mtg.meeting_date DESC
+        """, (f"%{first_name.lower()}%", f"%{last_name.lower()}%")).fetchall()
+
+        meetings = [dict(r) for r in rows]
+
+        # Items where this person was the staff_recommender
+        recs = conn.execute("""
+            SELECT m.id, m.title, m.motion_type, m.outcome, mtg.meeting_date,
+                   m.staff_recommender, m.dollar_amount
+            FROM motion m
+            JOIN meeting mtg ON mtg.id = m.meeting_id
+            WHERE m.staff_recommender ILIKE %s AND m.staff_recommender ILIKE %s
+              AND m.data_status = 'clean'
+            ORDER BY mtg.meeting_date DESC
+        """, (f"%{first_name}%", f"%{last_name}%")).fetchall()
+        recommendations = [dict(r) for r in recs]
+
+    return {"meetings": meetings, "recommendations": recommendations}
+
+
+@st.cache_data(ttl=300)
+def load_petitioner_record(name: str) -> dict[str, Any]:
+    with connect() as conn:
+        motions = conn.execute("""
+            SELECT m.id, m.title, m.motion_type, m.outcome, m.dollar_amount,
+                   m.locations, m.description,
+                   m.vote_tally_yes, m.vote_tally_no,
+                   mtg.meeting_date, gb.name AS body_name
+            FROM motion m
+            JOIN meeting mtg ON mtg.id = m.meeting_id
+            JOIN governing_body gb ON gb.id = mtg.governing_body_id
+            WHERE m.petitioner_name = %s
+              AND m.data_status = 'clean'
+            ORDER BY mtg.meeting_date DESC
+        """, (name,)).fetchall()
+    return {"motions": [dict(m) for m in motions]}
+
+
 @st.cache_data(ttl=300)
 def load_db_stats() -> dict[str, Any]:
     with connect() as conn:
         return {
             "officials":  conn.execute("SELECT COUNT(*) AS n FROM official").fetchone()["n"],
             "votes":      conn.execute("SELECT COUNT(*) AS n FROM vote").fetchone()["n"],
-            "motions":    conn.execute("SELECT COUNT(*) AS n FROM motion").fetchone()["n"],
+            "motions":    conn.execute("SELECT COUNT(*) AS n FROM motion WHERE data_status = 'clean'").fetchone()["n"],
+            "motions_quarantined": conn.execute("SELECT COUNT(*) AS n FROM motion WHERE data_status = 'disputed'").fetchone()["n"],
             "meetings":   conn.execute("SELECT COUNT(*) AS n FROM meeting").fetchone()["n"],
             "findings":   conn.execute("SELECT COUNT(*) AS n FROM finding").fetchone()["n"],
             "earliest":   conn.execute("SELECT MIN(meeting_date) AS d FROM meeting").fetchone()["d"],
@@ -170,7 +329,7 @@ def load_official_record(official_id: int) -> dict[str, Any]:
                    BOOL_OR(t.is_current) AS is_current
             FROM official o
             LEFT JOIN vote v ON v.official_id = o.id
-            LEFT JOIN motion m ON m.id = v.motion_id
+            LEFT JOIN motion m ON m.id = v.motion_id AND m.data_status = 'clean'
             LEFT JOIN meeting mtg ON mtg.id = m.meeting_id
             LEFT JOIN term t ON t.official_id = o.id
             WHERE o.id = %s
@@ -200,6 +359,7 @@ def load_official_record(official_id: int) -> dict[str, Any]:
             FROM vote v
             JOIN motion m ON m.id = v.motion_id
             WHERE v.official_id = %s
+              AND m.data_status = 'clean'
             GROUP BY m.motion_type
             ORDER BY total DESC
         """, (official_id,)).fetchall()
@@ -225,6 +385,7 @@ def load_official_record(official_id: int) -> dict[str, Any]:
             JOIN motion m ON m.id = v.motion_id
             JOIN meeting mtg ON mtg.id = m.meeting_id
             WHERE v.official_id = %s
+              AND m.data_status = 'clean'
             ORDER BY mtg.meeting_date DESC
         """, (official_id,)).fetchall()
 
@@ -247,13 +408,18 @@ def render_header() -> None:
     col_title, col_action = st.columns([3, 1])
     with col_title:
         st.markdown("# 🏛 TownWatch — Grovetown, GA")
+        quarantine_note = (
+            f" · {stats['motions_quarantined']} under review"
+            if stats.get("motions_quarantined")
+            else ""
+        )
         st.caption(
             f"Indexed: {stats['earliest']} → {stats['latest']} · "
-            f"{stats['officials']} officials · {stats['motions']:,} motions · "
+            f"{stats['officials']} officials · {stats['motions']:,} motions{quarantine_note} · "
             f"{stats['votes']:,} votes · {stats['findings']} findings"
         )
     with col_action:
-        if st.session_state.view == "profile":
+        if st.session_state.view != "roster":
             if st.button("← Back to roster", use_container_width=True):
                 go_to_roster()
                 st.rerun()
@@ -261,45 +427,183 @@ def render_header() -> None:
 
 def render_roster() -> None:
     df = load_roster()
+    staff_df = load_staff_roster()
+    pet_df = load_petitioner_roster()
+
+    quarantined_count = load_db_stats().get("motions_quarantined", 0)
+    quarantine_label = (
+        f"⚠ Data Quality ({quarantined_count})" if quarantined_count else "⚠ Data Quality"
+    )
+
+    tab_elected, tab_staff, tab_petitioners, tab_candidates, tab_quarantine = st.tabs([
+        f"🏛 Elected ({len(df)})",
+        f"🛠 Staff ({len(staff_df)})",
+        f"📋 Petitioners ({len(pet_df)})",
+        "🗳 Candidates",
+        quarantine_label,
+    ])
+
+    with tab_elected:
+        _render_elected_roster(df)
+
+    with tab_staff:
+        _render_staff_roster(staff_df)
+
+    with tab_petitioners:
+        _render_petitioner_roster(pet_df)
+
+    with tab_quarantine:
+        _render_quarantine_panel()
+
+    with tab_candidates:
+        st.markdown("### Upcoming and recently-filed candidates")
+        st.info(
+            "**Mayor — Special Election, November 2026**\n\n"
+            "The Mayor seat is currently vacant. Council voted (Apr 13, 2026) "
+            "to call a special election to fill the unexpired term. Qualifying "
+            "fee set at **$612**.\n\n"
+            "Candidate filings are not yet tracked in TownWatch. "
+            "We'll list candidates here as they file with the City Clerk."
+        )
+
+
+def _render_elected_roster(df: pd.DataFrame) -> None:
     if df.empty:
         st.info("No officials in the database yet.")
         return
-
     current = df[df["is_current"] == True]  # noqa: E712
     historical = df[df["is_current"] != True]  # noqa: E712
 
-    # ---- Current officials ----
-    st.markdown("## Current officials")
+    st.markdown("#### Current")
     st.caption(f"{len(current)} active member" + ("s" if len(current) != 1 else ""))
-
     if not current.empty:
         cols = st.columns(min(len(current), 4))
         for i, (_, row) in enumerate(current.iterrows()):
             with cols[i % len(cols)]:
                 _render_official_card(row, current=True)
 
-    # ---- Historical officials ----
-    st.markdown("## Historical officials")
+    st.markdown("#### Historical")
     st.caption(f"{len(historical)} past member" + ("s" if len(historical) != 1 else ""))
-
     if not historical.empty:
         cols = st.columns(4)
         for i, (_, row) in enumerate(historical.iterrows()):
             with cols[i % 4]:
                 _render_official_card(row, current=False)
 
-    # ---- Candidates section (data not yet ingested) ----
-    st.markdown("## Candidates")
-    st.caption("Upcoming and recently-filed candidates for Grovetown offices")
 
-    st.info(
-        "**Mayor — Special Election, November 2026**\n\n"
-        "The Mayor seat is currently vacant. Council voted (Apr 13, 2026) "
-        "to call a special election to fill the unexpired term. Qualifying "
-        "fee set at **$612**.\n\n"
-        "Candidate filings are not yet tracked in TownWatch. "
-        "We'll list candidates here as they file with the City Clerk."
+def _render_staff_roster(df: pd.DataFrame) -> None:
+    if df.empty:
+        st.info("No staff members captured yet.")
+        return
+    st.caption(
+        f"{len(df)} non-elected staff/appointed officials recorded as present in "
+        "council meetings. These are the people who actually run city operations."
     )
+    cols = st.columns(3)
+    for i, (_, row) in enumerate(df.iterrows()):
+        with cols[i % 3]:
+            _render_staff_card(row)
+
+
+def _render_staff_card(row: pd.Series) -> None:
+    title = row["title_summary"] or "Staff"
+    name = row["name"]
+    meetings = int(row["meetings"])
+    years_part = f" · {row['years']}yr" if row["years"] else ""
+    if st.button(
+        f"**{name}**\n\n"
+        f"{title} · {meetings} meeting{'s' if meetings != 1 else ''}{years_part}",
+        key=f"staff_{row['key']}",
+        use_container_width=True,
+    ):
+        go_to_staff_profile(row["key"])
+        st.rerun()
+
+
+def _render_petitioner_roster(df: pd.DataFrame) -> None:
+    if df.empty:
+        st.info("No petitioners captured yet. The comprehensive extraction was just completed; this list grows as motions are tagged.")
+        return
+    st.caption(
+        f"{len(df)} distinct petitioners (individuals, businesses, LLCs) recorded "
+        "as having filed or requested at least one motion."
+    )
+    cols = st.columns(2)
+    for i, (_, row) in enumerate(df.iterrows()):
+        with cols[i % 2]:
+            _render_petitioner_card(row)
+
+
+@st.cache_data(ttl=60)
+def _load_quarantined_motions() -> list[dict[str, Any]]:
+    with connect() as conn:
+        rows = conn.execute("""
+            SELECT m.id, m.title, m.motion_type, m.outcome,
+                   m.vote_tally_yes, m.vote_tally_no, m.vote_tally_abstain, m.vote_tally_absent,
+                   m.petitioner_name, m.data_status_reason, m.data_status_at,
+                   mtg.meeting_date, gb.name AS body_name,
+                   (SELECT COUNT(*) FROM vote WHERE motion_id = m.id) AS actual_votes,
+                   (SELECT title FROM finding
+                    WHERE subject_motion_id = m.id AND pattern_id LIKE 'qa_%'
+                    ORDER BY severity DESC LIMIT 1) AS finding_title,
+                   (SELECT explanation FROM finding
+                    WHERE subject_motion_id = m.id AND pattern_id LIKE 'qa_%'
+                    ORDER BY severity DESC LIMIT 1) AS finding_explanation
+            FROM motion m
+            JOIN meeting mtg ON mtg.id = m.meeting_id
+            JOIN governing_body gb ON gb.id = mtg.governing_body_id
+            WHERE m.data_status = 'disputed'
+            ORDER BY m.data_status_reason, mtg.meeting_date DESC
+        """).fetchall()
+    return [dict(r) for r in rows]
+
+
+def _render_quarantine_panel() -> None:
+    motions = _load_quarantined_motions()
+    if not motions:
+        st.success("✓ No motions currently under data-quality review. The corpus is clean.")
+        return
+
+    st.markdown("### Motions held back from public surfaces")
+    st.caption(
+        "These motions failed automatic quality checks and are hidden from "
+        "officials' profiles, vote counts, and the petitioner index until the "
+        "underlying data is verified. This panel exists so operators can see "
+        "what the platform is holding back — citizens never see quarantined data."
+    )
+
+    by_reason: dict[str, list[dict]] = {}
+    for m in motions:
+        by_reason.setdefault(m["data_status_reason"] or "unknown", []).append(m)
+
+    for reason, group in by_reason.items():
+        with st.expander(f"**{reason}** — {len(group)} motion(s)", expanded=False):
+            st.caption(group[0].get("finding_explanation") or "")
+            for m in group:
+                tally = (
+                    f"declared {m['vote_tally_yes']}–{m['vote_tally_no']}"
+                    f"–{m['vote_tally_abstain']}–{m['vote_tally_absent']}"
+                    f" · actual votes: {m['actual_votes']}"
+                )
+                st.markdown(
+                    f"- **{m['meeting_date']} · {m['body_name']}** — {m['title']}  \n"
+                    f"  _{tally}_"
+                )
+
+
+def _render_petitioner_card(row: pd.Series) -> None:
+    name = row["petitioner_name"]
+    motions = int(row["motions"])
+    dollar = float(row["total_dollar"] or 0)
+    dollar_str = f" · ${dollar:,.0f}" if dollar else ""
+    if st.button(
+        f"**{name}**\n\n"
+        f"{motions} motion{'s' if motions != 1 else ''}{dollar_str}",
+        key=f"pet_{name}",
+        use_container_width=True,
+    ):
+        go_to_petitioner_profile(name)
+        st.rerun()
 
 
 def _render_official_card(row: pd.Series, *, current: bool) -> None:
@@ -439,11 +743,131 @@ def render_profile(official_id: int) -> None:
                     outcome_tag = f" → {m['outcome']}" if m["outcome"] != "passed" else ""
                     tally = f"({m['vote_tally_yes']}-{m['vote_tally_no']})"
                     st.markdown(f"**{emoji} {date_str}** · {m['title']} {tally}{outcome_tag}")
+
+                    # Comprehensive new fields (only show when populated)
+                    extras = _fetch_motion_extras(int(m["motion_id"]))
+                    if extras:
+                        if extras.get("petitioner_name"):
+                            st.caption(f"📝 **Petitioner:** {extras['petitioner_name']}")
+                        if extras.get("staff_recommender"):
+                            st.caption(f"🛠 **Staff recommender:** {extras['staff_recommender']}")
+                        if extras.get("dollar_amount"):
+                            st.caption(f"💰 **${float(extras['dollar_amount']):,.2f}**")
+                        if extras.get("locations"):
+                            locs = extras["locations"] if isinstance(extras["locations"], list) else []
+                            if locs:
+                                st.caption(f"📍 {' · '.join(locs[:3])}")
+                        if extras.get("discussion_summary"):
+                            st.caption(f"💬 {extras['discussion_summary']}")
+
                     if m["description"]:
                         st.caption(m["description"])
                     if m["notes"]:
                         st.info(f"📌 {m['notes']}")
                     st.markdown("---")
+
+
+@st.cache_data(ttl=300)
+def _fetch_motion_extras(motion_id: int) -> dict[str, Any]:
+    with connect() as conn:
+        r = conn.execute("""
+            SELECT petitioner_name, staff_recommender, presenter, movant, seconder,
+                   dollar_amount, locations, documents_referenced, discussion_summary
+            FROM motion WHERE id = %s
+        """, (motion_id,)).fetchone()
+    return dict(r) if r else {}
+
+
+def render_staff_profile(staff_key: str) -> None:
+    """Render a profile page for a non-elected staff member."""
+    first_lower, _, last_lower = staff_key.partition("|")
+    staff_df = load_staff_roster()
+    match = staff_df[
+        (staff_df["first_name"].str.lower() == first_lower)
+        & (staff_df["last_name"].str.lower() == last_lower)
+    ]
+    if match.empty:
+        st.error("Staff member not found.")
+        return
+    info = match.iloc[0]
+
+    first_name = info["first_name"] or first_lower.title()
+    last_name = info["last_name"] or last_lower.title()
+    name = info["name"]
+
+    record = load_staff_member_record(first_name, last_name)
+    meetings = record["meetings"]
+    recommendations = record["recommendations"]
+
+    st.markdown(f"# {name}")
+    st.caption(info["title_summary"] or "Staff")
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Meetings attended", f"{int(info['meetings']):,}")
+    c2.metric("Years observed", f"{info['years']}")
+    c3.metric("Items recommended", f"{len(recommendations)}")
+    rec_dollar = sum(float(r["dollar_amount"] or 0) for r in recommendations)
+    c4.metric("$ of recommendations", f"${rec_dollar:,.0f}" if rec_dollar else "—")
+
+    if len(info["titles"]) > 1:
+        st.markdown("**Titles observed:**")
+        for t in sorted(info["titles"]):
+            st.markdown(f"- {t}")
+
+    if recommendations:
+        st.markdown("## Items recommended to council")
+        for r in recommendations[:30]:
+            dollar = f" · ${float(r['dollar_amount']):,.0f}" if r["dollar_amount"] else ""
+            st.markdown(f"- **{r['meeting_date']}** · {r['title']} ({r['outcome']}){dollar}")
+
+    st.markdown("## Meetings attended")
+    with st.expander(f"Show all {len(meetings)} meetings"):
+        for m in meetings[:100]:
+            st.markdown(f"- **{m['meeting_date']}** · {m['body_name']} ({m['meeting_type']})")
+
+
+def render_petitioner_profile(name: str) -> None:
+    """Render a profile page for a petitioner / applicant entity."""
+    record = load_petitioner_record(name)
+    motions = record["motions"]
+
+    st.markdown(f"# {name}")
+    st.caption("Petitioner / Applicant")
+
+    if not motions:
+        st.info("No motions on file for this petitioner.")
+        return
+
+    total_dollar = sum(float(m["dollar_amount"] or 0) for m in motions)
+    passed = sum(1 for m in motions if m["outcome"] == "passed")
+    failed = sum(1 for m in motions if m["outcome"] == "failed")
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Motions filed", f"{len(motions)}")
+    c2.metric("Passed", f"{passed}")
+    c3.metric("Failed", f"{failed}")
+    c4.metric("$ moved", f"${total_dollar:,.0f}" if total_dollar else "—")
+
+    # All locations associated with this petitioner
+    all_locations: list[str] = []
+    for m in motions:
+        locs = m["locations"] if isinstance(m["locations"], list) else []
+        all_locations.extend(locs)
+    if all_locations:
+        st.markdown("## Properties involved")
+        unique_locs = sorted(set(all_locations))
+        for loc in unique_locs:
+            st.markdown(f"- {loc}")
+
+    st.markdown("## Motions filed")
+    for m in motions:
+        emoji = {"passed": "✓", "failed": "✗", "tabled": "⊘"}.get(m["outcome"], "?")
+        date_str = m["meeting_date"].strftime("%Y-%m-%d") if hasattr(m["meeting_date"], "strftime") else str(m["meeting_date"])
+        tally = f"({m['vote_tally_yes']}-{m['vote_tally_no']})"
+        dollar = f" · ${float(m['dollar_amount']):,.0f}" if m["dollar_amount"] else ""
+        st.markdown(f"- **{emoji} {date_str}** · {m['title']} {tally}{dollar}")
+        if m["description"]:
+            st.caption(m["description"])
 
     # ---- Career history (terms) ----
     if terms:
@@ -487,7 +911,12 @@ def render_profile(official_id: int) -> None:
 render_header()
 st.markdown("---")
 
-if st.session_state.view == "profile" and st.session_state.selected_official_id:
+view = st.session_state.view
+if view == "profile" and st.session_state.selected_official_id:
     render_profile(st.session_state.selected_official_id)
+elif view == "staff_profile" and st.session_state.selected_staff_key:
+    render_staff_profile(st.session_state.selected_staff_key)
+elif view == "petitioner_profile" and st.session_state.selected_petitioner:
+    render_petitioner_profile(st.session_state.selected_petitioner)
 else:
     render_roster()
