@@ -22,6 +22,7 @@ from ..patterns.qa_data_anomalies import (
     QaGenericPetitioner,
     QaLowConfidenceMeeting,
     QaOfficialAsPetitioner,
+    QaOfficialAsStaffRecommender,
     QaOrphanOfficial,
     QaPetitionerIsStaff,
     QaShortMotionTitle,
@@ -49,6 +50,7 @@ QA_PATTERNS = [
     QaLowConfidenceMeeting(),
     QaGenericPetitioner(),
     QaOfficialAsPetitioner(),
+    QaOfficialAsStaffRecommender(),
 ]
 
 ALL_PATTERNS = GOVERNANCE_PATTERNS + QA_PATTERNS

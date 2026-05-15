@@ -242,6 +242,58 @@ class QaOfficialAsPetitioner(Pattern):
         ]
 
 
+class QaOfficialAsStaffRecommender(Pattern):
+    """
+    Flag motions where staff_recommender names an elected official.
+
+    Council members vote on motions but they don't recommend them as
+    staff. When motion.staff_recommender captures a councilmember's name
+    it's almost always an extraction confusion — likely the motion's
+    movant (who made the motion in the meeting) got mis-tagged.
+
+    Same matching shapes as qa_official_as_petitioner; same repair shape
+    (nullify the bad attribution).
+    """
+    pattern_id = "qa_official_as_staff_recommender"
+
+    def detect(self, conn: psycopg.Connection) -> list[Finding]:
+        rows = conn.execute("""
+            SELECT DISTINCT m.id, m.staff_recommender, o.id AS official_id,
+                   o.canonical_name, m.title
+            FROM motion m
+            JOIN official o ON o.is_elected = TRUE
+            WHERE m.data_status = 'clean'
+              AND m.staff_recommender IS NOT NULL
+              AND LENGTH(o.canonical_name) >= 8
+              AND POSITION(LOWER(o.canonical_name) IN LOWER(m.staff_recommender)) > 0
+        """).fetchall()
+        return [
+            Finding(
+                pattern_id=self.pattern_id,
+                severity=2,
+                title=(
+                    f"Staff-recommender field names an elected official: "
+                    f"'{r['staff_recommender']}' (matches {r['canonical_name']})"
+                ),
+                explanation=(
+                    "Council members don't recommend motions as staff — staff "
+                    "recommendations come from city employees. The staff_recommender "
+                    "field captured a council member here, likely a model confusion "
+                    "between who recommended the motion and who moved it. "
+                    "Repair will set staff_recommender to NULL."
+                ),
+                subject_motion_id=int(r["id"]),
+                metrics={
+                    "staff_recommender": r["staff_recommender"],
+                    "matched_official_id": int(r["official_id"]),
+                    "matched_canonical": r["canonical_name"],
+                    "motion_title": r["title"],
+                },
+            )
+            for r in rows
+        ]
+
+
 class QaGenericPetitioner(Pattern):
     pattern_id = "qa_generic_petitioner"
 
