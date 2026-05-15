@@ -37,33 +37,77 @@ class CivicEngagePhotoScraper(PhotoScraper):
     platform = "civicengage"
 
     def scrape(self, council_url: str, jurisdiction_domain: str) -> list[PhotoCandidate]:
-        candidates: list[PhotoCandidate] = []
-
+        """Scrape one CivicEngage directory page (council or staff dept) for officials."""
         with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=TIMEOUT, follow_redirects=True) as client:
-            council_html = client.get(council_url).text
-            soup = BeautifulSoup(council_html, "html.parser")
+            return list(self._scrape_directory(client, council_url, jurisdiction_domain))
 
-            # Find every link to a Directory.aspx?EID=N bio page
-            eid_links: dict[int, str] = {}
+    def scrape_staff(self, directory_index_url: str, jurisdiction_domain: str) -> list[PhotoCandidate]:
+        """
+        Scrape the entire CivicEngage Staff Directory tree for a jurisdiction.
+
+        directory_index_url should be the top-level /Directory.aspx page that
+        lists every department. We discover each department's /Directory.aspx?did=N
+        page, then for each department enumerate its individual EID bio pages.
+        """
+        candidates: list[PhotoCandidate] = []
+        with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=TIMEOUT, follow_redirects=True) as client:
+            index_html = client.get(directory_index_url).text
+            soup = BeautifulSoup(index_html, "html.parser")
+
+            # Each department links by ?did=N
+            dept_urls: list[str] = []
+            seen: set[int] = set()
             for a in soup.find_all("a", href=True):
-                m = re.search(r"Directory\.aspx\?EID=(\d+)", a["href"], re.IGNORECASE)
+                m = re.search(r"Directory\.aspx\?did=(\d+)", a["href"], re.IGNORECASE)
                 if not m:
                     continue
-                eid = int(m.group(1))
-                if eid not in eid_links:
-                    eid_links[eid] = urljoin(council_url, a["href"])
+                did = int(m.group(1))
+                if did in seen:
+                    continue
+                seen.add(did)
+                dept_urls.append(urljoin(directory_index_url, a["href"]))
 
-            # Fetch each bio page and extract name + photo + caption
-            for eid, bio_url in eid_links.items():
+            for dept_url in dept_urls:
                 try:
-                    bio_html = client.get(bio_url).text
+                    candidates.extend(self._scrape_directory(client, dept_url, jurisdiction_domain))
                 except httpx.HTTPError:
                     continue
-                candidate = _parse_bio_page(bio_html, bio_url, jurisdiction_domain)
-                if candidate:
-                    candidates.append(candidate)
 
-        return candidates
+        # Dedupe by photo_url so the same person appearing in two departments
+        # only lands once.
+        seen_urls: set[str] = set()
+        out: list[PhotoCandidate] = []
+        for c in candidates:
+            if c.photo_url in seen_urls:
+                continue
+            seen_urls.add(c.photo_url)
+            out.append(c)
+        return out
+
+    def _scrape_directory(
+        self, client: httpx.Client, directory_url: str, jurisdiction_domain: str
+    ):
+        """Yield PhotoCandidates from one /Directory.aspx page (council or dept)."""
+        html = client.get(directory_url).text
+        soup = BeautifulSoup(html, "html.parser")
+
+        eid_links: dict[int, str] = {}
+        for a in soup.find_all("a", href=True):
+            m = re.search(r"Directory\.aspx\?EID=(\d+)", a["href"], re.IGNORECASE)
+            if not m:
+                continue
+            eid = int(m.group(1))
+            if eid not in eid_links:
+                eid_links[eid] = urljoin(directory_url, a["href"])
+
+        for bio_url in eid_links.values():
+            try:
+                bio_html = client.get(bio_url).text
+            except httpx.HTTPError:
+                continue
+            candidate = _parse_bio_page(bio_html, bio_url, jurisdiction_domain)
+            if candidate:
+                yield candidate
 
 
 CHROME_ALT_BLOCKLIST = {

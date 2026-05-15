@@ -123,12 +123,16 @@ class QaOrphanOfficial(Pattern):
     pattern_id = "qa_orphan_official"
 
     def detect(self, conn: psycopg.Connection) -> list[Finding]:
+        # Only flag *elected* officials with zero votes and zero terms.
+        # Appointed staff legitimately have neither — they're employees,
+        # not councilmembers. Deleting them would be the bug, not the cure.
         rows = conn.execute("""
             SELECT o.id, o.canonical_name,
                    (SELECT COUNT(*) FROM vote WHERE official_id = o.id) AS votes,
                    (SELECT COUNT(*) FROM term WHERE official_id = o.id) AS terms
             FROM official o
-            WHERE (SELECT COUNT(*) FROM vote WHERE official_id = o.id) = 0
+            WHERE o.is_elected = TRUE
+              AND (SELECT COUNT(*) FROM vote WHERE official_id = o.id) = 0
               AND (SELECT COUNT(*) FROM term WHERE official_id = o.id) = 0
         """).fetchall()
         return [
