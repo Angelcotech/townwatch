@@ -89,7 +89,7 @@ st.markdown(
 # =====================================================================
 
 if "view" not in st.session_state:
-    st.session_state.view = "roster"  # roster | profile | staff_profile | petitioner_profile
+    st.session_state.view = "home"  # home | roster | profile | staff_profile | petitioner_profile
 if "selected_official_id" not in st.session_state:
     st.session_state.selected_official_id = None
 if "selected_staff_key" not in st.session_state:
@@ -115,6 +115,13 @@ def go_to_petitioner_profile(name: str) -> None:
 
 def go_to_roster() -> None:
     st.session_state.view = "roster"
+    st.session_state.selected_official_id = None
+    st.session_state.selected_staff_key = None
+    st.session_state.selected_petitioner = None
+
+
+def go_to_home() -> None:
+    st.session_state.view = "home"
     st.session_state.selected_official_id = None
     st.session_state.selected_staff_key = None
     st.session_state.selected_petitioner = None
@@ -419,10 +426,283 @@ def render_header() -> None:
             f"{stats['votes']:,} votes · {stats['findings']} findings"
         )
     with col_action:
-        if st.session_state.view != "roster":
-            if st.button("← Back to roster", use_container_width=True):
-                go_to_roster()
+        if st.session_state.view != "home":
+            if st.button("← Home", use_container_width=True):
+                go_to_home()
                 st.rerun()
+
+
+@st.cache_data(ttl=300)
+def _load_home_stats() -> dict:
+    """Aggregate stats for the home ladder modules."""
+    with connect() as conn:
+        unanimous = conn.execute("""
+            SELECT
+                COUNT(*) FILTER (WHERE vote_tally_no = 0 AND vote_tally_abstain = 0
+                                   AND vote_tally_yes > 0) AS unanimous,
+                COUNT(*) FILTER (WHERE vote_tally_yes > 0 OR vote_tally_no > 0) AS with_votes
+            FROM motion WHERE data_status = 'clean'
+        """).fetchone()
+        u = int(unanimous["unanimous"]); w = int(unanimous["with_votes"])
+        unanimity_pct = int(u * 100 / max(w, 1)) if w else 0
+
+        top_petitioners = conn.execute("""
+            SELECT petitioner_name, COUNT(*) AS motions
+            FROM motion WHERE petitioner_name IS NOT NULL AND data_status = 'clean'
+            GROUP BY petitioner_name
+            ORDER BY motions DESC LIMIT 5
+        """).fetchall()
+        n_petitioners = conn.execute("""
+            SELECT COUNT(DISTINCT petitioner_name) AS n
+            FROM motion WHERE petitioner_name IS NOT NULL AND data_status = 'clean'
+        """).fetchone()["n"]
+
+        top_staff = conn.execute("""
+            SELECT staff_recommender, COUNT(*) AS motions
+            FROM motion WHERE staff_recommender IS NOT NULL AND data_status = 'clean'
+            GROUP BY staff_recommender
+            ORDER BY motions DESC LIMIT 5
+        """).fetchall()
+        n_staff = conn.execute("""
+            SELECT COUNT(DISTINCT staff_recommender) AS n
+            FROM motion WHERE staff_recommender IS NOT NULL AND data_status = 'clean'
+        """).fetchone()["n"]
+
+        recent_decisions = conn.execute("""
+            SELECT m.id, m.title, m.outcome, mtg.meeting_date
+            FROM motion m JOIN meeting mtg ON mtg.id = m.meeting_id
+            WHERE m.data_status = 'clean' AND m.outcome IN ('passed', 'failed')
+            ORDER BY mtg.meeting_date DESC, m.id DESC LIMIT 5
+        """).fetchall()
+
+        # Body meeting counts
+        bodies = conn.execute("""
+            SELECT gb.id, gb.name, gb.body_type,
+                   COUNT(mtg.id) AS meetings,
+                   MAX(mtg.meeting_date) AS latest
+            FROM governing_body gb
+            LEFT JOIN meeting mtg ON mtg.governing_body_id = gb.id
+            GROUP BY gb.id, gb.name, gb.body_type
+            ORDER BY gb.id
+        """).fetchall()
+
+    return {
+        "unanimity_pct": unanimity_pct,
+        "unanimous_count": u,
+        "voted_count": w,
+        "top_petitioners": [dict(r) for r in top_petitioners],
+        "n_petitioners": n_petitioners,
+        "top_staff": [dict(r) for r in top_staff],
+        "n_staff": n_staff,
+        "recent_decisions": [dict(r) for r in recent_decisions],
+        "bodies": [dict(r) for r in bodies],
+    }
+
+
+@st.cache_data(ttl=300)
+def _load_jurisdiction_meta() -> dict:
+    """Jurisdiction-level constants displayed in the citizens tier."""
+    with connect() as conn:
+        row = conn.execute("""
+            SELECT j.display_name, j.population
+            FROM jurisdiction j ORDER BY j.id LIMIT 1
+        """).fetchone()
+    return dict(row) if row else {}
+
+
+def _gap_line(label: str) -> str:
+    """Render a 'data not on file' line in muted color."""
+    return (
+        f'<div style="color:#9CA3AF;font-size:0.78rem;font-style:italic;">'
+        f'{label} — not on file</div>'
+    )
+
+
+def _render_citizens_tier(role: str) -> None:
+    """Citizens box — top (sovereign) or bottom (recipients)."""
+    juris = _load_jurisdiction_meta()
+    pop = juris.get("population")
+    label = "sovereign authority — elect who serves" if role == "top" else "live with the outcomes"
+    pop_line = f"{pop:,} residents" if pop else "population — not on file"
+    st.markdown(
+        f"""
+        <div style="background:#0F172A;color:white;border-radius:8px;padding:1.25rem 1.5rem;
+                    text-align:center;margin:0.5rem 0;">
+          <div style="font-size:0.7rem;letter-spacing:0.12em;opacity:0.7;text-transform:uppercase;">
+            Citizens
+          </div>
+          <div style="font-size:1.4rem;font-weight:600;margin-top:0.25rem;">{pop_line}</div>
+          <div style="font-size:0.85rem;opacity:0.85;margin-top:0.25rem;">{label}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _render_council_seat(row: pd.Series) -> None:
+    """One council-seat card with photo, contact gaps, click-through."""
+    official_id = int(row["id"])
+    name = row["canonical_name"]
+    seat = row.get("current_seat") or "—"
+    is_pro_tem = "pro tem" in (seat or "").lower() or False
+    pro_tem_badge = " · Mayor Pro-Tem" if is_pro_tem else ""
+
+    with st.container(border=True):
+        _render_official_avatar(official_id, name, size=96)
+        st.markdown(f"**{name}**")
+        st.caption(f"{seat}{pro_tem_badge}")
+        # Term info gap
+        st.markdown(_gap_line("term end date"), unsafe_allow_html=True)
+        st.markdown(_gap_line("direct email"), unsafe_allow_html=True)
+        if st.button("View profile →", key=f"home_council_{official_id}", use_container_width=True):
+            go_to_profile(official_id)
+            st.rerun()
+
+
+def _render_mayor_seat_vacant() -> None:
+    """Special-case rendering for an unfilled mayor seat."""
+    with st.container(border=True):
+        st.markdown(_initials_svg("?", size=96).decode("utf-8"), unsafe_allow_html=True)
+        st.markdown("**VACANT**")
+        st.caption("Mayor")
+        st.markdown(
+            '<div style="color:#9CA3AF;font-size:0.78rem;font-style:italic;">'
+            "special election Nov 2026 · qualifying fee $612"
+            '</div>',
+            unsafe_allow_html=True,
+        )
+
+
+def _render_council_row(df: pd.DataFrame, stats: dict) -> None:
+    """Mayor + 4 councilmember seats with the unanimity stat above."""
+    current = df[df["is_current"] == True].copy()  # noqa: E712
+
+    st.markdown("### Mayor + Council")
+    st.caption(
+        f"{stats['unanimity_pct']}% of motions with a recorded vote pass unanimously "
+        f"({stats['unanimous_count']:,} of {stats['voted_count']:,}). "
+        f"Unanimity is data, not necessarily wrong — but worth knowing."
+    )
+
+    cols = st.columns(5)
+    with cols[0]:
+        _render_mayor_seat_vacant()
+    for i, (_, row) in enumerate(current.iterrows()):
+        if i + 1 >= len(cols):
+            break
+        with cols[i + 1]:
+            _render_council_seat(row)
+
+
+def _render_upstream_module(
+    title: str, total: int, top_rows: list[dict], key_field: str, count_field: str,
+    drill_label: str, drill_target_view: str,
+) -> None:
+    """Petitioner or staff aggregate module."""
+    with st.container(border=True):
+        st.markdown(f"### {title}")
+        st.caption(f"{total:,} distinct {title.lower()} captured")
+        for r in top_rows:
+            n = int(r[count_field])
+            label = (r[key_field] or "(unnamed)")
+            label_short = label if len(label) <= 50 else label[:47] + "…"
+            st.markdown(f"- **{label_short}** — {n} motion{'s' if n != 1 else ''}")
+        if st.button(drill_label, key=f"home_{drill_target_view}", use_container_width=True):
+            st.session_state.view = "roster"
+            st.rerun()
+
+
+def _render_bodies_row(bodies: list[dict], known_bodies_in_config: list[dict]) -> None:
+    """Appointed-body boxes."""
+    st.markdown("### Appointed Bodies")
+    st.caption("Authority delegated by the council to recommend zoning, planning, and appeals decisions.")
+
+    in_db = {b["name"]: b for b in bodies}
+    cols = st.columns(len(known_bodies_in_config))
+    for i, cfg_body in enumerate(known_bodies_in_config):
+        with cols[i]:
+            with st.container(border=True):
+                st.markdown(f"**{cfg_body['name']}**")
+                db_body = in_db.get(cfg_body["name"])
+                if db_body and db_body["meetings"]:
+                    st.caption(f"{int(db_body['meetings'])} meetings on file")
+                    if db_body["latest"]:
+                        st.caption(f"latest: {db_body['latest']}")
+                else:
+                    st.markdown(
+                        _gap_line("no meetings indexed yet"),
+                        unsafe_allow_html=True,
+                    )
+                # Member roster gap
+                st.markdown(_gap_line("member roster"), unsafe_allow_html=True)
+
+
+def _render_recent_decisions(decisions: list[dict]) -> None:
+    """Recent enacted motions module."""
+    with st.container(border=True):
+        st.markdown("### Recent Decisions Enacted")
+        if not decisions:
+            st.caption("No published decisions yet.")
+            return
+        for d in decisions:
+            outcome_icon = "✓" if d["outcome"] == "passed" else "✗"
+            title = d["title"]
+            if len(title) > 80:
+                title = title[:77] + "…"
+            st.markdown(f"- {outcome_icon} *{d['meeting_date']}* — {title}")
+
+
+def render_home_ladder() -> None:
+    """The TownWatch home screen — government as it currently operates."""
+    from townwatch_etl.jurisdiction import load_config
+    try:
+        cfg = load_config("grovetown-ga")
+    except Exception:
+        cfg = {"governing_bodies": []}
+
+    df = load_roster()
+    stats = _load_home_stats()
+
+    _render_citizens_tier("top")
+    _ladder_arrow("elect every 4 years")
+    _render_council_row(df, stats)
+    _ladder_arrow("ratifies / votes on what arrives at the agenda")
+
+    col_pet, col_staff = st.columns(2)
+    with col_pet:
+        _render_upstream_module(
+            "Petitioners", stats["n_petitioners"], stats["top_petitioners"],
+            key_field="petitioner_name", count_field="motions",
+            drill_label="Browse all petitioners →", drill_target_view="petitioners",
+        )
+    with col_staff:
+        _render_upstream_module(
+            "Staff Recommenders", stats["n_staff"], stats["top_staff"],
+            key_field="staff_recommender", count_field="motions",
+            drill_label="Browse staff →", drill_target_view="staff",
+        )
+    _ladder_arrow("shape decisions before the council votes")
+
+    _render_bodies_row(stats["bodies"], cfg["governing_bodies"])
+    _ladder_arrow("recommend back to council")
+
+    _render_recent_decisions(stats["recent_decisions"])
+    _ladder_arrow("affects daily life")
+
+    _render_citizens_tier("bottom")
+
+
+def _ladder_arrow(text: str) -> None:
+    """Visual connector between ladder tiers."""
+    st.markdown(
+        f"""
+        <div style="text-align:center;color:#6B7280;font-size:0.85rem;
+                    padding:0.6rem 0;font-style:italic;">
+          ↓ {text} ↓
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_roster() -> None:
@@ -988,5 +1268,7 @@ elif view == "staff_profile" and st.session_state.selected_staff_key:
     render_staff_profile(st.session_state.selected_staff_key)
 elif view == "petitioner_profile" and st.session_state.selected_petitioner:
     render_petitioner_profile(st.session_state.selected_petitioner)
-else:
+elif view == "roster":
     render_roster()
+else:
+    render_home_ladder()
