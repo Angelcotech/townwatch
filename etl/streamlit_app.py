@@ -606,18 +606,84 @@ def _render_petitioner_card(row: pd.Series) -> None:
         st.rerun()
 
 
+@st.cache_data(ttl=600)
+def _load_official_photo(official_id: int) -> tuple[bytes, str] | None:
+    """Return (bytes, mime) for the highest-scored verified photo, or None."""
+    with connect() as conn:
+        row = conn.execute("""
+            SELECT photo_bytes, photo_mime
+            FROM official_photo
+            WHERE official_id = %s AND data_status = 'verified'
+              AND photo_bytes IS NOT NULL
+            ORDER BY verification_score DESC, created_at DESC
+            LIMIT 1
+        """, (official_id,)).fetchone()
+    if not row or not row["photo_bytes"]:
+        return None
+    return bytes(row["photo_bytes"]), row["photo_mime"] or "image/jpeg"
+
+
+def _initials(name: str) -> str:
+    """Return up to 2 uppercase initials for a name."""
+    parts = [p for p in (name or "").split() if p and p[0].isalpha()]
+    if not parts:
+        return "?"
+    if len(parts) == 1:
+        return parts[0][:2].upper()
+    return (parts[0][0] + parts[-1][0]).upper()
+
+
+def _initials_svg(name: str, size: int = 120) -> bytes:
+    """Generate an SVG data placeholder for officials without a verified photo."""
+    initials = _initials(name)
+    # Hash-driven background color for variety, kept in the navy/slate palette
+    palette = ["#1E3A8A", "#1E40AF", "#1F2937", "#334155", "#475569", "#0F172A"]
+    color = palette[hash(name or "") % len(palette)]
+    svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" '
+        f'viewBox="0 0 {size} {size}">'
+        f'<rect width="{size}" height="{size}" rx="{size//2}" fill="{color}"/>'
+        f'<text x="50%" y="55%" text-anchor="middle" dominant-baseline="middle" '
+        f'font-family="-apple-system,Helvetica,Arial,sans-serif" '
+        f'font-size="{int(size*0.42)}" font-weight="600" fill="#ffffff">{initials}</text>'
+        f'</svg>'
+    )
+    return svg.encode("utf-8")
+
+
+def _render_official_avatar(official_id: int, name: str, size: int = 64) -> None:
+    photo = _load_official_photo(official_id)
+    if photo:
+        # Real photo — let st.image handle resizing
+        import base64
+        b64 = base64.b64encode(photo[0]).decode("ascii")
+        st.markdown(
+            f'<img src="data:{photo[1]};base64,{b64}" '
+            f'style="width:{size}px;height:{size}px;border-radius:50%;object-fit:cover;'
+            f'display:block;" />',
+            unsafe_allow_html=True,
+        )
+    else:
+        # SVG initials fallback — inline raw SVG (st.image doesn't grok SVG bytes)
+        st.markdown(_initials_svg(name, size=size).decode("utf-8"), unsafe_allow_html=True)
+
+
 def _render_official_card(row: pd.Series, *, current: bool) -> None:
     label = "Current" if current else "Historical"
     seat_or_status = row.get("current_seat") or label
     years_part = f" · {row['years']}yr" if row["years"] else ""
-    if st.button(
-        f"**{row['canonical_name']}**\n\n"
-        f"{seat_or_status} · {int(row['votes']):,} votes{years_part}",
-        key=f"official_{row['id']}",
-        use_container_width=True,
-    ):
-        go_to_profile(int(row["id"]))
-        st.rerun()
+    col_photo, col_text = st.columns([1, 3])
+    with col_photo:
+        _render_official_avatar(int(row["id"]), row["canonical_name"], size=72)
+    with col_text:
+        if st.button(
+            f"**{row['canonical_name']}**\n\n"
+            f"{seat_or_status} · {int(row['votes']):,} votes{years_part}",
+            key=f"official_{row['id']}",
+            use_container_width=True,
+        ):
+            go_to_profile(int(row["id"]))
+            st.rerun()
 
 
 def render_profile(official_id: int) -> None:
@@ -634,21 +700,25 @@ def render_profile(official_id: int) -> None:
     detail = rec["detail"]
 
     # ---- Header ----
-    st.markdown(f"# {o['canonical_name']}")
-    current_term = next((t for t in terms if t["is_current"]), None)
-    if current_term:
-        st.caption(
-            f"{current_term['seat_name']} · {current_term['body_name']} · "
-            f"{current_term['jurisdiction']} · current"
-        )
-    elif terms:
-        t = terms[0]
-        st.caption(
-            f"Formerly: {t['seat_name']} · {t['body_name']} · "
-            f"{t['jurisdiction']}"
-        )
-    else:
-        st.caption("No term record on file — historical vote record only.")
+    header_photo, header_text = st.columns([1, 4])
+    with header_photo:
+        _render_official_avatar(int(o["id"]), o["canonical_name"], size=160)
+    with header_text:
+        st.markdown(f"# {o['canonical_name']}")
+        current_term = next((t for t in terms if t["is_current"]), None)
+        if current_term:
+            st.caption(
+                f"{current_term['seat_name']} · {current_term['body_name']} · "
+                f"{current_term['jurisdiction']} · current"
+            )
+        elif terms:
+            t = terms[0]
+            st.caption(
+                f"Formerly: {t['seat_name']} · {t['body_name']} · "
+                f"{t['jurisdiction']}"
+            )
+        else:
+            st.caption("No term record on file — historical vote record only.")
 
     # ---- Headline stats ----
     total_votes = int(o["votes"] or 0)
