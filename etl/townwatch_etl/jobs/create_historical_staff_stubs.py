@@ -158,8 +158,10 @@ class CreateHistoricalStaffStubs(IngestJob):
                 first_name=first,
                 last_name=last,
             )
+            # Stubs derived from historical motions are by definition not
+            # on the current city directory — mark inactive at creation.
             self.conn.execute(
-                "UPDATE official SET is_elected = FALSE WHERE id = %s",
+                "UPDATE official SET is_elected = FALSE, is_active = FALSE WHERE id = %s",
                 (official_id,),
             )
             # Alias the canonical form and every raw variant we saw

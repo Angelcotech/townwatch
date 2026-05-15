@@ -101,6 +101,7 @@ class AcquireStaff(IngestJob):
         verified_count = 0
         unverified_count = 0
         skipped_count = 0
+        seen_official_ids: set[int] = set()
 
         for c in candidates:
             print(f"\n  → {c.source_name} ({c.source_title or 'no title'})")
@@ -151,29 +152,37 @@ class AcquireStaff(IngestJob):
                 resolver.register_new_official(
                     official_id, canonical_name=c.source_name, last_name=last
                 )
+                # Newly-scraped person from the live directory is by
+                # definition active.
+                self.conn.execute(
+                    "UPDATE official SET is_active = TRUE WHERE id = %s",
+                    (official_id,),
+                )
                 created_count += 1
-                print(f"     + created staff official #{official_id} (is_elected=false)")
+                print(f"     + created staff official #{official_id} (is_elected=false, is_active=true)")
             else:
                 # Existing record — enrich title + bio. DO NOT touch
                 # is_elected: this job runs on the full staff directory
                 # which includes the elected council, so blindly flipping
                 # is_elected=FALSE would mis-classify them as staff.
-                updates = []
-                params = []
+                # DO mark is_active=TRUE: they're on the current directory.
+                updates = ["is_active = TRUE"]
+                params: list = []
                 if c.source_title:
                     updates.append("display_title = %s")
                     params.append(c.source_title)
                 if c.bio_text:
                     updates.append("bio_text = %s")
                     params.append(c.bio_text)
-                if updates:
-                    params.append(official_id)
-                    self.conn.execute(
-                        f"UPDATE official SET {', '.join(updates)} WHERE id = %s",
-                        tuple(params),
-                    )
+                params.append(official_id)
+                self.conn.execute(
+                    f"UPDATE official SET {', '.join(updates)} WHERE id = %s",
+                    tuple(params),
+                )
                 enriched_count += 1
-                print(f"     enriched existing official #{official_id}")
+                print(f"     enriched existing official #{official_id} (is_active=true)")
+
+            seen_official_ids.add(official_id)
 
             # Look up canonical name for photo verification scoring
             row = self.conn.execute(
@@ -244,6 +253,25 @@ class AcquireStaff(IngestJob):
                 unverified_count += 1
             marker = "✓ verified" if data_status == "verified" else "⚠ unverified"
             print(f"     {marker} photo ({pic['size']} bytes)")
+
+        # Mark staff who didn't appear in THIS scrape as inactive — they've
+        # left the city / aren't on the directory anymore. Scoped to staff
+        # only (is_elected=FALSE) so we don't touch elected officials whose
+        # status is governed by term.is_current.
+        if seen_official_ids:
+            ids_tuple = tuple(seen_official_ids)
+            placeholders = ",".join(["%s"] * len(ids_tuple))
+            now_inactive = self.conn.execute(
+                f"""UPDATE official SET is_active = FALSE
+                    WHERE is_elected = FALSE AND is_active = TRUE
+                      AND id NOT IN ({placeholders})
+                    RETURNING id, canonical_name""",
+                ids_tuple,
+            ).fetchall()
+            if now_inactive:
+                print(f"\n  marked {len(now_inactive)} staff as inactive (no longer on directory):")
+                for r in now_inactive:
+                    print(f"    - #{r['id']} {r['canonical_name']}")
 
         self.summary = {
             "created": created_count,
