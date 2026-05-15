@@ -112,6 +112,29 @@ class AcquireOfficialPhotos(IngestJob):
             canonical = row["canonical_name"]
             print(f"     resolved → official #{official_id} ({canonical})")
 
+            # Enrich: write display_title + bio_text from the same scraped page.
+            # We always overwrite (the city's page is the source of truth).
+            updates = []
+            params = []
+            if c.source_title:
+                updates.append("display_title = %s")
+                params.append(c.source_title)
+            if c.bio_text:
+                updates.append("bio_text = %s")
+                params.append(c.bio_text)
+            if updates:
+                params.append(official_id)
+                self.conn.execute(
+                    f"UPDATE official SET {', '.join(updates)} WHERE id = %s",
+                    tuple(params),
+                )
+                bits = []
+                if c.source_title:
+                    bits.append(f"title={c.source_title!r}")
+                if c.bio_text:
+                    bits.append(f"bio={len(c.bio_text)}ch")
+                print(f"     enriched ({', '.join(bits)})")
+
             # Idempotency: if we already have THIS photo_url, skip unless --force
             existing = self.conn.execute(
                 "SELECT id, data_status FROM official_photo WHERE official_id = %s AND photo_url = %s",

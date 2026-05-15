@@ -126,17 +126,12 @@ def _parse_bio_page(html: str, bio_url: str, jurisdiction_domain: str) -> PhotoC
     if not name:
         return None
 
-    # Title (Mayor Pro Tem, Councilmember, etc.) — look for it near the name
-    title = None
-    title_candidates = soup.find_all(["p", "span", "div"])
-    for tag in title_candidates[:40]:
-        txt = tag.get_text(strip=True)
-        if not txt:
-            continue
-        if re.search(r"\b(mayor|council|commissioner|chair|alderman)\b", txt, re.IGNORECASE):
-            if len(txt) < 120:
-                title = txt
-                break
+    # Title — CivicEngage renders "Title: Mayor Pro Tem" in the directory detail.
+    # Strip the leading "Title:" label so we store just the role.
+    title = _extract_label_value(soup, "title")
+
+    # Bio text — typically a multi-sentence paragraph below the title/phone block.
+    bio_text = _extract_bio_paragraph(soup, name)
 
     # Tier: gold if the bio page is hosted on the jurisdiction's own domain
     host = urlparse(bio_url).netloc.lower()
@@ -150,4 +145,45 @@ def _parse_bio_page(html: str, bio_url: str, jurisdiction_domain: str) -> PhotoC
         source_tier=tier,
         caption=caption,
         platform="civicengage",
+        bio_text=bio_text,
     )
+
+
+def _extract_label_value(soup: BeautifulSoup, label: str) -> str | None:
+    """
+    Find a 'Label: Value' pattern in the page text. CivicEngage often renders
+    these as two adjacent text nodes or in a structured row.
+    """
+    label_lower = label.lower()
+    # First pass: visible text scan for "<label>: <value>"
+    text = soup.get_text(separator="\n", strip=True)
+    for line in text.splitlines():
+        if line.lower().startswith(f"{label_lower}:"):
+            return line.split(":", 1)[1].strip() or None
+    # Second pass: label and value on adjacent lines (CivicEngage frequently
+    # renders "Title" on one line and "Mayor Pro Tem" on the next).
+    lines = [l.strip() for l in text.splitlines() if l.strip()]
+    for i, line in enumerate(lines[:-1]):
+        if line.lower() == label_lower or line.lower() == f"{label_lower}:":
+            return lines[i + 1] or None
+    return None
+
+
+def _extract_bio_paragraph(soup: BeautifulSoup, name: str) -> str | None:
+    """
+    Pull the substantive biographical paragraph from the bio page.
+
+    CivicEngage renders the rich bio inside <div class="BioText fr-view">.
+    There's typically also a metadata-only <div class="BioText"> (just title
+    + phone) — we filter that out by length.
+    """
+    candidates: list[str] = []
+    for div in soup.find_all("div", class_="BioText"):
+        txt = div.get_text(separator=" ", strip=True)
+        # Skip the metadata div (title + phone, ~80 chars or less)
+        if not txt or len(txt) < 100:
+            continue
+        candidates.append(txt)
+    if candidates:
+        return max(candidates, key=len)
+    return None

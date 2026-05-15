@@ -14,11 +14,11 @@ from dataclasses import dataclass
 
 @dataclass
 class PhotoCandidate:
-    """One photo found on a public page, with full provenance."""
+    """One photo found on a public page, with full provenance + enrichment."""
     # Who the photo is supposedly of (the name as displayed on the source page)
     source_name: str
 
-    # Their seat/title as displayed (optional but useful for disambiguation)
+    # Their seat/title as displayed (e.g., "Mayor Pro Tem", "Councilmember")
     source_title: str | None
 
     # Direct URL to the image
@@ -35,6 +35,9 @@ class PhotoCandidate:
 
     # Platform tag — civicengage, granicus, wordpress, vision_fallback, ...
     platform: str
+
+    # Biographical text scraped from the same page (multi-sentence narrative)
+    bio_text: str | None = None
 
 
 class PhotoScraper(ABC):
