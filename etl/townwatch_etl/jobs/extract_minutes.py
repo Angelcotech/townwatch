@@ -53,13 +53,16 @@ USER_AGENT = "TownWatch-ETL/0.1 (civic transparency research)"
 class MinutesExtract(IngestJob):
     source_type = "scrape"
 
-    def __init__(self, meeting_id: int) -> None:
+    def __init__(self, meeting_id: int, *, prebuilt_extraction: MeetingExtraction | None = None) -> None:
         super().__init__()
         self.meeting_id = meeting_id
         # source_name + source_url are set per-meeting in ingest() so the
         # provenance reflects the actual document being processed.
         self.source_name = "minutes_extract"
         self.source_url = None
+        # When set, skip the PDF-fetch + Sonnet step and persist this result
+        # directly. Used by the batched extraction job.
+        self.prebuilt_extraction = prebuilt_extraction
 
     # ---- main flow -------------------------------------------------------
 
@@ -88,19 +91,24 @@ class MinutesExtract(IngestJob):
 
         print(f"  → meeting {meeting['meeting_date']} ({meeting['meeting_type']}) | {meeting['minutes_url']}")
 
-        # Download PDF
-        with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=30.0) as client:
-            r = client.get(meeting["minutes_url"])
-            r.raise_for_status()
+        if self.prebuilt_extraction is not None:
+            extraction = self.prebuilt_extraction
+            method = "prebuilt"
+            print(f"     method={method}  items={len(extraction.agenda_items)}  confidence={extraction.meeting.extraction_confidence}")
+        else:
+            # Download PDF
+            with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=30.0) as client:
+                r = client.get(meeting["minutes_url"])
+                r.raise_for_status()
 
-        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
-            f.write(r.content)
-            pdf_path = Path(f.name)
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+                f.write(r.content)
+                pdf_path = Path(f.name)
 
-        # Extract via tiered pipeline (text layer → OCR → vision fallback)
-        print(f"     pdf={len(r.content):,} bytes → extracting...")
-        extraction, method = extract_from_pdf(pdf_path)
-        print(f"     method={method}  items={len(extraction.agenda_items)}  confidence={extraction.meeting.extraction_confidence}")
+            # Extract via tiered pipeline (text layer → OCR → vision fallback)
+            print(f"     pdf={len(r.content):,} bytes → extracting...")
+            extraction, method = extract_from_pdf(pdf_path)
+            print(f"     method={method}  items={len(extraction.agenda_items)}  confidence={extraction.meeting.extraction_confidence}")
 
         # Persist the raw extraction so a re-run never needs another API call
         self._attach_raw_payload(meeting["minutes_url"], extraction)

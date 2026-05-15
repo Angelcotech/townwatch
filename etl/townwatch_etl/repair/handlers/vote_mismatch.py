@@ -29,6 +29,7 @@ import psycopg
 
 from ...config import ANTHROPIC_API_KEY
 from ...identity import CachedResolver
+from ..pdf_utils import trim_pdf
 from .base import RepairHandler, RepairOutcome, RepairResult
 
 
@@ -121,6 +122,9 @@ class VoteMismatchHandler(RepairHandler):
                 notes=f"PDF download failed: {e}",
             )
 
+        # Send only the pages containing this motion (5-10x cheaper input)
+        pdf_bytes, pdf_note = trim_pdf(pdf_bytes, motion["title"])
+
         prompt = PROMPT_TEMPLATE.format(
             meeting_date=meeting["meeting_date"],
             title=motion["title"],
@@ -135,6 +139,7 @@ class VoteMismatchHandler(RepairHandler):
         response = client.messages.create(
             model=VISION_MODEL,
             max_tokens=2048,
+            output_config={"effort": "low"},
             messages=[
                 {
                     "role": "user",

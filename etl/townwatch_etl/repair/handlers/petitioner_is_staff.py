@@ -26,6 +26,7 @@ import anthropic
 import psycopg
 
 from ...config import ANTHROPIC_API_KEY
+from ..pdf_utils import trim_pdf
 from .base import RepairHandler, RepairOutcome, RepairResult
 
 
@@ -94,6 +95,9 @@ class PetitionerIsStaffHandler(RepairHandler):
                 notes=f"PDF download failed: {e}",
             )
 
+        # Send only the pages containing this motion (5-10x cheaper input)
+        pdf_bytes, pdf_note = trim_pdf(pdf_bytes, title)
+
         prompt = PROMPT_TEMPLATE.format(
             title=title,
             motion_type=motion_type,
@@ -104,6 +108,7 @@ class PetitionerIsStaffHandler(RepairHandler):
         response = client.messages.create(
             model=VISION_MODEL,
             max_tokens=1024,
+            output_config={"effort": "low"},
             messages=[
                 {
                     "role": "user",
@@ -152,13 +157,14 @@ class PetitionerIsStaffHandler(RepairHandler):
             handler=self.handler_id,
             notes=(
                 f"petitioner_name → {new_petitioner!r} "
-                f"(internal={is_internal}, conf={confidence}): "
+                f"(internal={is_internal}, conf={confidence}, scanned={pdf_note}): "
                 f"{payload.get('reasoning','')}"
             ),
             mutations={
                 "field": "petitioner_name",
                 "old": motion.get("petitioner_name"),
                 "new": new_petitioner,
+                "pdf_scope": pdf_note,
             },
         )
 
