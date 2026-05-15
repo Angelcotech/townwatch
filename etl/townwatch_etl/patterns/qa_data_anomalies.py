@@ -177,6 +177,71 @@ class QaLowConfidenceMeeting(Pattern):
         ]
 
 
+class QaOfficialAsPetitioner(Pattern):
+    """
+    Flag motions where petitioner_name matches an elected official on the
+    same body. Almost always an extraction error — councilmembers can move
+    or second a motion in their own body, but they're not its petitioner.
+    The repair nullifies petitioner_name; the council role is recorded
+    separately via motion.movant.
+
+    Match shapes (case-insensitive):
+      - petitioner == canonical_name exactly
+      - petitioner starts with "Councilmember <last>" or "Councilmember <full>"
+      - petitioner starts with "Mayor <full>" or "Mayor Pro Tem <full>"
+
+    Bare last-name match is deliberately not used — too many false positives
+    (e.g. "Russell Jones, Jr." matched as a last-name collision with Gary Jones).
+    """
+    pattern_id = "qa_official_as_petitioner"
+
+    def detect(self, conn: psycopg.Connection) -> list[Finding]:
+        # Match against ANY elected official record, not just those with a
+        # term row. Historical councilmembers in the corpus have votes
+        # attributed (so we know they served) but their term backfill is
+        # incomplete — joining through term would miss them.
+        rows = conn.execute("""
+            SELECT DISTINCT m.id, m.petitioner_name, o.id AS official_id,
+                   o.canonical_name, m.title
+            FROM motion m
+            JOIN official o ON o.is_elected = TRUE
+            WHERE m.data_status = 'clean'
+              AND m.petitioner_name IS NOT NULL
+              AND (
+                LOWER(m.petitioner_name) = LOWER(o.canonical_name)
+                OR LOWER(m.petitioner_name) LIKE 'councilmember ' || LOWER(o.last_name) || '%'
+                OR LOWER(m.petitioner_name) LIKE 'councilmember ' || LOWER(o.canonical_name) || '%'
+                OR LOWER(m.petitioner_name) LIKE 'mayor pro tem ' || LOWER(o.canonical_name) || '%'
+                OR LOWER(m.petitioner_name) LIKE 'mayor ' || LOWER(o.canonical_name) || '%'
+              )
+        """).fetchall()
+        return [
+            Finding(
+                pattern_id=self.pattern_id,
+                severity=2,
+                title=(
+                    f"Petitioner field names an elected official: '{r['petitioner_name']}' "
+                    f"(matches {r['canonical_name']})"
+                ),
+                explanation=(
+                    "Council members can move, second, or speak to a motion in their "
+                    "own body, but they're not the motion's petitioner. The petitioner "
+                    "field captured a council member as if they had filed the request "
+                    "externally — almost always an extraction confusion between "
+                    "'movant' and 'petitioner'. Repair will set petitioner_name to NULL."
+                ),
+                subject_motion_id=int(r["id"]),
+                metrics={
+                    "petitioner_name": r["petitioner_name"],
+                    "matched_official_id": int(r["official_id"]),
+                    "matched_canonical": r["canonical_name"],
+                    "motion_title": r["title"],
+                },
+            )
+            for r in rows
+        ]
+
+
 class QaGenericPetitioner(Pattern):
     pattern_id = "qa_generic_petitioner"
 

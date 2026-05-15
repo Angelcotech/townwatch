@@ -28,6 +28,7 @@ from psycopg.rows import dict_row
 from ..db import connect
 from .handlers.base import RepairHandler, RepairOutcome, RepairResult
 from .handlers.bundled_tally import BundledTallyHandler
+from .handlers.official_as_petitioner import OfficialAsPetitionerHandler
 from .handlers.orphan_official import OrphanOfficialHandler
 from .handlers.petitioner_is_staff import PetitionerIsStaffHandler
 from .handlers.voice_vote import VoiceVoteHandler
@@ -43,6 +44,7 @@ DEFAULT_WORKERS = 4
 MOTION_HANDLERS: list[RepairHandler] = [
     VoiceVoteHandler(),
     BundledTallyHandler(),
+    OfficialAsPetitionerHandler(),
     PetitionerIsStaffHandler(),
     VoteMismatchHandler(),
 ]

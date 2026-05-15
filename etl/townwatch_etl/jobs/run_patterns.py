@@ -21,6 +21,7 @@ from ..patterns.development_bundle import DevelopmentBundle
 from ..patterns.qa_data_anomalies import (
     QaGenericPetitioner,
     QaLowConfidenceMeeting,
+    QaOfficialAsPetitioner,
     QaOrphanOfficial,
     QaPetitionerIsStaff,
     QaShortMotionTitle,
@@ -47,6 +48,7 @@ QA_PATTERNS = [
     QaOrphanOfficial(),
     QaLowConfidenceMeeting(),
     QaGenericPetitioner(),
+    QaOfficialAsPetitioner(),
 ]
 
 ALL_PATTERNS = GOVERNANCE_PATTERNS + QA_PATTERNS
