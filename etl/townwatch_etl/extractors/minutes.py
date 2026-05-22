@@ -168,6 +168,18 @@ class MeetingExtraction(BaseModel):
     meeting: MeetingMeta
     attendance: Attendance
     agenda_items: list[AgendaItem]
+    document_summary: str = Field(
+        default="",
+        description=(
+            "2-3 sentence plain-English summary of what actually happened at the meeting. "
+            "Written for a citizen who has not opened the PDF. Lead with the most "
+            "consequential outcomes (what passed, what failed, what was tabled). Name "
+            "dollar amounts, applicants, and recusals when notable. Example: 'Council "
+            "passed a $2.4M road resurfacing contract 4-1 with Councilor Smith dissenting, "
+            "tabled a rezoning at 1110 Dodge Lane after 45 minutes of public comment, and "
+            "appointed two new members to the BZA. Mayor Jones recused on the rezoning.'"
+        ),
+    )
     extraction_notes: str = Field(
         default="",
         description="Ambiguities, illegible passages, or unusual items. Empty string if clean.",
@@ -199,6 +211,11 @@ ATTENDANCE EXTRACTION
 - attendance.present and attendance.absent: ELECTED council/board members only (write names exactly as they appear)
 - attendance.staff_present: every non-elected official noted as attending — City Administrator, City Attorney, City Clerk, Finance Director, Planning Director, Public Works Director, etc. Capture name + title.
 - attendance.others_present: non-staff others recorded as present — county officials, state representatives, guests recognized by the chair. Skip the generic public audience.
+
+DOCUMENT SUMMARY
+- Always populate document_summary with a 2-3 sentence plain-English overview of what happened. This is what a citizen will read instead of opening the PDF. Lead with consequential outcomes (what passed/failed/tabled/withdrew) and notable details (dollar amounts, applicants, recusals).
+- Be concrete and specific. Avoid hedging language unless the record itself is ambiguous.
+- Skip procedural boilerplate (roll call, minutes approval, adjournment) unless something unusual happened during those steps.
 
 RULES
 1. Names: Copy exactly as written. Do not normalize spellings or capitalization. Identity resolution happens downstream.

@@ -198,6 +198,10 @@ class MinutesExtract(IngestJob):
         called_to_order = extraction.meeting.called_to_order_at
         adjourned = extraction.meeting.adjourned_at
 
+        # Only overwrite the summary when extraction produced one — empty
+        # default from old/batched payloads must NOT clobber a real summary.
+        new_summary = extraction.document_summary or None
+
         self.conn.execute(
             """
             UPDATE meeting
@@ -207,6 +211,7 @@ class MinutesExtract(IngestJob):
                 adjourned_at        = %s,
                 staff_present       = %s::jsonb,
                 others_present      = %s::jsonb,
+                minutes_ai_summary  = COALESCE(%s, minutes_ai_summary),
                 updated_at          = now()
             WHERE id = %s
             """,
@@ -217,6 +222,7 @@ class MinutesExtract(IngestJob):
                 adjourned,
                 json.dumps(staff_present) if staff_present is not None else None,
                 json.dumps(others_present) if others_present is not None else None,
+                new_summary,
                 meeting_id,
             ),
         )
