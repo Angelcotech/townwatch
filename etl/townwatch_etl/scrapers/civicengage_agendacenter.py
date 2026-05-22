@@ -85,10 +85,13 @@ def parse_rows(
         meeting_date = date(int(yyyy), int(mm), int(dd))
 
         description = agenda_link.get_text(strip=True) or None
-        agenda_url = base_url + agenda_link["href"]
+        # CivicEngage sometimes appends ?html=true to route links through
+        # their HTML viewer instead of returning the raw document. Always
+        # strip the query string so downstream extractors get the file.
+        agenda_url = base_url + agenda_link["href"].split("?", 1)[0]
 
         minutes_anchor = tr.find("a", href=re.compile(r"/AgendaCenter/ViewFile/Minutes/_\d{8}-\d+"))
-        minutes_url = base_url + minutes_anchor["href"] if minutes_anchor else None
+        minutes_url = base_url + minutes_anchor["href"].split("?", 1)[0] if minutes_anchor else None
 
         meeting_type = DEFAULT_TYPE
         if description:
