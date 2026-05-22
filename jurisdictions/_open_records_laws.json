@@ -1,0 +1,65 @@
+{
+  "_schema_notes": [
+    "Per-state source of truth for open-records / open-meetings law.",
+    "Observers and records-request PDF generators read from this file instead",
+    "of hardcoding state-specific statute citations. Add a new state by adding",
+    "a top-level key with the same shape; the rest of the pipeline works without",
+    "code changes.",
+    "",
+    "open_records_act = the law governing public access to government records",
+    "  (response deadlines, fee rules, denial procedures).",
+    "open_meetings_act = the law governing what must be public about meetings",
+    "  themselves (minutes, agendas, attendance).",
+    "campaign_finance_act = the law governing candidate disclosure filings.",
+    "finding_categories = the specific statute each TownWatch finding cites."
+  ],
+  "GA": {
+    "state_name": "Georgia",
+    "open_records_act": {
+      "title": "Georgia Open Records Act",
+      "citation": "OCGA § 50-18-70 et seq.",
+      "url": "https://law.justia.com/codes/georgia/title-50/chapter-18/article-4/",
+      "response_deadline_business_days": 3,
+      "response_deadline_citation": "OCGA § 50-18-71(b)(1)(A)",
+      "no_records_statement_citation": "OCGA § 50-18-71(b)(1)(B)",
+      "fee_citation": "OCGA § 50-18-71(d)",
+      "fee_estimate_threshold_dollars": 25,
+      "fee_per_page_cents": 10
+    },
+    "open_meetings_act": {
+      "title": "Georgia Open Meetings Act",
+      "citation": "OCGA § 50-14-1 et seq.",
+      "url": "https://law.justia.com/codes/georgia/title-50/chapter-14/"
+    },
+    "campaign_finance_act": {
+      "title": "Georgia Ethics in Government Act",
+      "citation": "OCGA § 21-5-34",
+      "url": "https://law.justia.com/codes/georgia/title-21/chapter-5/article-2/",
+      "municipal_filing_destination_pre_2027": "City Clerk",
+      "municipal_filing_destination_post_2027": "https://ethics.ga.gov",
+      "transition_date": "2027-01-01"
+    },
+    "finding_categories": {
+      "minutes_missing": {
+        "statute_label": "OCGA § 50-14-1(e)(2)",
+        "statute_url": "https://law.justia.com/codes/georgia/title-50/chapter-14/section-50-14-1/",
+        "statute_text": "Minutes of all meetings of public agencies shall be promptly recorded and shall be open to public inspection once approved as official by the agency."
+      },
+      "agenda_missing": {
+        "statute_label": "OCGA § 50-14-1(b)(1)",
+        "statute_url": "https://law.justia.com/codes/georgia/title-50/chapter-14/section-50-14-1/",
+        "statute_text": "The agenda of all matters expected to come before a public agency shall be made available, upon request, to the public for inspection as far in advance of the meeting as is reasonably possible."
+      },
+      "campaign_finance_missing": {
+        "statute_label": "OCGA § 21-5-34",
+        "statute_url": "https://law.justia.com/codes/georgia/title-21/chapter-5/article-2/section-21-5-34/",
+        "statute_text": "Candidates for municipal office shall file Campaign Contribution Disclosure Reports at the deadlines specified by the Act, including pre-election, post-election, and semi-annual reports."
+      },
+      "member_roster_missing": {
+        "statute_label": "OCGA § 50-18-70 et seq.",
+        "statute_url": "https://law.justia.com/codes/georgia/title-50/chapter-18/article-4/",
+        "statute_text": "All public records shall be open for personal inspection and copying by any person at a reasonable time and place. The membership of a public agency — including appointed boards and commissions — is a public record."
+      }
+    }
+  }
+}

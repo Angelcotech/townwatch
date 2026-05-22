@@ -25,6 +25,18 @@
     "form_of_government": "mayor_council_at_large"
   },
 
+  "records_custodian": {
+    "name": "Vicki Capetillo",
+    "honorific": "Hon.",
+    "title": "City Clerk",
+    "email": "clerk@cityofgrovetown.com",
+    "mailing_address": [
+      "City of Grovetown",
+      "103 Old Wrightsboro Road",
+      "Grovetown, GA 30813"
+    ]
+  },
+
   "governing_bodies": [
     {
       "name": "City Council",
