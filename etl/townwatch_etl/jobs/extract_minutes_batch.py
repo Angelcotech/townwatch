@@ -71,6 +71,50 @@ def _download_pdf(url: str) -> bytes:
         return resp.read()
 
 
+# Anthropic Batches API caps each request payload at 256MB. We chunk
+# under this with safety margin so multi-MB scanned-PDF minutes don't
+# blow the limit. Mirrors the auto-chunking in extract_agendas_batch.
+BATCH_SIZE_BYTES_TARGET = 200 * 1024 * 1024
+
+
+def _build_request(meeting_id: int, pdf_bytes: bytes) -> dict:
+    pdf_b64 = base64.standard_b64encode(pdf_bytes).decode("utf-8")
+    return {
+        "custom_id": f"meeting_{meeting_id}",
+        "params": {
+            "model": VISION_MODEL,
+            "max_tokens": 16384,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "document",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "application/pdf",
+                                "data": pdf_b64,
+                            },
+                        },
+                        {"type": "text", "text": VISION_INSTRUCTIONS},
+                    ],
+                },
+            ],
+        },
+    }
+
+
+def _submit_chunk(client: anthropic.Anthropic, chunk: list[dict], idx: int, total: int) -> str | None:
+    print(f"\n[chunk {idx}/{total}] submitting batch of {len(chunk)} request(s)...")
+    try:
+        batch = client.messages.batches.create(requests=chunk)
+    except Exception as e:
+        print(f"  ✗ chunk {idx} submit failed: {e}")
+        return None
+    print(f"  ✓ batch_id={batch.id}  status={batch.processing_status}")
+    return batch.id
+
+
 def cmd_submit(jurisdiction: str | None) -> int:
     meetings = _list_pending_meetings(jurisdiction)
     if not meetings:
@@ -78,52 +122,52 @@ def cmd_submit(jurisdiction: str | None) -> int:
         return 0
 
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-    requests_payload = []
+    print(f"Building batches for {len(meetings)} meeting(s) (chunking under {BATCH_SIZE_BYTES_TARGET // (1024*1024)}MB/chunk)...")
 
-    print(f"Building batch for {len(meetings)} meeting(s)...")
+    chunks: list[list[dict]] = [[]]
+    chunk_sizes: list[int] = [0]
     for m in meetings:
         try:
             pdf_bytes = _download_pdf(m["minutes_url"])
         except Exception as e:
             print(f"  ✗ meeting {m['id']}: PDF download failed ({e}); skipping")
             continue
-        pdf_b64 = base64.standard_b64encode(pdf_bytes).decode("utf-8")
-        requests_payload.append({
-            "custom_id": f"meeting_{m['id']}",
-            "params": {
-                "model": VISION_MODEL,
-                "max_tokens": 16384,
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "document",
-                                "source": {
-                                    "type": "base64",
-                                    "media_type": "application/pdf",
-                                    "data": pdf_b64,
-                                },
-                            },
-                            {"type": "text", "text": VISION_INSTRUCTIONS},
-                        ],
-                    },
-                ],
-            },
-        })
+        req = _build_request(m["id"], pdf_bytes)
+        req_size = len(req["params"]["messages"][0]["content"][0]["source"]["data"]) + 512
+        if chunk_sizes[-1] + req_size > BATCH_SIZE_BYTES_TARGET and chunks[-1]:
+            chunks.append([])
+            chunk_sizes.append(0)
+        chunks[-1].append(req)
+        chunk_sizes[-1] += req_size
 
-    if not requests_payload:
+    chunks = [c for c in chunks if c]
+    if not chunks:
         print("No usable meetings in batch (all PDF downloads failed).")
         return 1
 
-    print(f"Submitting batch of {len(requests_payload)} request(s)...")
-    batch = client.messages.batches.create(requests=requests_payload)
-    print(f"\nbatch_id={batch.id}")
-    print(f"status={batch.processing_status}")
-    print(f"\nPoll with:")
-    print(f"  python -m townwatch_etl.jobs.extract_minutes_batch --poll {batch.id}")
-    print(f"\nResume + ingest results once status='ended':")
-    print(f"  python -m townwatch_etl.jobs.extract_minutes_batch --resume {batch.id}")
+    total_requests = sum(len(c) for c in chunks)
+    print(f"\nReady to submit {len(chunks)} chunk(s), {total_requests} total request(s).")
+    print("Sizes: " + ", ".join(f"{len(c)} reqs / {chunk_sizes[i] // (1024*1024)}MB" for i, c in enumerate(chunks)))
+
+    batch_ids: list[str] = []
+    for i, chunk in enumerate(chunks, 1):
+        bid = _submit_chunk(client, chunk, i, len(chunks))
+        if bid:
+            batch_ids.append(bid)
+
+    if not batch_ids:
+        print("\nAll chunks failed to submit.")
+        return 1
+
+    print(f"\n=== submitted {len(batch_ids)} batch(es) ===")
+    for bid in batch_ids:
+        print(f"  {bid}")
+    print("\nPoll all:")
+    for bid in batch_ids:
+        print(f"  python -m townwatch_etl.jobs.extract_minutes_batch --poll {bid}")
+    print("\nResume + ingest results once status='ended':")
+    for bid in batch_ids:
+        print(f"  python -m townwatch_etl.jobs.extract_minutes_batch --resume {bid}")
     return 0
 
 
