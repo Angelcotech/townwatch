@@ -112,6 +112,18 @@ class CouncilRosterRefresh(IngestJob):
         ).fetchone()
         return row["id"] if row else None
 
+    @property
+    def _photo_source_tier(self) -> str:
+        """Trust tier for photos sourced from this jurisdiction's own
+        directory page. Counties get county_official; cities get city_official.
+        Used when inserting into official_photo."""
+        jtype = self.config["jurisdiction"].get("type") or self.config["jurisdiction"].get("jurisdiction_type")
+        if jtype == "county":
+            return "county_official"
+        if jtype == "state":
+            return "state_official"
+        return "city_official"
+
     def _refresh_body(self, body_cfg: dict, jurisdiction_id: int) -> None:
         assert self.conn is not None
         body_name = body_cfg["name"]
@@ -291,6 +303,37 @@ class CouncilRosterRefresh(IngestJob):
             ).fetchone()
             if updated:
                 actions.append(f"term.end_date={member.term_expires_date}")
+
+        # Photo URL — inserted into official_photo with source tier =
+        # {city,county,state}_official depending on jurisdiction. Idempotent
+        # via the (official_id, photo_url) unique key. data_status='unverified'
+        # — promotion to 'verified' is a separate downstream job that confirms
+        # the photo actually depicts the person (face-recognition or manual).
+        # vision_confidence carries the extractor's per-page confidence so a
+        # later filter can prefer high-confidence photos.
+        if member.photo_url:
+            inserted = self.conn.execute(
+                """
+                INSERT INTO official_photo (
+                    official_id, photo_url, source_url, source_tier,
+                    source_caption, source_platform,
+                    data_status, vision_confidence
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, 'unverified', 'high')
+                ON CONFLICT (official_id, photo_url) DO NOTHING
+                RETURNING id
+                """,
+                (
+                    official_id,
+                    member.photo_url,
+                    self.config["jurisdiction"].get("official_website") or member.photo_url,
+                    self._photo_source_tier,
+                    f"{member.name} — {member.title or 'member'}",
+                    "official_jurisdiction_website",
+                ),
+            ).fetchone()
+            if inserted:
+                actions.append(f"photo_url=...{member.photo_url[-30:]}")
 
         return actions
 
