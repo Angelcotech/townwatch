@@ -68,6 +68,62 @@ def finding_statute(state_abbr: str, category: str) -> dict[str, str]:
     return block
 
 
+def mark_url_unreachable(
+    conn,
+    *,
+    meeting_id: int,
+    kind: str,             # 'agenda' or 'minutes'
+    reason: str,           # '404', 'oversized', 'connection_refused', etc.
+    detail: str | None = None,
+) -> None:
+    """Record on the meeting that one of its scraped URLs is permanently
+    unreachable, so future extract-pending queries skip it.
+
+    Lives on meeting.meta as a nested object — no schema migration needed,
+    queryable via @> operator. Idempotent: setting the same key again just
+    refreshes the checked_at timestamp.
+
+    Used by every job that downloads a document URL (extract_agendas[_batch],
+    extract_minutes[_batch], refresh_council_roster). The pending-meetings
+    query in each batch driver excludes meetings whose target URL has any
+    status entry, so we don't pay the download cost again for dead URLs.
+    """
+    if kind not in ("agenda", "minutes"):
+        raise ValueError(f"kind must be 'agenda' or 'minutes', got {kind!r}")
+    field = f"{kind}_url_status"
+    import json as _json
+    conn.execute(
+        """
+        UPDATE meeting
+        SET meta = COALESCE(meta, '{}'::jsonb) || jsonb_build_object(
+                %s,
+                jsonb_build_object(
+                    'status', 'unreachable',
+                    'reason', %s,
+                    'detail', %s,
+                    'checked_at', now()
+                )
+            ),
+            updated_at = now()
+        WHERE id = %s
+        """,
+        (field, reason, detail, meeting_id),
+    )
+
+
+def mark_url_healthy(conn, *, meeting_id: int, kind: str) -> None:
+    """Clear the unreachable status for a URL — used when a fresh
+    inventory scrape brings back a URL that previously failed, so
+    operators can re-trigger extraction without manual DB edits."""
+    if kind not in ("agenda", "minutes"):
+        raise ValueError(f"kind must be 'agenda' or 'minutes', got {kind!r}")
+    field = f"{kind}_url_status"
+    conn.execute(
+        "UPDATE meeting SET meta = meta - %s, updated_at = now() WHERE id = %s",
+        (field, meeting_id),
+    )
+
+
 def record_failure(
     conn,
     *,

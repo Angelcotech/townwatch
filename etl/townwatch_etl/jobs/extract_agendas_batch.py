@@ -24,6 +24,7 @@ import argparse
 import base64
 import json
 import sys
+import urllib.error
 import urllib.request
 
 import anthropic
@@ -38,6 +39,9 @@ from ..extractors.agendas import (
 
 
 def _list_pending_meetings(jurisdiction: str | None) -> list[dict]:
+    # Exclude meetings whose agenda_url has already failed a prior fetch
+    # (404, oversized, etc.) — see audit.mark_url_unreachable. Without this,
+    # every batch would re-download dead URLs and silently drop them again.
     sql = """
         SELECT m.id, m.agenda_url, m.meeting_date, j.display_name AS jurisdiction
         FROM meeting m
@@ -45,6 +49,7 @@ def _list_pending_meetings(jurisdiction: str | None) -> list[dict]:
         JOIN jurisdiction j ON j.id = gb.jurisdiction_id
         WHERE m.agenda_url IS NOT NULL
           AND NOT EXISTS (SELECT 1 FROM agenda_item ai WHERE ai.meeting_id = m.id)
+          AND NOT (COALESCE(m.meta, '{}'::jsonb) ? 'agenda_url_status')
     """
     params: list = []
     if jurisdiction:
@@ -68,6 +73,13 @@ def _download_pdf(url: str) -> bytes:
 # the limit. Picked empirically: 5MB PDF → ~6.7MB base64 → ~30 PDFs per
 # chunk, well clear of the 200MB target.
 BATCH_SIZE_BYTES_TARGET = 200 * 1024 * 1024
+
+# Anthropic vision rejects PDFs above 32MB outright. We trim to 30MB to
+# give a margin for base64 encoding and request overhead. Files above
+# this get marked oversized so downstream observers can route them to
+# a different path (records request, split-and-extract job, etc.)
+# instead of silently failing batch after batch.
+MAX_PDF_BYTES = 30 * 1024 * 1024
 
 
 def _build_request(meeting_id: int, pdf_bytes: bytes) -> dict:
@@ -121,20 +133,56 @@ def cmd_submit(jurisdiction: str | None) -> int:
     # chunk before the running total would exceed the target.
     chunks: list[list[dict]] = [[]]
     chunk_sizes: list[int] = [0]
-    for m in meetings:
-        try:
-            pdf_bytes = _download_pdf(m["agenda_url"])
-        except Exception as e:
-            print(f"  ✗ meeting {m['id']}: PDF download failed ({e}); skipping")
-            continue
-        req = _build_request(m["id"], pdf_bytes)
-        # Approximate the JSON-encoded payload contribution (base64 dominates)
-        req_size = len(req["params"]["messages"][0]["content"][0]["source"]["data"]) + 512
-        if chunk_sizes[-1] + req_size > BATCH_SIZE_BYTES_TARGET and chunks[-1]:
-            chunks.append([])
-            chunk_sizes.append(0)
-        chunks[-1].append(req)
-        chunk_sizes[-1] += req_size
+    from ..audit import mark_url_unreachable
+    with connect() as conn:
+        for m in meetings:
+            try:
+                pdf_bytes = _download_pdf(m["agenda_url"])
+            except urllib.error.HTTPError as e:
+                # 404 / 410 are permanent — mark URL state so we don't
+                # retry in future runs. Other HTTP errors are transient.
+                if e.code in (404, 410):
+                    mark_url_unreachable(
+                        conn,
+                        meeting_id=m["id"],
+                        kind="agenda",
+                        reason=f"http_{e.code}",
+                        detail=str(e),
+                    )
+                    print(f"  ✗ meeting {m['id']}: agenda {e.code}, marked unreachable")
+                else:
+                    print(f"  ✗ meeting {m['id']}: PDF download HTTP {e.code} ({e}); skipping")
+                continue
+            except Exception as e:
+                print(f"  ✗ meeting {m['id']}: PDF download failed ({e}); skipping")
+                continue
+
+            # Pre-flight size check — Anthropic vision rejects >32MB PDFs.
+            # Mark these so future batches skip them, and so an observer
+            # can route them to a different remediation (records-request,
+            # split-and-extract, etc.) instead of silently failing.
+            if len(pdf_bytes) > MAX_PDF_BYTES:
+                mark_url_unreachable(
+                    conn,
+                    meeting_id=m["id"],
+                    kind="agenda",
+                    reason="oversized_for_vision",
+                    detail=f"{len(pdf_bytes) // (1024*1024)}MB exceeds {MAX_PDF_BYTES // (1024*1024)}MB cap",
+                )
+                print(
+                    f"  ✗ meeting {m['id']}: agenda PDF {len(pdf_bytes) // (1024*1024)}MB "
+                    f"> {MAX_PDF_BYTES // (1024*1024)}MB, marked oversized"
+                )
+                continue
+
+            req = _build_request(m["id"], pdf_bytes)
+            # Approximate the JSON-encoded payload contribution (base64 dominates)
+            req_size = len(req["params"]["messages"][0]["content"][0]["source"]["data"]) + 512
+            if chunk_sizes[-1] + req_size > BATCH_SIZE_BYTES_TARGET and chunks[-1]:
+                chunks.append([])
+                chunk_sizes.append(0)
+            chunks[-1].append(req)
+            chunk_sizes[-1] += req_size
 
     chunks = [c for c in chunks if c]
     if not chunks:

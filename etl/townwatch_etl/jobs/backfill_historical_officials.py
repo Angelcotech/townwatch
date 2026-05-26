@@ -83,10 +83,13 @@ class BackfillHistoricalOfficials(IngestJob):
     # -- DB queries -------------------------------------------------------
 
     def _jurisdiction_id(self) -> int | None:
+        # Resolve via the centralized helper so cities + counties both
+        # work (cities have place_fips, counties have county_fips).
+        from ..jurisdiction import jurisdiction_fips
         assert self.conn is not None
         row = self.conn.execute(
             "SELECT id FROM jurisdiction WHERE fips_code = %s",
-            (self.config["jurisdiction"]["place_fips"],),
+            (jurisdiction_fips(self.config),),
         ).fetchone()
         return row["id"] if row else None
 
