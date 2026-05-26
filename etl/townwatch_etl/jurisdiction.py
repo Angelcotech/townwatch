@@ -141,6 +141,25 @@ def validate_config(config: dict[str, Any], *, slug: str | None = None) -> None:
         raise
 
 
+def jurisdiction_fips(config: dict[str, Any]) -> str:
+    """Canonical FIPS code for the jurisdiction — matches `jurisdiction.fips_code`
+    in the DB. Cities use place_fips (Census 7-digit place ID); counties use
+    county_fips (5-digit). Loud failure when neither is present so a misconfigured
+    jurisdiction can't silently match the wrong DB row.
+
+    Use this in every ETL job that filters by `j.fips_code = ?` rather than
+    reaching into config["jurisdiction"]["place_fips"] directly.
+    """
+    j = config["jurisdiction"]
+    fips = j.get("place_fips") or j.get("county_fips")
+    if not fips:
+        raise RuntimeError(
+            f"Jurisdiction config has neither place_fips nor county_fips: "
+            f"name={j.get('name')!r}, type={j.get('type')!r}"
+        )
+    return fips
+
+
 def list_slugs() -> list[str]:
     """Return all jurisdiction config slugs currently available."""
     slugs: list[str] = []

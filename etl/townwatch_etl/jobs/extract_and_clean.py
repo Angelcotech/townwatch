@@ -45,10 +45,10 @@ def _list_pending_meetings(jurisdiction: str | None) -> list[dict]:
     """
     params: list = []
     if jurisdiction:
-        from ..jurisdiction import load_config
+        from ..jurisdiction import load_config, jurisdiction_fips
         cfg = load_config(jurisdiction)
         sql += " AND j.fips_code = %s"
-        params.append(cfg["jurisdiction"]["place_fips"])
+        params.append(jurisdiction_fips(cfg))
     sql += " ORDER BY m.meeting_date ASC"
     with connect() as conn:
         return [dict(r) for r in conn.execute(sql, params).fetchall()]

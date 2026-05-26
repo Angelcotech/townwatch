@@ -234,10 +234,10 @@ def main() -> int:
     """
     params: list = []
     if args.jurisdiction:
-        from ..jurisdiction import load_config
+        from ..jurisdiction import load_config, jurisdiction_fips
         cfg = load_config(args.jurisdiction)
         sql += " AND j.fips_code = %s"
-        params.append(cfg["jurisdiction"]["place_fips"])
+        params.append(jurisdiction_fips(cfg))
     sql += " ORDER BY m.meeting_date ASC"
 
     with connect() as conn:

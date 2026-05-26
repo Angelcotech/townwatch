@@ -164,10 +164,10 @@ def _list_pending(
         """
     params: list = []
     if jurisdiction_slug:
-        from ..jurisdiction import load_config
+        from ..jurisdiction import load_config, jurisdiction_fips
         cfg = load_config(jurisdiction_slug)
         sql += " AND j.fips_code = %s"
-        params.append(cfg["jurisdiction"]["place_fips"])
+        params.append(jurisdiction_fips(cfg))
     sql += " ORDER BY m.meeting_date DESC"
     if limit:
         sql += f" LIMIT {int(limit)}"

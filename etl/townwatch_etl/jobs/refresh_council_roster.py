@@ -84,15 +84,21 @@ class CouncilRosterRefresh(IngestJob):
             self._refresh_body(body, body_id)
 
     def _find_jurisdiction_id(self) -> int:
+        """Lookup by fips_code, which counties store as county_fips and
+        cities store as place_fips (the Census 7-digit place ID)."""
         assert self.conn is not None
+        j = self.config["jurisdiction"]
+        fips = j.get("place_fips") or j.get("county_fips")
+        if not fips:
+            raise RuntimeError(
+                f"Jurisdiction {self.slug!r} has neither place_fips nor county_fips in config."
+            )
         row = self.conn.execute(
             "SELECT id FROM jurisdiction WHERE fips_code = %s LIMIT 1",
-            (self.config["jurisdiction"]["place_fips"],),
+            (fips,),
         ).fetchone()
         if row is None:
-            raise RuntimeError(
-                f"Jurisdiction with FIPS={self.config['jurisdiction']['place_fips']} not found"
-            )
+            raise RuntimeError(f"Jurisdiction with FIPS={fips} not found in DB")
         return row["id"]
 
     def _resolve_body_id(self, body_name: str, jurisdiction_id: int) -> int | None:
