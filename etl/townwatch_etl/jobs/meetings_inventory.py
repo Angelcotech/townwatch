@@ -1,16 +1,23 @@
 """
-CivicEngage meeting inventory ingest.
+Meeting inventory ingest — platform-agnostic dispatcher.
 
-Enumerates every meeting from the AgendaCenter for each governing body
-configured for this jurisdiction, and writes one row per meeting. This
-is the meeting REGISTRY — agenda + minutes URLs only. Vote extraction
-from the PDFs is a separate downstream job (extract_minutes).
+Enumerates every meeting from whichever civic platform the jurisdiction
+uses and writes one row per meeting. Vote/agenda extraction from the
+PDFs is a separate downstream job (extract_minutes / extract_agendas).
+
+Dispatch is driven by jurisdiction config:
+  platform_hints.agenda_platform = "civicengage" → scrapers/civicengage_agendacenter
+  platform_hints.agenda_platform = "civicclerk"  → scrapers/civicclerk_meetings
+
+Adding a new platform is a new scraper module that returns the same
+MeetingRecord shape; this file picks it up via the dispatch table below.
 
 Idempotent: re-runs don't duplicate. Conflict on (body, date, agenda_url)
 updates the row in place.
 
 Run:
     python -m townwatch_etl.jobs.meetings_inventory --jurisdiction grovetown-ga
+    python -m townwatch_etl.jobs.meetings_inventory --jurisdiction columbia-county-ga
 """
 
 from __future__ import annotations
@@ -18,31 +25,134 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Iterable, Protocol
 
 from ..ingest_base import IngestJob
 from ..jurisdiction import load_config
-from ..scrapers.civicengage_agendacenter import MeetingRecord, inventory
 
 
-class CivicEngageMeetingsInventory(IngestJob):
+# Common shape across platforms. Each scraper module exposes its own
+# MeetingRecord dataclass with these fields — duck-typed; no shared
+# import to keep the boundary clean.
+class _MeetingRecordProto(Protocol):
+    agenda_id: int
+    meeting_date: object  # datetime.date
+    meeting_type: str
+    category_id: int
+    category_name: str
+    description: str | None
+    agenda_url: str | None
+    minutes_url: str | None
+    agenda_posted_at: object | None  # datetime
+
+
+@dataclass
+class _PlatformBinding:
+    """Per-platform glue: how to build the categories dict + how to call
+    the scraper's inventory iterator + what source_name to record."""
+    body_config_key: str               # key in governing_bodies entry (e.g. "civicengage")
+    inventory_fn: callable             # scraper's inventory()
+    inventory_kwargs_builder: callable # (config, categories_dict) -> dict of kwargs
+    source_name_builder: callable      # (config) -> str
+    source_url_builder: callable       # (config) -> str
+
+
+def _build_civicengage_binding() -> _PlatformBinding:
+    from ..scrapers.civicengage_agendacenter import inventory as ce_inventory
+
+    def kwargs(config: dict, categories: dict[int, str]) -> dict:
+        base_url = config.get("platform_hints", {}).get("agenda_base_url")
+        if not base_url:
+            raise ValueError("civicengage requires platform_hints.agenda_base_url")
+        return {"base_url": base_url, "categories": categories}
+
+    def source_name(config: dict) -> str:
+        base = config["platform_hints"]["agenda_base_url"]
+        return f"{base.replace('https://', '').replace('http://', '')}/AgendaCenter"
+
+    def source_url(config: dict) -> str:
+        return f"{config['platform_hints']['agenda_base_url']}/AgendaCenter"
+
+    return _PlatformBinding(
+        body_config_key="civicengage",
+        inventory_fn=ce_inventory,
+        inventory_kwargs_builder=kwargs,
+        source_name_builder=source_name,
+        source_url_builder=source_url,
+    )
+
+
+def _build_civicclerk_binding() -> _PlatformBinding:
+    from ..scrapers.civicclerk_meetings import inventory as cc_inventory
+
+    def kwargs(config: dict, categories: dict[int, str]) -> dict:
+        tenant = config.get("platform_hints", {}).get("civicclerk_tenant")
+        if not tenant:
+            raise ValueError("civicclerk requires platform_hints.civicclerk_tenant")
+        return {"tenant": tenant, "categories": categories}
+
+    def source_name(config: dict) -> str:
+        tenant = config["platform_hints"]["civicclerk_tenant"]
+        return f"{tenant}.portal.civicclerk.com"
+
+    def source_url(config: dict) -> str:
+        tenant = config["platform_hints"]["civicclerk_tenant"]
+        return f"https://{tenant}.portal.civicclerk.com/"
+
+    return _PlatformBinding(
+        body_config_key="civicclerk",
+        inventory_fn=cc_inventory,
+        inventory_kwargs_builder=kwargs,
+        source_name_builder=source_name,
+        source_url_builder=source_url,
+    )
+
+
+_PLATFORM_BINDINGS: dict[str, callable] = {
+    "civicengage": _build_civicengage_binding,
+    "civicclerk": _build_civicclerk_binding,
+    # Add new platforms here (granicus, legistar, boarddocs, …).
+}
+
+
+class MeetingsInventory(IngestJob):
+    """Platform-agnostic inventory job."""
     source_type = "scrape"
 
     def __init__(self, slug: str) -> None:
         super().__init__()
         self.slug = slug
         self.config = load_config(slug)
-        hints = self.config.get("platform_hints", {})
-        self.base_url = hints.get("agenda_base_url")
-        if not self.base_url:
-            raise ValueError(f"{slug} config missing platform_hints.agenda_base_url")
-        self.source_name = f"{self.base_url.replace('https://', '').replace('http://','')}/AgendaCenter"
-        self.source_url = f"{self.base_url}/AgendaCenter"
-        # Build {category_id: body_name} from config
+        platform = (self.config.get("platform_hints") or {}).get("agenda_platform")
+        if not platform:
+            raise ValueError(
+                f"{slug} config missing platform_hints.agenda_platform "
+                f"(one of: {sorted(_PLATFORM_BINDINGS)})"
+            )
+        if platform not in _PLATFORM_BINDINGS:
+            raise ValueError(
+                f"{slug} declared platform={platform!r}, but no scraper is registered. "
+                f"Add a binding in jobs/meetings_inventory.py:_PLATFORM_BINDINGS."
+            )
+        self.platform = platform
+        self.binding = _PLATFORM_BINDINGS[platform]()
+        self.source_name = self.binding.source_name_builder(self.config)
+        self.source_url = self.binding.source_url_builder(self.config)
+        # FIPS code used to scope governing_body lookups to THIS jurisdiction.
+        # Without this scope, "Planning Commission" in multiple cities would
+        # collide and inserts would attach to the wrong body.
+        self.jurisdiction_fips = self.config["jurisdiction"].get("county_fips") \
+            if self.config["jurisdiction"]["type"] == "county" \
+            else self.config["jurisdiction"].get("place_fips")
+
+        # Build {category_id: body_name} from the per-platform config block
         self.category_to_body = {
-            b["civicengage"]["category_id"]: b["name"]
+            b[self.binding.body_config_key]["category_id"]: b["name"]
             for b in self.config.get("governing_bodies", [])
-            if "civicengage" in b and "category_id" in b["civicengage"]
+            if self.binding.body_config_key in b
+               and "category_id" in b[self.binding.body_config_key]
         }
 
     def ingest(self) -> None:
@@ -50,27 +160,41 @@ class CivicEngageMeetingsInventory(IngestJob):
         for cat_id, body_name in self.category_to_body.items():
             body_id = self._find_body(body_name)
             if body_id is None:
-                print(f"  ⊘ body '{body_name}' not in DB — skipping (run civicengage_officials first)")
+                print(f"  ⊘ body '{body_name}' not in DB — skipping")
                 continue
-            print(f"  → scraping {body_name} (catID={cat_id})")
+            print(f"  → scraping {body_name} ({self.platform} catID={cat_id})")
+            kwargs = self.binding.inventory_kwargs_builder(
+                self.config, {cat_id: body_name},
+            )
             count = 0
-            for m in inventory(
-                base_url=self.base_url,
-                categories={cat_id: body_name},
-            ):
+            for m in self.binding.inventory_fn(**kwargs):
                 self._upsert_meeting(body_id, m)
                 count += 1
             print(f"  ✓ {body_name}: processed {count} meetings")
 
     def _find_body(self, body_name: str) -> int | None:
+        """Find body by name, scoped to THIS jurisdiction. Without scoping,
+        cities and counties that share body names (Planning Commission is
+        common) would collide and inserts would attach to the wrong body.
+        """
         assert self.conn is not None
+        if not self.jurisdiction_fips:
+            raise RuntimeError(
+                f"Cannot resolve body — config for {self.slug} has no fips_code-equivalent "
+                f"(neither place_fips nor county_fips). Fix the jurisdiction config."
+            )
         row = self.conn.execute(
-            "SELECT id FROM governing_body WHERE name = %s",
-            (body_name,),
+            """
+            SELECT gb.id FROM governing_body gb
+            JOIN jurisdiction j ON j.id = gb.jurisdiction_id
+            WHERE gb.name = %s AND j.fips_code = %s
+            LIMIT 1
+            """,
+            (body_name, self.jurisdiction_fips),
         ).fetchone()
         return row["id"] if row else None
 
-    def _upsert_meeting(self, body_id: int, m: MeetingRecord) -> None:
+    def _upsert_meeting(self, body_id: int, m: _MeetingRecordProto) -> None:
         assert self.conn is not None and self.data_source_id is not None
         existing = self.conn.execute(
             """
@@ -107,7 +231,7 @@ class CivicEngageMeetingsInventory(IngestJob):
         })
 
     @staticmethod
-    def _derive_status(m: MeetingRecord) -> str:
+    def _derive_status(m: _MeetingRecordProto) -> str:
         today = datetime.now().date()
         if m.minutes_url:
             return "minutes_published"
@@ -116,11 +240,15 @@ class CivicEngageMeetingsInventory(IngestJob):
         return "completed"
 
 
+# Back-compat alias for any caller still importing the old name.
+CivicEngageMeetingsInventory = MeetingsInventory
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--jurisdiction", required=True)
     args = parser.parse_args()
-    result = CivicEngageMeetingsInventory(args.jurisdiction).run()
+    result = MeetingsInventory(args.jurisdiction).run()
     print(json.dumps(result, indent=2, default=str))
     return 0
 

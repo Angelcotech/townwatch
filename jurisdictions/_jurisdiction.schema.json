@@ -28,8 +28,8 @@
         "name": { "type": "string" },
         "display_name": { "type": "string" },
         "type": {
-          "enum": ["city", "county", "town", "village", "state", "federal", "other"],
-          "description": "Layer of government. Determines which fields are meaningful and which downstream behaviors apply."
+          "enum": ["city", "county", "town", "village", "school_district", "state", "federal", "other"],
+          "description": "Layer of government. Determines which fields are meaningful and which downstream behaviors apply. school_district is a separate jurisdiction in GA (CCSD, etc.) — constitutionally independent of the county it sits in."
         },
         "state": {
           "type": "string",

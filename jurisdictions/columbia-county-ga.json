@@ -1,0 +1,117 @@
+{
+  "schema_version": "0.1",
+  "config_meta": {
+    "generated_at": "2026-05-26",
+    "generated_by": "manual_recon",
+    "last_verified": "2026-05-26",
+    "review_frequency_days": 90
+  },
+
+  "jurisdiction": {
+    "name": "Columbia County",
+    "display_name": "Columbia County",
+    "type": "county",
+    "state": "GA",
+    "state_fips": "13",
+    "county": "Columbia County",
+    "county_fips": "13073",
+    "population": 165319,
+    "population_year": 2024,
+    "official_website": "https://www.columbiacountyga.gov",
+    "city_hall_address": "630 Ronald Reagan Drive, Building A, Evans, GA 30809",
+    "city_hall_phone": "(706) 868-3308",
+    "form_of_government": "county_commission",
+    "parent_type": "state"
+  },
+
+  "records_custodian": {
+    "name": "Patrice Crawley",
+    "honorific": "Ms.",
+    "title": "County Clerk",
+    "email": "pcrawley@columbiacountyga.gov",
+    "mailing_address": [
+      "Office of the County Clerk",
+      "Columbia County",
+      "630 Ronald Reagan Drive, Building A",
+      "Evans, GA 30809"
+    ]
+  },
+
+  "governing_bodies": [
+    {
+      "name": "Board of Commissioners",
+      "body_type": "county_commission",
+      "seat_count": null,
+      "meeting_frequency": "biweekly",
+      "website_url": "https://www.columbiacountyga.gov/304/Board-of-Commissioners",
+      "civicclerk": { "category_id": 26 }
+    },
+    {
+      "name": "Planning Commission",
+      "body_type": "planning_commission",
+      "seat_count": null,
+      "meeting_frequency": "monthly",
+      "website_url": "https://www.columbiacountyga.gov/129/Agendas-Minutes",
+      "civicclerk": { "category_id": 27 }
+    }
+  ],
+
+  "platform_hints": {
+    "agenda_platform": "civicclerk",
+    "civicclerk_tenant": "columbiacoga",
+    "agenda_base_url": "https://columbiacoga.portal.civicclerk.com",
+    "property_platform": "qpublic_schneider",
+    "qpublic_app": "ColumbiaCountyGA"
+  },
+
+  "data_sources": {
+    "officials_roster": {
+      "status": "found",
+      "source": "county_website",
+      "url": "https://www.columbiacountyga.gov/304/Board-of-Commissioners",
+      "ingest_method": "scrape_or_vision",
+      "format": "html",
+      "notes": "Board of Commissioners directory page. Verify member count + districts during first onboarding pass."
+    },
+    "meeting_agendas_minutes": {
+      "status": "found",
+      "source": "civicclerk_portal",
+      "url": "https://columbiacoga.portal.civicclerk.com/",
+      "api_url": "https://columbiacoga.api.civicclerk.com/v1/",
+      "ingest_method": "api",
+      "format": "json+pdf",
+      "notes": "OData JSON API. Events endpoint per category; attachments via Meetings/GetAttachmentFile(fileId=N)."
+    },
+    "property_records": {
+      "status": "partial",
+      "source": "qpublic_columbia_county",
+      "url": "https://qpublic.schneidercorp.com/Application.aspx?App=ColumbiaCountyGA&PageType=Search",
+      "gis_portal": "https://maps.columbiacountyga.gov/",
+      "notes": "Same property platform as Grovetown — county is the parcel-records source for everything inside Columbia County."
+    },
+    "campaign_finance": {
+      "status": "not_available",
+      "source": "county_clerk_paper_records",
+      "url": null,
+      "ingest_method": "open_records_request",
+      "transition_date": "2027-01-01",
+      "future_source": "https://ethics.ga.gov",
+      "notes": "Pre-2027 county candidate filings held by County Clerk."
+    }
+  },
+
+  "known_gaps": [
+    {
+      "category": "school_district_separation",
+      "explanation": "Columbia County School District (CCSD) is a constitutionally independent jurisdiction, not a body under county government. CCSD has its own elected Board of Education, taxing authority, and budget. Modeled separately as type=school_district once that jurisdiction is added.",
+      "user_facing_message": "Columbia County School District is separate from county government — its records will live at its own jurisdiction page when added.",
+      "remediation": "Onboard CCSD as a separate jurisdiction."
+    },
+    {
+      "category": "constitutional_officers",
+      "explanation": "Sheriff, District Attorney, Tax Commissioner, Probate Court Judge, etc. are individually-elected constitutional officers — not voting bodies. Currently modeled as governing_bodies which is structurally wrong. Future schema work needed.",
+      "user_facing_message": "Pages for the Sheriff, DA, and elected court judges are not yet indexed.",
+      "remediation": "Add 'constitutional_officer' jurisdiction type or per-officer profile schema."
+    }
+  ]
+}

@@ -22,7 +22,9 @@
     "official_website": "https://cityofgrovetown.com",
     "city_hall_address": "103 Old Wrightsboro Road, Grovetown, GA 30813",
     "city_hall_phone": "(706) 863-4576",
-    "form_of_government": "mayor_council_at_large"
+    "form_of_government": "mayor_council_at_large",
+    "parent_id": "columbia-county-ga",
+    "parent_type": "county"
   },
 
   "records_custodian": {

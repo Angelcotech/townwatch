@@ -493,8 +493,12 @@ def main() -> int:
     if args.jurisdiction:
         from ..jurisdiction import load_config
         cfg = load_config(args.jurisdiction)
+        # Counties don't have place_fips (that's a Census place ID, for
+        # incorporated places only). Use whichever is set; both end up
+        # stored as the jurisdiction.fips_code DB column.
+        j = cfg["jurisdiction"]
         sql += " WHERE j.fips_code = %s"
-        params.append(cfg["jurisdiction"]["place_fips"])
+        params.append(j.get("place_fips") or j.get("county_fips"))
     sql += " ORDER BY j.display_name, gb.name"
 
     with connect() as conn:
