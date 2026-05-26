@@ -17,7 +17,7 @@ import sys
 import time
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
-from typing import Iterator
+from typing import Iterator, Optional  # noqa: F401  (kept for older callers)
 
 import httpx
 from bs4 import BeautifulSoup
@@ -25,6 +25,52 @@ from bs4 import BeautifulSoup
 
 USER_AGENT = "TownWatch-ETL/0.1 (civic transparency research)"
 REQUEST_DELAY_SECS = 1.0
+
+# CivicEngage prints "Posted [Month] [Day], [Year] [Time AM/PM]" next to
+# each agenda link. Captures the timestamp the city actually uploaded
+# the document — diff vs. meeting_date is the citizen-notice signal.
+POSTED_RE = re.compile(
+    r"Posted\s+([A-Za-z]+)\s+(\d{1,2}),\s+(\d{4})\s+(\d{1,2}):(\d{2})\s*([AP]M)",
+    re.IGNORECASE,
+)
+
+_MONTH_LOOKUP = {
+    "jan": 1, "january": 1,
+    "feb": 2, "february": 2,
+    "mar": 3, "march": 3,
+    "apr": 4, "april": 4,
+    "may": 5,
+    "jun": 6, "june": 6,
+    "jul": 7, "july": 7,
+    "aug": 8, "august": 8,
+    "sep": 9, "sept": 9, "september": 9,
+    "oct": 10, "october": 10,
+    "nov": 11, "november": 11,
+    "dec": 12, "december": 12,
+}
+
+
+def _parse_posted_at(row_text: str) -> datetime | None:
+    """Parse the 'Posted Month D, YYYY H:MM AM/PM' phrase if present.
+
+    Returns naive datetime (no tz). CivicEngage timestamps are local to
+    the city; callers can assume the jurisdiction's local zone when this
+    matters for notice-threshold calculations.
+    """
+    m = POSTED_RE.search(row_text)
+    if not m:
+        return None
+    month_str, day, year, hour, minute, ampm = m.groups()
+    month = _MONTH_LOOKUP.get(month_str.lower())
+    if month is None:
+        return None
+    hour_24 = int(hour) % 12
+    if ampm.upper() == "PM":
+        hour_24 += 12
+    try:
+        return datetime(int(year), month, int(day), hour_24, int(minute))
+    except ValueError:
+        return None
 
 TYPE_PATTERNS = [
     (re.compile(r"\bwork session\b", re.I),         "workshop"),
@@ -47,6 +93,7 @@ class MeetingRecord:
     description: str | None
     agenda_url: str
     minutes_url: str | None
+    agenda_posted_at: datetime | None = None
 
 
 def fetch_year(base_url: str, category_id: int, year: int) -> str:
@@ -100,6 +147,11 @@ def parse_rows(
                     meeting_type = label
                     break
 
+        # Posted-on timestamp lives elsewhere in the row, not on the
+        # anchor itself. Read all text inside the <tr> so the regex
+        # picks it up regardless of which <td> CivicEngage renders it in.
+        posted_at = _parse_posted_at(tr.get_text(" ", strip=True))
+
         out.append(MeetingRecord(
             agenda_id=int(agenda_id),
             meeting_date=meeting_date,
@@ -109,6 +161,7 @@ def parse_rows(
             description=description,
             agenda_url=agenda_url,
             minutes_url=minutes_url,
+            agenda_posted_at=posted_at,
         ))
 
     out.sort(key=lambda r: (r.meeting_date, r.agenda_id))

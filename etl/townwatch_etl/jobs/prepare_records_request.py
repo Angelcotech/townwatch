@@ -85,6 +85,31 @@ _CATEGORY_LETTER_CONFIG = {
         ],
         "record_type": "appointed-body membership records",
     },
+    "meeting_notice_too_short": {
+        "subject_template": (
+            "Georgia Open Records Act request &mdash; "
+            "{body_name} meeting-notice policy and short-notice records"
+        ),
+        "items_template": [
+            (
+                "The current written policy of the {city_full} governing how and when notice of "
+                "{body_name} regular meetings is published to the public, including the minimum "
+                "advance-notice period the City commits to provide for regular meetings."
+            ),
+            (
+                "For every {body_name} regular meeting held during the period January 1, 2024 "
+                "through the present for which notice was given fewer than three (3) calendar days "
+                "in advance, a written explanation of the circumstances necessitating the short "
+                "notice, including any communication between the City Clerk and the body members "
+                "regarding the meeting's scheduling."
+            ),
+            (
+                "Copies of the public meeting notices (agenda postings, press releases, website "
+                "snapshots) actually issued for each such short-notice {body_name} meeting."
+            ),
+        ],
+        "record_type": "meeting-notice policy and short-notice records",
+    },
     "elected_member_contact_missing": {
         "subject_template": (
             "Georgia Open Records Act request &mdash; "

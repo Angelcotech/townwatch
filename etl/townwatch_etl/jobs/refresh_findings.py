@@ -238,11 +238,60 @@ def observe_elected_member_contact_missing(conn, body_id: int, state_abbr: str) 
     )
 
 
+def observe_meeting_notice_too_short(conn, body_id: int, state_abbr: str) -> ObservedFinding | None:
+    """Recurring pattern of short-notice REGULAR meetings.
+
+    Counts regular meetings in the last 24 months whose agenda was
+    posted within fewer than 3 calendar days of the meeting. Special,
+    emergency, executive_session, and workshop meetings are excluded
+    because their statutory notice requirements differ.
+
+    Records where agenda_posted_at is after the meeting_date are
+    excluded too — those are bulk-archival uploads of historical
+    documents, not notice signals.
+
+    Severity:
+      - high if any meeting was posted same-day-or-later (notice < 1 day)
+      - medium otherwise (legal but below transparency norms)
+    """
+    row = conn.execute(
+        """
+        SELECT
+          COUNT(*) AS short_count,
+          MIN(m.meeting_date - m.agenda_posted_at::date) AS min_notice_days
+        FROM meeting m
+        WHERE m.governing_body_id = %s
+          AND m.meeting_type = 'regular'
+          AND m.agenda_posted_at IS NOT NULL
+          AND m.agenda_posted_at::date <= m.meeting_date
+          AND m.meeting_date >= CURRENT_DATE - INTERVAL '24 months'
+          AND (m.meeting_date - m.agenda_posted_at::date) < 3
+        """,
+        (body_id,),
+    ).fetchone()
+    short_count = row["short_count"] or 0
+    if short_count < 2:
+        return None
+    min_notice = row["min_notice_days"]
+    severity = "high" if (min_notice is not None and min_notice < 1) else "medium"
+    statute = finding_statute(state_abbr, "meeting_notice_too_short")
+    return ObservedFinding(
+        category="meeting_notice_too_short",
+        severity=severity,
+        statute_label=statute["statute_label"],
+        statute_url=statute["statute_url"],
+        statute_text=statute["statute_text"],
+        count=short_count,
+        since_date=None,
+    )
+
+
 OBSERVERS: list[Callable] = [
     observe_minutes_missing,
     observe_member_roster_missing,
     observe_campaign_finance_missing,
     observe_elected_member_contact_missing,
+    observe_meeting_notice_too_short,
     # Add new finding categories here: observe_agenda_missing,
     # observe_attendance_missing, ...
 ]

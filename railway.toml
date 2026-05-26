@@ -1,0 +1,39 @@
+# Railway service configuration for the TownWatch ETL pipeline.
+#
+# Two services are described here:
+#   1. etl-cron        — runs the daily orchestrator on a cron schedule
+#   2. etl-jobs        — long-form jobs invoked manually (extract batches,
+#                        backfills, onboard_jurisdiction, etc.). Uses
+#                        the same Docker image; no cron.
+#
+# Both services share the Dockerfile at etl/Dockerfile, which includes
+# libreoffice for legacy DOC conversion (see agenda document-formats memory).
+#
+# Adjust the cron schedule per jurisdiction load — most US cities post
+# agendas in the late morning / early afternoon local time, so a 06:00
+# UTC run (≈ 01:00 ET overnight) catches anything posted the previous
+# business day before clerks come in the next morning.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "etl/Dockerfile"
+
+[[services]]
+name = "etl-cron"
+cronSchedule = "0 6 * * *"            # daily at 06:00 UTC
+startCommand = "python -m townwatch_etl.jobs.daily_refresh"
+
+[[services]]
+name = "etl-jobs"
+startCommand = "tail -f /dev/null"     # idle; commands invoked via `railway run`
+
+# Notes
+# -----
+# - The daily_refresh job picks up all jurisdictions in jurisdictions/*.json
+#   automatically. Adding a new town requires no config change here.
+# - All ETL secrets (DATABASE_URL, ANTHROPIC_API_KEY) live in Railway env
+#   vars, never in this file.
+# - To run an ad-hoc backfill (e.g. extract_agendas_batch --submit), use:
+#       railway run --service etl-jobs python -m townwatch_etl.jobs.extract_agendas_batch --submit
+# - Cron failures surface in pipeline_failure and on the admin/findings
+#   queue, so a missed run is loudly visible to the operator.

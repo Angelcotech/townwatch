@@ -85,10 +85,13 @@ class CivicEngageMeetingsInventory(IngestJob):
             self.conn.execute(
                 """
                 UPDATE meeting
-                SET minutes_url = %s, status = %s, updated_at = now()
+                SET minutes_url = %s,
+                    status = %s,
+                    agenda_posted_at = COALESCE(%s, agenda_posted_at),
+                    updated_at = now()
                 WHERE id = %s
                 """,
-                (m.minutes_url, status, existing["id"]),
+                (m.minutes_url, status, m.agenda_posted_at, existing["id"]),
             )
             self.rows_skipped += 1
             return
@@ -100,6 +103,7 @@ class CivicEngageMeetingsInventory(IngestJob):
             "agenda_url":        m.agenda_url,
             "minutes_url":       m.minutes_url,
             "status":            status,
+            "agenda_posted_at":  m.agenda_posted_at,
         })
 
     @staticmethod
