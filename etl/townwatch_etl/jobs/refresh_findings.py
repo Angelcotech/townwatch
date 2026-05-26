@@ -131,11 +131,120 @@ def observe_member_roster_missing(conn, body_id: int, state_abbr: str) -> Observ
     )
 
 
+def observe_campaign_finance_missing(conn, body_id: int, state_abbr: str) -> ObservedFinding | None:
+    """No campaign finance filings on record for the body's elected officials.
+
+    Fires on ELECTED bodies (city_council, county_commission, school_board,
+    state legislatures, federal offices) where there are zero
+    campaign_contribution rows for any current member within the last
+    eight years (covers two full council cycles in GA + most analogous
+    structures). For appointed bodies the obligation doesn't apply, so
+    the observer is silent.
+
+    Counts officials whose terms intersect "current" — the absence is per
+    BODY, not per official, because the records request covers all
+    sitting members in one ask.
+    """
+    EIGHT_YEARS_AGO = "(CURRENT_DATE - INTERVAL '8 years')"
+    row = conn.execute(
+        f"""
+        SELECT
+            gb.body_type,
+            (SELECT COUNT(DISTINCT t.official_id)
+             FROM term t JOIN seat s ON s.id = t.seat_id
+             WHERE s.governing_body_id = gb.id AND t.is_current = true) AS current_members,
+            (SELECT COUNT(*)
+             FROM campaign_contribution cc
+             JOIN term t ON t.official_id = cc.official_id
+             JOIN seat s ON s.id = t.seat_id
+             WHERE s.governing_body_id = gb.id
+               AND t.is_current = true
+               AND cc.contribution_date >= {EIGHT_YEARS_AGO}) AS contributions_count
+        FROM governing_body gb
+        WHERE gb.id = %s
+        """,
+        (body_id,),
+    ).fetchone()
+    body_type = row["body_type"]
+    current_members = row["current_members"] or 0
+    contributions_count = row["contributions_count"] or 0
+    # Only elected bodies have CCDR-equivalent obligations.
+    elected_types = (
+        "city_council", "county_commission", "school_board",
+        "board_of_education",  # GA convention varies
+    )
+    if body_type not in elected_types:
+        return None
+    if current_members == 0:
+        # No officials to require filings from — surface this via
+        # member_roster_missing instead; don't double-flag.
+        return None
+    if contributions_count > 0:
+        return None
+    statute = finding_statute(state_abbr, "campaign_finance_missing")
+    return ObservedFinding(
+        category="campaign_finance_missing",
+        severity="high",
+        statute_label=statute["statute_label"],
+        statute_url=statute["statute_url"],
+        statute_text=statute["statute_text"],
+        count=current_members,  # number of sitting officials with no filings on record
+        since_date=None,
+    )
+
+
+def observe_elected_member_contact_missing(conn, body_id: int, state_abbr: str) -> ObservedFinding | None:
+    """Current elected members have no direct email or no published term-end date.
+
+    Fires on elected bodies (city_council, county_commission, school_board,
+    board_of_education) when any current member is missing either email or
+    term.end_date. The records-request remediation asks for the full current
+    contact roster + appointment dates at once, so we batch both gaps into
+    one finding.
+    """
+    row = conn.execute(
+        """
+        SELECT gb.body_type,
+               (SELECT COUNT(*)
+                FROM term t JOIN seat s ON s.id = t.seat_id
+                JOIN official o ON o.id = t.official_id
+                WHERE s.governing_body_id = gb.id AND t.is_current = TRUE
+                  AND (o.email IS NULL OR o.email = ''
+                       OR t.end_date IS NULL)) AS missing_count,
+               (SELECT COUNT(*)
+                FROM term t JOIN seat s ON s.id = t.seat_id
+                WHERE s.governing_body_id = gb.id AND t.is_current = TRUE) AS total_current
+        FROM governing_body gb
+        WHERE gb.id = %s
+        """,
+        (body_id,),
+    ).fetchone()
+    elected_types = ("city_council", "county_commission", "school_board", "board_of_education")
+    if row["body_type"] not in elected_types:
+        return None
+    missing = row["missing_count"] or 0
+    total = row["total_current"] or 0
+    if missing == 0 or total == 0:
+        return None
+    statute = finding_statute(state_abbr, "elected_member_contact_missing")
+    return ObservedFinding(
+        category="elected_member_contact_missing",
+        severity="medium",
+        statute_label=statute["statute_label"],
+        statute_url=statute["statute_url"],
+        statute_text=statute["statute_text"],
+        count=missing,
+        since_date=None,
+    )
+
+
 OBSERVERS: list[Callable] = [
     observe_minutes_missing,
     observe_member_roster_missing,
+    observe_campaign_finance_missing,
+    observe_elected_member_contact_missing,
     # Add new finding categories here: observe_agenda_missing,
-    # observe_campaign_finance_missing, observe_attendance_missing, ...
+    # observe_attendance_missing, ...
 ]
 
 

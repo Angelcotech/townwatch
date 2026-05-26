@@ -85,6 +85,61 @@ _CATEGORY_LETTER_CONFIG = {
         ],
         "record_type": "appointed-body membership records",
     },
+    "elected_member_contact_missing": {
+        "subject_template": (
+            "Georgia Open Records Act request &mdash; "
+            "{body_name} current member contact and term-expiration records"
+        ),
+        "items_template": [
+            (
+                "The current roster of sitting members of the {city_full} {body_name}, listing for "
+                "each member: full legal name, the seat or district occupied, the date the member "
+                "was sworn in, and the date the current term is scheduled to expire."
+            ),
+            (
+                "Direct contact information (email address and direct phone, if maintained) for each "
+                "current sitting member of the {body_name} that the City makes available for "
+                "constituents to contact those officials regarding city business."
+            ),
+            (
+                "The most recent election results certifications received by the City Clerk "
+                "establishing each current member's term, including the election cycle year."
+            ),
+        ],
+        "record_type": "elected-member contact and term records",
+    },
+    "campaign_finance_missing": {
+        "subject_template": (
+            "Georgia Open Records Act request &mdash; "
+            "{body_name} campaign finance filings, current officials"
+        ),
+        "items_template": [
+            (
+                "All Campaign Contribution Disclosure Reports (CCDRs) and any related campaign "
+                "finance filings submitted under OCGA &sect; 21-5-34 by each current sitting "
+                "member of the {city_full} {body_name}, for every election cycle in which that "
+                "person ran for office, through the present. Include pre-election, post-election, "
+                "semi-annual, and two-business-day reports of contributions in excess of $1,000."
+            ),
+            (
+                "Any amendments, addenda, or supplemental filings to the above reports."
+            ),
+            (
+                "For each current sitting member, a written statement identifying which required "
+                "reports were filed and which were not filed, including the report period(s) missing."
+            ),
+            (
+                "Any Personal Financial Disclosure Statements or related disclosures submitted to "
+                "the City Clerk by current sitting members of the {body_name} during their service, "
+                "to the extent any such records are within the City's custody."
+            ),
+            (
+                "A statement of the format in which these records are maintained (paper, "
+                "electronic, or both) and the process by which they are accepted and retained."
+            ),
+        ],
+        "record_type": "campaign finance disclosures",
+    },
 }
 
 

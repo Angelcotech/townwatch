@@ -59,6 +59,11 @@
         "statute_label": "OCGA § 50-18-70 et seq.",
         "statute_url": "https://law.justia.com/codes/georgia/title-50/chapter-18/article-4/",
         "statute_text": "All public records shall be open for personal inspection and copying by any person at a reasonable time and place. The membership of a public agency — including appointed boards and commissions — is a public record."
+      },
+      "elected_member_contact_missing": {
+        "statute_label": "OCGA § 50-18-70 et seq.",
+        "statute_url": "https://law.justia.com/codes/georgia/title-50/chapter-18/article-4/",
+        "statute_text": "Contact information and term-expiration dates for elected officials of a public agency, when used for the conduct of public business, are public records subject to inspection under the Open Records Act."
       }
     }
   }
