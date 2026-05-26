@@ -1,0 +1,64 @@
+{
+  "_schema_notes": [
+    "State-level defaults for Georgia jurisdictions.",
+    "Values here are inherited by every GA jurisdiction config via deep-merge in load_config().",
+    "Per-jurisdiction values OVERRIDE these defaults when present.",
+    "Law-specific citations live in jurisdictions/_open_records_laws.json (loaded by audit.py).",
+    "This file holds non-law state defaults: body taxonomy, election conventions, scraper hints, form-of-government norms."
+  ],
+  "state_meta": {
+    "state_abbr": "GA",
+    "state_name": "Georgia",
+    "state_fips": "13"
+  },
+  "common_body_aliases": {
+    "_doc": "Maps clerk-vocabulary variations to canonical body_type enum values. Used by onboard_jurisdiction.py and during scraper classification.",
+    "city council": "city_council",
+    "mayor and council": "city_council",
+    "town council": "city_council",
+    "board of commissioners": "county_commission",
+    "county commission": "county_commission",
+    "planning and zoning commission": "planning_commission",
+    "planning commission": "planning_commission",
+    "planning & zoning": "planning_commission",
+    "zoning board of appeals": "board_of_zoning_appeals",
+    "board of zoning appeals": "board_of_zoning_appeals",
+    "bza": "board_of_zoning_appeals",
+    "board of education": "board_of_education",
+    "school board": "school_board",
+    "downtown development authority": "downtown_development_authority",
+    "dda": "downtown_development_authority",
+    "board of assessors": "tax_assessors_board",
+    "tax assessors": "tax_assessors_board",
+    "board of elections": "elections_board",
+    "elections and registration": "elections_board"
+  },
+  "form_of_government_conventions": {
+    "_doc": "Default form-of-government for new GA configs when otherwise unknown. Cities/towns most commonly use mayor_council variants; counties use county_commission.",
+    "city_default": "mayor_council_at_large",
+    "county_default": "county_commission"
+  },
+  "election_cycle_defaults": {
+    "_doc": "Typical election cadences for GA local offices. Per-jurisdiction configs override when charters differ.",
+    "city_council_term_years": 4,
+    "city_council_pattern": "staggered_2yr",
+    "mayor_term_years": 4,
+    "county_commissioner_term_years": 4,
+    "county_commissioner_pattern": "staggered_2yr",
+    "qualifying_period_typical": "Last week of August",
+    "general_election_date_pattern": "first_tuesday_after_first_monday_november"
+  },
+  "platform_conventions": {
+    "_doc": "What platforms GA jurisdictions tend to use — speeds onboarding.",
+    "city_agenda_platform_typical": "civicengage",
+    "county_agenda_platform_typical": "civicengage",
+    "property_platform_typical": "qpublic_schneider",
+    "ethics_filings_url_post_2027": "https://ethics.ga.gov"
+  },
+  "records_custodian_conventions": {
+    "_doc": "Default custodian title by jurisdiction type. Names are always per-jurisdiction.",
+    "city_default_title": "City Clerk",
+    "county_default_title": "County Clerk",
+    "honorific_default": "Hon."
+  }
+}

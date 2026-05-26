@@ -1,0 +1,204 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://townwatch.org/schemas/jurisdiction.json",
+  "title": "TownWatch Jurisdiction Config",
+  "description": "Master template defining the shape of every per-jurisdiction config in jurisdictions/{slug}.json. Adding a required field here forces all existing configs to surface their gap when validate_configs runs. State-level defaults live in jurisdictions/_state_defaults/{state}.json; values there are inherited and overridden by per-jurisdiction files.",
+  "type": "object",
+  "required": ["schema_version", "jurisdiction", "governing_bodies"],
+  "additionalProperties": true,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Version of this schema the config targets. Increments when breaking shape changes ship."
+    },
+    "config_meta": {
+      "type": "object",
+      "description": "Provenance and freshness of this config — when it was generated, by whom, when last verified.",
+      "properties": {
+        "generated_at": { "type": "string", "format": "date" },
+        "generated_by": { "type": "string", "description": "manual_recon | onboard_agent | imported | etc." },
+        "last_verified": { "type": "string", "format": "date" },
+        "review_frequency_days": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "jurisdiction": {
+      "type": "object",
+      "required": ["name", "display_name", "type", "state"],
+      "properties": {
+        "name": { "type": "string" },
+        "display_name": { "type": "string" },
+        "type": {
+          "enum": ["city", "county", "town", "village", "state", "federal", "other"],
+          "description": "Layer of government. Determines which fields are meaningful and which downstream behaviors apply."
+        },
+        "state": {
+          "type": "string",
+          "pattern": "^[A-Z]{2}$",
+          "description": "Two-letter USPS state code. Drives state-defaults cascade."
+        },
+        "state_fips": { "type": "string", "pattern": "^[0-9]{2}$" },
+        "county": { "type": "string" },
+        "county_fips": { "type": "string", "pattern": "^[0-9]{5}$" },
+        "place_fips": { "type": "string", "pattern": "^[0-9]{7}$" },
+        "gnis_id": { "type": "string" },
+        "population": { "type": "integer", "minimum": 0 },
+        "population_year": { "type": "integer", "minimum": 1900 },
+        "official_website": { "type": "string", "format": "uri" },
+        "city_hall_address": { "type": "string" },
+        "city_hall_phone": { "type": "string" },
+        "form_of_government": {
+          "enum": [
+            "mayor_council_at_large",
+            "mayor_council_districts",
+            "mayor_council_strong",
+            "mayor_council_weak",
+            "council_manager",
+            "commission",
+            "county_commission",
+            "representative_town_meeting",
+            "other"
+          ]
+        },
+        "parent_id": {
+          "type": "string",
+          "description": "Slug of the containing jurisdiction (e.g. for grovetown-ga, parent_id is columbia-county-ga). Used for cross-jurisdiction findings and the 'cities in this county' surface."
+        },
+        "parent_type": {
+          "enum": ["county", "state", "federal", "none"]
+        }
+      }
+    },
+    "records_custodian": {
+      "type": "object",
+      "description": "Default records custodian for this jurisdiction. A specific body may override via governing_body.records_custodian.",
+      "required": ["name", "title", "mailing_address"],
+      "properties": {
+        "name": { "type": "string" },
+        "honorific": { "type": "string" },
+        "title": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "mailing_address": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        }
+      }
+    },
+    "governing_bodies": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "body_type"],
+        "properties": {
+          "name": { "type": "string" },
+          "body_type": {
+            "enum": [
+              "city_council",
+              "county_commission",
+              "planning_commission",
+              "board_of_zoning_appeals",
+              "board_of_education",
+              "school_board",
+              "water_board",
+              "downtown_development_authority",
+              "tax_assessors_board",
+              "elections_board",
+              "ethics_board",
+              "probate_court",
+              "magistrate_court",
+              "industrial_development_authority",
+              "housing_authority",
+              "library_board",
+              "parks_recreation_board",
+              "airport_authority",
+              "other"
+            ]
+          },
+          "seat_count": { "type": ["integer", "null"], "minimum": 0 },
+          "seats": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "seat_type", "is_leadership", "term_length_years"],
+              "properties": {
+                "name": { "type": "string" },
+                "seat_type": {
+                  "enum": ["at_large", "district", "appointed", "ex_officio", "other"]
+                },
+                "is_leadership": { "type": "boolean" },
+                "term_length_years": { "type": "integer", "minimum": 1, "maximum": 10 },
+                "district_name": { "type": "string" }
+              }
+            }
+          },
+          "election_cycle_pattern": {
+            "enum": ["staggered_2yr", "staggered_4yr", "concurrent_2yr", "concurrent_4yr", "appointed", "other"]
+          },
+          "meeting_frequency": {
+            "enum": ["weekly", "biweekly", "monthly", "bimonthly", "quarterly", "as_needed", "other"]
+          },
+          "website_url": { "type": "string", "format": "uri" },
+          "civicengage": {
+            "type": "object",
+            "description": "CivicEngage / CivicPlus AgendaCenter ingest hints.",
+            "properties": {
+              "category_id": { "type": "integer", "minimum": 1 }
+            }
+          },
+          "records_custodian": {
+            "type": "object",
+            "description": "Body-specific records custodian override. Falls back to jurisdiction.records_custodian when absent. Common case: a county clerk handles commission records but the tax-assessors board has its own custodian.",
+            "required": ["name", "title", "mailing_address"],
+            "properties": {
+              "name": { "type": "string" },
+              "honorific": { "type": "string" },
+              "title": { "type": "string" },
+              "email": { "type": "string", "format": "email" },
+              "mailing_address": {
+                "type": "array",
+                "items": { "type": "string" },
+                "minItems": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "platform_hints": {
+      "type": "object",
+      "description": "Which civic platforms this jurisdiction uses — determines which scrapers and ingestors apply.",
+      "properties": {
+        "agenda_platform": {
+          "enum": ["civicengage", "civicplus", "granicus", "legistar", "boarddocs", "civicclerk", "iqm2", "municode", "other", "unknown"]
+        },
+        "agenda_base_url": { "type": "string", "format": "uri" },
+        "officials_table_scraper": { "type": "string" },
+        "property_platform": { "type": "string" },
+        "qpublic_app": { "type": "string" }
+      }
+    },
+    "data_sources": {
+      "type": "object",
+      "description": "Per-domain provenance for this jurisdiction's data — where each kind of record is found, how it's ingested, and any known gaps."
+    },
+    "sunshine_law": {
+      "type": "object",
+      "description": "DEPRECATED in favor of _state_defaults/{state}.json + _open_records_laws.json. Kept for backward compat during migration."
+    },
+    "known_gaps": {
+      "type": "array",
+      "description": "Jurisdiction-specific documented data gaps. Surfaced to users explicitly so absences are transparent, not silent.",
+      "items": {
+        "type": "object",
+        "required": ["category", "explanation"],
+        "properties": {
+          "category": { "type": "string" },
+          "explanation": { "type": "string" },
+          "user_facing_message": { "type": "string" },
+          "remediation": { "type": "string" }
+        }
+      }
+    }
+  }
+}
