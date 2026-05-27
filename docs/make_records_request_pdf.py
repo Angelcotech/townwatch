@@ -75,6 +75,11 @@ def _styles():
             "sig", parent=base["Normal"],
             fontName="Times-Roman", fontSize=11, leading=14, spaceAfter=2,
         ),
+        "section_heading": ParagraphStyle(
+            "section_heading", parent=base["Normal"],
+            fontName="Times-Bold", fontSize=11, leading=14,
+            spaceBefore=10, spaceAfter=6,
+        ),
     }
 
 
@@ -153,8 +158,22 @@ def render(letter: dict, output_path: Path) -> Path:
         preamble_paragraphs = [letter["preamble"]]
     for para in preamble_paragraphs or []:
         story.append(Paragraph(para, s["body"]))
-    for i, item in enumerate(letter["items"], start=1):
-        story.append(Paragraph(f"{i}.&nbsp;&nbsp;{item}", s["numbered"]))
+    # Items can be rendered either as one flat numbered list (single-finding
+    # request) OR as multiple sections each with a heading + numbered items
+    # (consolidated multi-finding request). When `sections` is present the
+    # numbering is GLOBAL across sections — the clerk sees one numbered list
+    # to respond to, with body-name headings as orientation.
+    sections = letter.get("sections")
+    if sections:
+        n = 0
+        for section in sections:
+            story.append(Paragraph(section["heading"], s["section_heading"]))
+            for item in section["items"]:
+                n += 1
+                story.append(Paragraph(f"{n}.&nbsp;&nbsp;{item}", s["numbered"]))
+    else:
+        for i, item in enumerate(letter.get("items", []), start=1):
+            story.append(Paragraph(f"{i}.&nbsp;&nbsp;{item}", s["numbered"]))
     for para in letter["body_paragraphs"]:
         story.append(Paragraph(para, s["body"]))
     story.append(Paragraph(letter["closing"], s["body"]))

@@ -371,17 +371,29 @@ def refresh_body(
                     "category": obs.category, "count": obs.count, "action": action,
                 })
                 # Auto-prepare records request when a finding is newly opened or
-                # reopened. Existing prepared requests are detected and skipped
-                # by prepare_for_finding (idempotent).
+                # reopened. Uses the consolidated path — one records_request
+                # per jurisdiction covering all open findings — so the clerk
+                # gets one email instead of N. ensure_consolidated_request is
+                # idempotent; it refreshes finding_ids + regenerates the PDF
+                # if the set of open findings has changed.
                 if action in ("inserted", "reopened"):
                     try:
-                        from .prepare_records_request import prepare_for_finding
-                        result = prepare_for_finding(conn, finding_id)
-                        if result["created"]:
+                        from .prepare_records_request import ensure_consolidated_request
+                        jurisdiction_id_row = conn.execute(
+                            "SELECT jurisdiction_id FROM governing_body WHERE id = %s",
+                            (body_id,),
+                        ).fetchone()
+                        if jurisdiction_id_row is None:
+                            raise RuntimeError(f"governing_body {body_id} has no jurisdiction_id")
+                        result = ensure_consolidated_request(
+                            conn, jurisdiction_id_row["jurisdiction_id"],
+                        )
+                        if result and (result["created"] or result["updated"]):
                             summary["actions"].append({
                                 "category": obs.category,
-                                "action": "request_prepared",
+                                "action": "consolidated_request_prepared" if result["created"] else "consolidated_request_refreshed",
                                 "records_request_id": result["records_request_id"],
+                                "finding_count": len(result["finding_ids"]),
                             })
                     except Exception as e:
                         # Loud failure — preparation problems must not silently

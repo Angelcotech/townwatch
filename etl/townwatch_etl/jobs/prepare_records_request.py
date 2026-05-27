@@ -310,47 +310,35 @@ def _tone_block(*, tone, custodian, city_full, body_name, record_type, ora, resp
                 # Mission
                 (
                     "I'm reaching out from TownWatch, a nonpartisan civic-transparency "
-                    "project that helps citizens understand how their local government "
-                    "works by aggregating public meeting records, votes, and decisions "
-                    "into one accessible place."
+                    "project that aggregates local government records so citizens can "
+                    "see how their government works."
                 ),
                 # Gratitude
                 (
-                    f"Before I get to my request, I want to thank you for the work you do "
-                    f"as {custodian['title']}. Records custodianship is some of the least "
-                    f"visible but most important work in local government — citizens having "
-                    f"a complete picture of how decisions get made depends on it."
+                    f"Before I get to my request, I want to thank you for the work you "
+                    f"do as {custodian['title']}. Records custodianship is some of the "
+                    f"most important and least visible work in local government."
                 ),
                 # Disarm
                 (
                     "This isn't an adversarial request. Where we find gaps in published "
-                    "records during our research, our goal is to help close them so that "
-                    "citizens — and frankly, future officials in your office — can rely on "
-                    "a complete archive. Gaps happen, especially over multi-year stretches, "
-                    "and we'd rather help fill them than flag them."
+                    "records, our goal is to help close them so citizens have a complete "
+                    "picture."
                 ),
                 # Transition
                 (
-                    f"Specifically for the {city_full} {body_name}, would you be able to "
-                    f"share the following with us?"
+                    f"For the {city_full} {body_name}, would you be able to share the "
+                    f"following?"
                 ),
             ],
             "body_paragraphs": [
                 (
-                    "I'm happy to receive these in whatever format is easiest for your "
-                    "office &mdash; email to <b>[YOUR EMAIL]</b> works great, but anything "
-                    "you can share is welcome."
+                    "Electronic delivery to <b>[YOUR EMAIL]</b> works great — whatever "
+                    "format is easiest for your office."
                 ),
                 (
-                    f"For reference, this falls under the {ora['title']} ({ora['citation']}), "
-                    f"which I know your office handles regularly. We're flexible on timeline; "
-                    f"if any portion of this would take significant work, please just let us "
-                    f"know what's reasonable and we'll accommodate."
-                ),
-                (
-                    f"TownWatch is an independent civic-records research project documenting "
-                    f"how local governments publish {record_type}. Filling in the gaps you "
-                    f"can share helps the public understand the work this office does."
+                    f"For reference, this falls under {ora['title']} ({ora['citation']}). "
+                    f"If any portion needs more time, just let us know what's reasonable."
                 ),
             ],
             "closing": "Thank you again for your time. Please reply to:",
@@ -572,6 +560,350 @@ def _jurisdiction_slug(display_name: str, state_abbr: str) -> str:
     return f"{display_name.lower().replace(' ', '-')}-{state_abbr.lower()}"
 
 
+# =====================================================================
+# Consolidated (per-jurisdiction) records request
+# =====================================================================
+#
+# Rolls all currently-open findings for a jurisdiction into one PDF
+# addressed to the records custodian. One email to the clerk instead
+# of N emails, one per finding. Items are grouped under per-body
+# section headings ("For the Planning Commission:") with global numeric
+# ordering so the clerk responds to one numbered list.
+
+def _build_consolidated_letter(
+    jurisdiction_cfg: dict,
+    findings: list[dict],
+    state_cfg: dict,
+    tone: int = 1,
+) -> dict:
+    if tone not in (1, 2, 3):
+        raise ValueError(f"tone must be 1, 2, or 3; got {tone!r}")
+    if not findings:
+        raise ValueError("findings list is empty — nothing to consolidate")
+
+    j = jurisdiction_cfg["jurisdiction"]
+    custodian = jurisdiction_cfg.get("records_custodian")
+    if not custodian:
+        raise ValueError(
+            f"Jurisdiction {j['display_name']!r} has no records_custodian block."
+        )
+    ora = state_cfg["open_records_act"]
+    response_days = ora["response_deadline_business_days"]
+    today = date.today()
+    city_full = f"City of {j['display_name']}" if j["type"] == "city" else j["display_name"]
+    first_name = (custodian["name"].split() or [custodian["name"]])[0]
+    last_with_title = _greeting_last_name(custodian)
+
+    # Group findings by body, preserving DB-order so PC/BZA/Council
+    # show up in a stable sequence across regenerations.
+    by_body: dict[tuple, list[dict]] = {}
+    for f in findings:
+        key = (f["body_id"], f["body_name"], f["body_type"])
+        by_body.setdefault(key, []).append(f)
+
+    # Build sections — one per body. Each section's items concatenate
+    # the per-category templates for every finding under that body.
+    sections: list[dict] = []
+    for (body_id, body_name, body_type), body_findings in by_body.items():
+        items: list[str] = []
+        for f in body_findings:
+            tmpl = _CATEGORY_LETTER_CONFIG.get(f["category"])
+            if not tmpl:
+                continue
+            since = f.get("since_date") or today
+            items.extend(
+                s.format(
+                    city_full=city_full,
+                    body_name=body_name,
+                    since_human=_human_date(since),
+                    today_human=_human_date(today),
+                )
+                for s in tmpl["items_template"]
+            )
+        if items:
+            sections.append({
+                "heading": f"For the {body_name}:",
+                "items": items,
+            })
+
+    framing = _consolidated_tone_block(
+        tone=tone,
+        custodian=custodian,
+        city_full=city_full,
+        first_name=first_name,
+        last_with_title=last_with_title,
+        ora=ora,
+        response_days=response_days,
+    )
+
+    recipient = [
+        f"{custodian.get('honorific','').strip()} {custodian['name']}".strip(),
+        custodian["title"],
+        *custodian["mailing_address"],
+    ]
+    sender = [
+        "David Brown",
+        "TownWatch — Civic Records Research",
+        "[YOUR MAILING ADDRESS]",
+        "[YOUR EMAIL]",
+        "[YOUR PHONE]",
+    ]
+
+    return {
+        "title": f"Records Request — {city_full}",
+        "date": today.strftime("%B %-d, %Y"),
+        "recipient": recipient,
+        "delivery_note": f"Sent via: email to {custodian['email']} and U.S. Mail.",
+        "subject": framing["subject"],
+        "greeting": framing["greeting"],
+        "preamble_paragraphs": framing["preamble_paragraphs"],
+        "sections": sections,
+        "body_paragraphs": framing["body_paragraphs"],
+        "closing": framing["closing"],
+        "sender": sender,
+        "signature_name": "David Brown",
+        "signoff": framing["signoff"],
+    }
+
+
+def _consolidated_tone_block(*, tone, custodian, city_full, first_name, last_with_title, ora, response_days):
+    """Tone-varying framing for a per-jurisdiction (multi-body) letter.
+    Mirrors _tone_block but with a jurisdiction-level transition since
+    multiple bodies are covered."""
+    if tone == 1:
+        return {
+            "subject": f"Records Request from TownWatch &mdash; {city_full}",
+            "greeting": f"Hi {first_name},",
+            "preamble_paragraphs": [
+                (
+                    "I'm reaching out from TownWatch, a nonpartisan civic-transparency "
+                    "project that aggregates local government records so citizens can "
+                    "see how their government works."
+                ),
+                (
+                    f"Before I get to my request, I want to thank you for the work you "
+                    f"do as {custodian['title']}. Records custodianship is some of the "
+                    f"most important and least visible work in local government."
+                ),
+                (
+                    "This isn't an adversarial request. Where we find gaps in published "
+                    "records, our goal is to help close them so citizens have a complete "
+                    "picture."
+                ),
+                (
+                    f"For the {city_full}, would you be able to share the following?"
+                ),
+            ],
+            "body_paragraphs": [
+                (
+                    "Electronic delivery to <b>[YOUR EMAIL]</b> works great — whatever "
+                    "format is easiest for your office."
+                ),
+                (
+                    f"For reference, this falls under {ora['title']} ({ora['citation']}). "
+                    f"If any portion needs more time, just let us know what's reasonable."
+                ),
+            ],
+            "closing": "Thank you again for your time. Please reply to:",
+            "signoff": "With appreciation,",
+        }
+    if tone == 2:
+        return {
+            "subject": f"Records Request &mdash; {city_full}",
+            "greeting": f"Dear {last_with_title},",
+            "preamble_paragraphs": [
+                (
+                    f"Following up on prior correspondence regarding {city_full} "
+                    f"records."
+                ),
+                (
+                    f"Under the {ora['title']}, {ora['citation']}, I'm requesting access "
+                    f"to and copies of the following records:"
+                ),
+            ],
+            "body_paragraphs": [
+                (
+                    "I'd appreciate electronic delivery (PDF, DOCX, or the format in "
+                    "which the records are maintained) by email to <b>[YOUR EMAIL]</b>, "
+                    f"which avoids per-page fees under {ora['fee_citation']}."
+                ),
+                (
+                    f"Under {ora['response_deadline_citation']}, the statutory response "
+                    f"window is {response_days} ({_business_days_word(response_days)}) "
+                    f"business days. If any portion will take longer to compile, please "
+                    f"let me know what's reasonable."
+                ),
+            ],
+            "closing": "Thank you for your attention to this follow-up. Please reply to:",
+            "signoff": "Sincerely,",
+        }
+    # tone == 3 strict
+    return {
+        "subject": f"{ora['title'].split(',')[0]} request &mdash; {city_full}",
+        "greeting": f"Dear {last_with_title},",
+        "preamble_paragraphs": [
+            (
+                f"Pursuant to the {ora['title']}, {ora['citation']}, I request access "
+                f"to and copies of the following records:"
+            ),
+        ],
+        "body_paragraphs": [
+            (
+                "I prefer to receive these records in electronic format (PDF, DOCX, or the format in "
+                "which they are maintained) delivered by email to <b>[YOUR EMAIL]</b>, which avoids "
+                f"per-page copying fees under {ora['fee_citation']}."
+            ),
+            (
+                f"If your agency anticipates fees exceeding ${ora['fee_estimate_threshold_dollars']}.00 "
+                f"under {ora['fee_citation']}, please provide a written cost estimate before incurring "
+                "the cost. I will respond to the estimate within three business days."
+            ),
+            (
+                f"Under {ora['response_deadline_citation']}, please respond to this request within "
+                f"{response_days} ({_business_days_word(response_days)}) business days. If any portion "
+                "of the request requires more time to fulfill, please advise in writing within that "
+                "period of (a) the specific records that will require additional time, (b) the reason "
+                f"for the delay, and (c) when the records will be produced. Under "
+                f"{ora['no_records_statement_citation']}, if any responsive records do not exist or are "
+                f"not in your custody, please state that in writing within the same {response_days} "
+                "business days."
+            ),
+            (
+                "If you withhold any responsive record in whole or in part, please cite the specific "
+                "statute authorizing the withholding and identify the record being withheld with enough "
+                "specificity that I can evaluate the exemption."
+            ),
+        ],
+        "closing": "Thank you for your assistance. Please reply to:",
+        "signoff": "Sincerely,",
+    }
+
+
+def ensure_consolidated_request(conn, jurisdiction_id: int, *, tone: int = 1) -> dict[str, Any] | None:
+    """Idempotent — ensure ONE consolidated records_request covers all
+    currently-open findings for the jurisdiction. Returns None when no
+    open findings exist.
+
+    Behavior:
+      - No existing non-closed request → create one with all open findings.
+      - Existing request with the same finding_id set → noop.
+      - Existing request with different finding_ids → regenerate the PDF
+        and update finding_ids in place (keeps the existing tone).
+    """
+    findings = conn.execute(
+        """
+        SELECT cf.id, cf.category, cf.since_date, cf.statute_label,
+               gb.id AS body_id, gb.name AS body_name, gb.body_type,
+               j.id AS jurisdiction_id, j.display_name AS jurisdiction_name,
+               j.state_abbr
+        FROM compliance_finding cf
+        JOIN governing_body gb ON gb.id = cf.governing_body_id
+        JOIN jurisdiction j ON j.id = gb.jurisdiction_id
+        WHERE j.id = %s AND cf.status = 'open'
+        ORDER BY gb.id, cf.id
+        """,
+        (jurisdiction_id,),
+    ).fetchall()
+    if not findings:
+        return None
+
+    findings = [dict(f) for f in findings]
+    finding_ids = [f["id"] for f in findings]
+    j_row = findings[0]
+
+    slug = _jurisdiction_slug(j_row["jurisdiction_name"], j_row["state_abbr"])
+    jurisdiction_cfg = load_config(slug)
+    state_cfg = state_law(j_row["state_abbr"])
+
+    # Look for an existing non-closed consolidated request for this
+    # jurisdiction. We match by overlap with any of the open findings —
+    # an old per-finding request OR a previous consolidated one both
+    # qualify, since we'll either supersede or refresh.
+    existing = conn.execute(
+        """
+        SELECT id, finding_ids, tone, status
+        FROM records_request
+        WHERE status IN ('draft', 'ready_for_review', 'sent', 'responded')
+          AND finding_ids && %s::int[]
+        ORDER BY array_length(finding_ids, 1) DESC NULLS LAST, created_at DESC
+        LIMIT 1
+        """,
+        (finding_ids,),
+    ).fetchone()
+
+    # If the existing request already covers exactly this set of findings,
+    # no work needed.
+    if existing and set(existing["finding_ids"] or []) == set(finding_ids):
+        return {
+            "records_request_id": existing["id"],
+            "created": False,
+            "updated": False,
+            "finding_ids": finding_ids,
+        }
+
+    effective_tone = existing["tone"] if existing else tone
+    letter = _build_consolidated_letter(jurisdiction_cfg, findings, state_cfg, tone=effective_tone)
+
+    from sys import path as _sys_path
+    docs_dir = _REPO_ROOT / "docs"
+    if str(docs_dir) not in _sys_path:
+        _sys_path.insert(0, str(docs_dir))
+    from make_records_request_pdf import render  # type: ignore
+
+    today_str = date.today().isoformat()
+    pdf_filename = f"jurisdiction-{jurisdiction_id}-tone{effective_tone}-{today_str}.pdf"
+    pdf_full_path = _PDF_OUT_DIR / pdf_filename
+    render(letter, pdf_full_path)
+    pdf_rel = f"/records-requests/{pdf_filename}"
+
+    if existing:
+        conn.execute(
+            """
+            UPDATE records_request
+            SET finding_id      = %s,
+                finding_ids     = %s,
+                pdf_path        = %s,
+                pdf_generated_at = now(),
+                updated_at      = now()
+            WHERE id = %s
+            """,
+            (finding_ids[0], finding_ids, pdf_rel, existing["id"]),
+        )
+        return {
+            "records_request_id": existing["id"],
+            "created": False,
+            "updated": True,
+            "finding_ids": finding_ids,
+        }
+
+    row = conn.execute(
+        """
+        INSERT INTO records_request (
+            finding_id, finding_ids, status, tone, pdf_path, pdf_generated_at, meta
+        )
+        VALUES (%s, %s, 'ready_for_review', %s, %s, now(), %s::jsonb)
+        RETURNING id
+        """,
+        (
+            finding_ids[0],
+            finding_ids,
+            effective_tone,
+            pdf_rel,
+            json.dumps({
+                "consolidated": True,
+                "letter_subject": letter["subject"],
+                "jurisdiction_id": jurisdiction_id,
+            }),
+        ),
+    ).fetchone()
+    return {
+        "records_request_id": row["id"],
+        "created": True,
+        "updated": False,
+        "finding_ids": finding_ids,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group(required=True)
@@ -582,11 +914,46 @@ def main() -> int:
                        help="Re-render an existing records_request at the given --tone")
     group.add_argument("--regenerate-all", action="store_true",
                        help="Re-render every non-closed records_request at the given --tone")
+    group.add_argument("--consolidate-jurisdiction-id", type=int,
+                       help="Ensure one consolidated records_request covers all open findings for this jurisdiction")
+    group.add_argument("--consolidate-all", action="store_true",
+                       help="Run --consolidate-jurisdiction-id for every jurisdiction with open findings")
     parser.add_argument("--tone", type=int, default=1, choices=(1, 2, 3),
                         help="Tone level: 1=friendly (default), 2=standard, 3=strict")
     args = parser.parse_args()
 
     with connect() as conn:
+        if args.consolidate_jurisdiction_id:
+            result = ensure_consolidated_request(conn, args.consolidate_jurisdiction_id, tone=args.tone)
+            if result is None:
+                print(f"  · jurisdiction {args.consolidate_jurisdiction_id}: no open findings")
+            else:
+                tag = "✓ created" if result["created"] else ("↻ updated" if result["updated"] else "= unchanged")
+                print(f"  {tag}  request {result['records_request_id']} covering {len(result['finding_ids'])} finding(s)")
+            return 0
+        if args.consolidate_all:
+            jurisdictions = conn.execute(
+                """
+                SELECT DISTINCT j.id, j.display_name
+                FROM jurisdiction j
+                JOIN governing_body gb ON gb.jurisdiction_id = j.id
+                JOIN compliance_finding cf ON cf.governing_body_id = gb.id
+                WHERE cf.status = 'open'
+                ORDER BY j.display_name
+                """,
+            ).fetchall()
+            print(f"Consolidating requests for {len(jurisdictions)} jurisdiction(s) with open findings...")
+            for jr in jurisdictions:
+                try:
+                    result = ensure_consolidated_request(conn, jr["id"], tone=args.tone)
+                    if result is None:
+                        print(f"  · {jr['display_name']}: no open findings")
+                    else:
+                        tag = "✓ created" if result["created"] else ("↻ updated" if result["updated"] else "= unchanged")
+                        print(f"  {tag}  {jr['display_name']}: request {result['records_request_id']} ({len(result['finding_ids'])} finding(s))")
+                except Exception as e:
+                    print(f"  ✗ {jr['display_name']}: {type(e).__name__}: {e}")
+            return 0
         if args.regenerate_request_id:
             result = regenerate_request(conn, args.regenerate_request_id, tone=args.tone)
             print(f"  ✓ regenerated request {result['records_request_id']} at tone {result['tone']} → {result['pdf_path']}")
