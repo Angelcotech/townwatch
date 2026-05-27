@@ -47,6 +47,14 @@ WRITABLE_FIELDS: list[tuple[str, tuple[str, ...]]] = [
     # doesn't require a schema migration to keep working.
     ("office_address", ("jurisdiction", "city_hall_address")),
     ("office_phone",   ("jurisdiction", "city_hall_phone")),
+    # Records custodian contact — denormalized into jurisdiction so the
+    # admin portal can populate mailto: compose links without reading
+    # config files at request time. Body-level custodian overrides
+    # (governing_body.records_custodian) are not denormalized; they
+    # remain on the config side where prepare_records_request reads them.
+    ("records_custodian_name",  ("records_custodian", "name")),
+    ("records_custodian_title", ("records_custodian", "title")),
+    ("records_custodian_email", ("records_custodian", "email")),
 ]
 
 
@@ -63,9 +71,13 @@ def sync_one(conn, slug: str, *, dry_run: bool = False) -> dict:
     """Sync a single jurisdiction. Returns a small action summary."""
     config = load_config(slug)
     fips = jurisdiction_fips(config)
+    # SELECT each writable column so the diff-check below sees current
+    # state on the existing row. The column list is derived from
+    # WRITABLE_FIELDS so adding a new sync target requires no further
+    # plumbing here.
+    select_cols = ", ".join(["id"] + [c for c, _ in WRITABLE_FIELDS])
     existing = conn.execute(
-        "SELECT id, display_name, population, office_address, office_phone "
-        "FROM jurisdiction WHERE fips_code = %s",
+        f"SELECT {select_cols} FROM jurisdiction WHERE fips_code = %s",
         (fips,),
     ).fetchone()
 
@@ -79,14 +91,13 @@ def sync_one(conn, slug: str, *, dry_run: bool = False) -> dict:
         cols = {
             "fips_code":         fips,
             "name":              j["name"],
-            "display_name":      new_values["display_name"],
             "jurisdiction_type": j["type"],
             "state_fips":        j["state_fips"],
             "state_abbr":        j["state"],
             "county_fips":       j.get("county_fips"),
-            "population":        new_values["population"],
-            "office_address":    new_values["office_address"],
-            "office_phone":      new_values["office_phone"],
+            # All writable fields flow through new_values so adding one
+            # in WRITABLE_FIELDS doesn't require a second edit here.
+            **new_values,
         }
         if dry_run:
             return {"action": "would_insert", "slug": slug, "fips": fips, "values": cols}
@@ -104,18 +115,14 @@ def sync_one(conn, slug: str, *, dry_run: bool = False) -> dict:
                 RETURNING id
                 """,
             ).fetchone()
+        # Build the column list + placeholders dynamically from cols so
+        # adding a writable field doesn't require editing the SQL here.
+        all_cols = {**cols, "data_source_id": ds["id"]}
+        col_names = ", ".join(all_cols.keys())
+        placeholders = ", ".join(f"%({k})s" for k in all_cols.keys())
         conn.execute(
-            """
-            INSERT INTO jurisdiction (
-                fips_code, name, display_name, jurisdiction_type,
-                state_fips, state_abbr, county_fips, population,
-                office_address, office_phone, data_source_id
-            )
-            VALUES (%(fips_code)s, %(name)s, %(display_name)s, %(jurisdiction_type)s,
-                    %(state_fips)s, %(state_abbr)s, %(county_fips)s, %(population)s,
-                    %(office_address)s, %(office_phone)s, %(data_source_id)s)
-            """,
-            {**cols, "data_source_id": ds["id"]},
+            f"INSERT INTO jurisdiction ({col_names}) VALUES ({placeholders})",
+            all_cols,
         )
         return {"action": "inserted", "slug": slug, "fips": fips}
 
