@@ -6,7 +6,6 @@
     "last_verified": "2026-05-26",
     "review_frequency_days": 90
   },
-
   "jurisdiction": {
     "name": "Columbia County",
     "display_name": "Columbia County",
@@ -23,7 +22,6 @@
     "form_of_government": "county_commission",
     "parent_type": "state"
   },
-
   "records_custodian": {
     "name": "Patrice Crawley",
     "honorific": "Ms.",
@@ -36,7 +34,6 @@
       "Evans, GA 30809"
     ]
   },
-
   "governing_bodies": [
     {
       "name": "Board of Commissioners",
@@ -44,7 +41,9 @@
       "seat_count": null,
       "meeting_frequency": "biweekly",
       "website_url": "https://www.columbiacountyga.gov/304/Board-of-Commissioners",
-      "civicclerk": { "category_id": 26 }
+      "civicclerk": {
+        "category_id": 26
+      }
     },
     {
       "name": "Planning Commission",
@@ -52,10 +51,11 @@
       "seat_count": null,
       "meeting_frequency": "monthly",
       "website_url": "https://www.columbiacountyga.gov/129/Agendas-Minutes",
-      "civicclerk": { "category_id": 27 }
+      "civicclerk": {
+        "category_id": 27
+      }
     }
   ],
-
   "platform_hints": {
     "agenda_platform": "civicclerk",
     "civicclerk_tenant": "columbiacoga",
@@ -63,7 +63,6 @@
     "property_platform": "qpublic_schneider",
     "qpublic_app": "ColumbiaCountyGA"
   },
-
   "data_sources": {
     "officials_roster": {
       "status": "found",
@@ -87,7 +86,7 @@
       "source": "qpublic_columbia_county",
       "url": "https://qpublic.schneidercorp.com/Application.aspx?App=ColumbiaCountyGA&PageType=Search",
       "gis_portal": "https://maps.columbiacountyga.gov/",
-      "notes": "Same property platform as Grovetown — county is the parcel-records source for everything inside Columbia County."
+      "notes": "Same property platform as Grovetown \u2014 county is the parcel-records source for everything inside Columbia County."
     },
     "campaign_finance": {
       "status": "not_available",
@@ -99,19 +98,23 @@
       "notes": "Pre-2027 county candidate filings held by County Clerk."
     }
   },
-
   "known_gaps": [
     {
       "category": "school_district_separation",
       "explanation": "Columbia County School District (CCSD) is a constitutionally independent jurisdiction, not a body under county government. CCSD has its own elected Board of Education, taxing authority, and budget. Modeled separately as type=school_district once that jurisdiction is added.",
-      "user_facing_message": "Columbia County School District is separate from county government — its records will live at its own jurisdiction page when added.",
+      "user_facing_message": "Columbia County School District is separate from county government \u2014 its records will live at its own jurisdiction page when added.",
       "remediation": "Onboard CCSD as a separate jurisdiction."
     },
     {
       "category": "constitutional_officers",
-      "explanation": "Sheriff, District Attorney, Tax Commissioner, Probate Court Judge, etc. are individually-elected constitutional officers — not voting bodies. Currently modeled as governing_bodies which is structurally wrong. Future schema work needed.",
+      "explanation": "Sheriff, District Attorney, Tax Commissioner, Probate Court Judge, etc. are individually-elected constitutional officers \u2014 not voting bodies. Currently modeled as governing_bodies which is structurally wrong. Future schema work needed.",
       "user_facing_message": "Pages for the Sheriff, DA, and elected court judges are not yet indexed.",
       "remediation": "Add 'constitutional_officer' jurisdiction type or per-officer profile schema."
     }
-  ]
+  ],
+  "gis": {
+    "platform": "arcgis_online",
+    "districts_endpoint": "https://services3.arcgis.com/XqCfDEcWKHtcTHsa/arcgis/rest/services/Columbia_County_GA_Redistricting_2022_Approved_Boundaries_View/FeatureServer/3",
+    "districts_endpoint_confidence": "high"
+  }
 }

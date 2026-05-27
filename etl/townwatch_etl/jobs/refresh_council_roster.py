@@ -1,6 +1,10 @@
 """
-Procure missing council/commission roster data — term-expires dates and
-direct emails — by reading the body's own website.
+Procure missing council/commission roster data — term-expires dates,
+phone numbers, and member photos — by reading the body's own website.
+
+Direct emails are deliberately NOT collected: most jurisdictions don't
+publish them, and we treat citizen-facing contact as a jurisdiction-level
+property (City Hall / Commissioners office) rather than per-official.
 
 For each elected body in a jurisdiction:
   1. Fetch the body's website_url (from per-body config or jurisdiction
@@ -264,19 +268,6 @@ class CouncilRosterRefresh(IngestJob):
         Returns the list of human-readable actions taken."""
         assert self.conn is not None
         actions: list[str] = []
-
-        # Email
-        if member.email:
-            updated = self.conn.execute(
-                """
-                UPDATE official SET email = %s, updated_at = now()
-                WHERE id = %s AND (email IS NULL OR email = '')
-                RETURNING id
-                """,
-                (member.email, official_id),
-            ).fetchone()
-            if updated:
-                actions.append(f"email={member.email}")
 
         # Phone
         if member.phone:

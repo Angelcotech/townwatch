@@ -193,51 +193,6 @@ def observe_campaign_finance_missing(conn, body_id: int, state_abbr: str) -> Obs
     )
 
 
-def observe_elected_member_contact_missing(conn, body_id: int, state_abbr: str) -> ObservedFinding | None:
-    """Current elected members have no direct email or no published term-end date.
-
-    Fires on elected bodies (city_council, county_commission, school_board,
-    board_of_education) when any current member is missing either email or
-    term.end_date. The records-request remediation asks for the full current
-    contact roster + appointment dates at once, so we batch both gaps into
-    one finding.
-    """
-    row = conn.execute(
-        """
-        SELECT gb.body_type,
-               (SELECT COUNT(*)
-                FROM term t JOIN seat s ON s.id = t.seat_id
-                JOIN official o ON o.id = t.official_id
-                WHERE s.governing_body_id = gb.id AND t.is_current = TRUE
-                  AND (o.email IS NULL OR o.email = ''
-                       OR t.end_date IS NULL)) AS missing_count,
-               (SELECT COUNT(*)
-                FROM term t JOIN seat s ON s.id = t.seat_id
-                WHERE s.governing_body_id = gb.id AND t.is_current = TRUE) AS total_current
-        FROM governing_body gb
-        WHERE gb.id = %s
-        """,
-        (body_id,),
-    ).fetchone()
-    elected_types = ("city_council", "county_commission", "school_board", "board_of_education")
-    if row["body_type"] not in elected_types:
-        return None
-    missing = row["missing_count"] or 0
-    total = row["total_current"] or 0
-    if missing == 0 or total == 0:
-        return None
-    statute = finding_statute(state_abbr, "elected_member_contact_missing")
-    return ObservedFinding(
-        category="elected_member_contact_missing",
-        severity="medium",
-        statute_label=statute["statute_label"],
-        statute_url=statute["statute_url"],
-        statute_text=statute["statute_text"],
-        count=missing,
-        since_date=None,
-    )
-
-
 def observe_meeting_notice_too_short(conn, body_id: int, state_abbr: str) -> ObservedFinding | None:
     """Recurring pattern of short-notice REGULAR meetings.
 
@@ -290,7 +245,6 @@ OBSERVERS: list[Callable] = [
     observe_minutes_missing,
     observe_member_roster_missing,
     observe_campaign_finance_missing,
-    observe_elected_member_contact_missing,
     observe_meeting_notice_too_short,
     # Add new finding categories here: observe_agenda_missing,
     # observe_attendance_missing, ...

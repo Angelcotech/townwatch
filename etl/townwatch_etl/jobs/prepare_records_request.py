@@ -110,29 +110,6 @@ _CATEGORY_LETTER_CONFIG = {
         ],
         "record_type": "meeting-notice policy and short-notice records",
     },
-    "elected_member_contact_missing": {
-        "subject_template": (
-            "Georgia Open Records Act request &mdash; "
-            "{body_name} current member contact and term-expiration records"
-        ),
-        "items_template": [
-            (
-                "The current roster of sitting members of the {city_full} {body_name}, listing for "
-                "each member: full legal name, the seat or district occupied, the date the member "
-                "was sworn in, and the date the current term is scheduled to expire."
-            ),
-            (
-                "Direct contact information (email address and direct phone, if maintained) for each "
-                "current sitting member of the {body_name} that the City makes available for "
-                "constituents to contact those officials regarding city business."
-            ),
-            (
-                "The most recent election results certifications received by the City Clerk "
-                "establishing each current member's term, including the election cycle year."
-            ),
-        ],
-        "record_type": "elected-member contact and term records",
-    },
     "campaign_finance_missing": {
         "subject_template": (
             "Georgia Open Records Act request &mdash; "
