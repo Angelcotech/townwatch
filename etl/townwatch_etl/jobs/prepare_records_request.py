@@ -154,8 +154,24 @@ def _build_letter(
     body_row: dict,
     jurisdiction_cfg: dict,
     state_cfg: dict,
+    tone: int = 1,
 ) -> dict:
-    """Compose the letter dict consumed by docs/make_records_request_pdf.render()."""
+    """Compose the letter dict consumed by docs/make_records_request_pdf.render().
+
+    `tone` controls how warm vs formal the letter reads:
+      1 = friendly  — leads with mission, thanks the custodian for their public
+                      service, frames the ask as collaborative; the statute is
+                      referenced as context rather than as a demand.
+      2 = standard  — business-formal follow-up. Statute cited clearly, response
+                      window mentioned politely, fewer warmth paragraphs.
+      3 = strict    — formal legal demand with quoted statute, explicit deadlines,
+                      and withholding-citation language. This is the prior default.
+
+    The per-category items list is identical across tones — the documents being
+    requested are the same regardless of how the cover letter reads.
+    """
+    if tone not in (1, 2, 3):
+        raise ValueError(f"tone must be 1, 2, or 3; got {tone!r}")
     category = finding_row["category"]
     if category not in _CATEGORY_LETTER_CONFIG:
         raise ValueError(
@@ -181,10 +197,6 @@ def _build_letter(
     body_name = body_row["name"]
     city_full = f"City of {j['display_name']}" if j["type"] == "city" else j["display_name"]
 
-    subject = tmpl["subject_template"].format(
-        body_name=body_name, since_human=_human_date(since),
-    )
-
     items = [
         s.format(
             city_full=city_full,
@@ -194,6 +206,18 @@ def _build_letter(
         )
         for s in tmpl["items_template"]
     ]
+
+    tone_block = _tone_block(
+        tone=tone,
+        custodian=custodian,
+        city_full=city_full,
+        body_name=body_name,
+        record_type=tmpl["record_type"],
+        ora=ora,
+        response_days=response_days,
+        category_subject_template=tmpl["subject_template"],
+        since=since,
+    )
 
     boilerplate = [
         (
@@ -240,21 +264,150 @@ def _build_letter(
     ]
 
     return {
-        "title": f"Open Records Act Request — {city_full} {body_name} {tmpl['record_type']}",
+        "title": f"Records Request — {city_full} {body_name} {tmpl['record_type']}",
         "date": today.strftime("%B %-d, %Y"),
         "recipient": recipient,
         "delivery_note": f"Sent via: email to {custodian['email']} and U.S. Mail.",
-        "subject": subject,
-        "greeting": f"Dear {_greeting_last_name(custodian)},",
-        "preamble": (
-            f"Pursuant to the {ora['title']}, {ora['citation']}, I request access to and "
-            f"copies of the following records:"
-        ),
+        "subject": tone_block["subject"],
+        "greeting": tone_block["greeting"],
+        "preamble_paragraphs": tone_block["preamble_paragraphs"],
         "items": items,
-        "body_paragraphs": boilerplate,
-        "closing": "Thank you for your assistance. Please reply to:",
+        "body_paragraphs": tone_block["body_paragraphs"] if tone == 1 or tone == 2 else boilerplate,
+        "closing": tone_block["closing"],
         "sender": sender,
         "signature_name": "David Brown",
+        "signoff": tone_block["signoff"],
+    }
+
+
+def _tone_block(*, tone, custodian, city_full, body_name, record_type, ora, response_days, category_subject_template, since):
+    """Tone-varying pieces of the letter. Returns dict with: subject,
+    greeting, preamble_paragraphs (list), body_paragraphs (list),
+    closing, signoff. Items list comes from the category template and
+    is identical across tones."""
+    first_name = (custodian["name"].split() or [custodian["name"]])[0]
+    last_with_title = _greeting_last_name(custodian)
+    # Bare category suffix (e.g. "Planning Commission meeting minutes, …")
+    # — the tone-specific prefix is added below per level.
+    category_subject = category_subject_template.format(
+        body_name=body_name, since_human=_human_date(since),
+    )
+    # Strip any pre-baked "Open Records Act request — " prefix the
+    # category template may carry over from earlier strict-only days.
+    for legacy_prefix in (
+        "Georgia Open Records Act request &mdash; ",
+        "Open Records Act request &mdash; ",
+    ):
+        if category_subject.startswith(legacy_prefix):
+            category_subject = category_subject[len(legacy_prefix):]
+            break
+
+    if tone == 1:
+        return {
+            "subject": f"Records Request from TownWatch &mdash; {category_subject}",
+            "greeting": f"Hi {first_name},",
+            "preamble_paragraphs": [
+                # Mission
+                (
+                    "I'm reaching out from TownWatch, a nonpartisan civic-transparency "
+                    "project that helps citizens understand how their local government "
+                    "works by aggregating public meeting records, votes, and decisions "
+                    "into one accessible place."
+                ),
+                # Gratitude
+                (
+                    f"Before I get to my request, I want to thank you for the work you do "
+                    f"as {custodian['title']}. Records custodianship is some of the least "
+                    f"visible but most important work in local government — citizens having "
+                    f"a complete picture of how decisions get made depends on it."
+                ),
+                # Disarm
+                (
+                    "This isn't an adversarial request. Where we find gaps in published "
+                    "records during our research, our goal is to help close them so that "
+                    "citizens — and frankly, future officials in your office — can rely on "
+                    "a complete archive. Gaps happen, especially over multi-year stretches, "
+                    "and we'd rather help fill them than flag them."
+                ),
+                # Transition
+                (
+                    f"Specifically for the {city_full} {body_name}, would you be able to "
+                    f"share the following with us?"
+                ),
+            ],
+            "body_paragraphs": [
+                (
+                    "I'm happy to receive these in whatever format is easiest for your "
+                    "office &mdash; email to <b>[YOUR EMAIL]</b> works great, but anything "
+                    "you can share is welcome."
+                ),
+                (
+                    f"For reference, this falls under the {ora['title']} ({ora['citation']}), "
+                    f"which I know your office handles regularly. We're flexible on timeline; "
+                    f"if any portion of this would take significant work, please just let us "
+                    f"know what's reasonable and we'll accommodate."
+                ),
+                (
+                    f"TownWatch is an independent civic-records research project documenting "
+                    f"how local governments publish {record_type}. Filling in the gaps you "
+                    f"can share helps the public understand the work this office does."
+                ),
+            ],
+            "closing": "Thank you again for your time. Please reply to:",
+            "signoff": "With appreciation,",
+        }
+
+    if tone == 2:
+        return {
+            "subject": f"Records Request &mdash; {category_subject}",
+            "greeting": f"Dear {last_with_title},",
+            "preamble_paragraphs": [
+                (
+                    f"Following up on our prior correspondence regarding {city_full} "
+                    f"{body_name} {record_type}."
+                ),
+                (
+                    f"Under the {ora['title']}, {ora['citation']}, I'm requesting access to "
+                    f"and copies of the following records:"
+                ),
+            ],
+            "body_paragraphs": [
+                (
+                    "I'd appreciate electronic delivery (PDF, DOCX, or the format in which "
+                    "the records are maintained) by email to <b>[YOUR EMAIL]</b>, which "
+                    f"avoids per-page fees under {ora['fee_citation']}."
+                ),
+                (
+                    f"Under {ora['response_deadline_citation']}, the statutory response "
+                    f"window is {response_days} ({_business_days_word(response_days)}) "
+                    f"business days. If any portion will take longer to compile, please "
+                    f"let me know in writing what's reasonable and I'll work with your "
+                    f"timeline."
+                ),
+                (
+                    f"TownWatch is an independent civic-records research project documenting "
+                    f"how local governments publish {record_type}."
+                ),
+            ],
+            "closing": "Thank you for your attention to this follow-up. Please reply to:",
+            "signoff": "Sincerely,",
+        }
+
+    # tone == 3 (strict — original formal demand)
+    return {
+        "subject": f"{ora['title'].split(',')[0]} request &mdash; {category_subject}",
+        "greeting": f"Dear {last_with_title},",
+        "preamble_paragraphs": [
+            (
+                f"Pursuant to the {ora['title']}, {ora['citation']}, I request access to "
+                f"and copies of the following records:"
+            ),
+        ],
+        # body_paragraphs is built outside (the strict boilerplate is the same
+        # 4-paragraph block prepare_records_request has always emitted).
+        "body_paragraphs": None,
+        "closing": "Thank you for your assistance. Please reply to:",
+        "signoff": "Sincerely,",
     }
 
 
@@ -272,11 +425,12 @@ def _greeting_last_name(custodian: dict) -> str:
     return f"Mr./Ms. {last}"
 
 
-def prepare_for_finding(conn, finding_id: int) -> dict[str, Any]:
+def prepare_for_finding(conn, finding_id: int, *, tone: int = 1) -> dict[str, Any]:
     """Returns {'records_request_id': int, 'pdf_path': str, 'created': bool}.
 
     Idempotent — if a non-closed records_request already exists for this
-    finding, returns it without re-rendering.
+    finding, returns it without re-rendering. Use regenerate_request to
+    re-render an existing row at a new tone.
     """
     # Skip if a non-closed request already exists.
     existing = conn.execute(
@@ -322,7 +476,7 @@ def prepare_for_finding(conn, finding_id: int) -> dict[str, Any]:
     body_row = {"name": f_row["body_name"], "body_type": f_row["body_type"]}
     finding_dict = dict(f_row)
 
-    letter = _build_letter(finding_dict, body_row, jurisdiction_cfg, state_cfg)
+    letter = _build_letter(finding_dict, body_row, jurisdiction_cfg, state_cfg, tone=tone)
 
     # Render PDF
     from sys import path as _sys_path
@@ -341,18 +495,77 @@ def prepare_for_finding(conn, finding_id: int) -> dict[str, Any]:
     row = conn.execute(
         """
         INSERT INTO records_request (
-            finding_id, status, pdf_path, pdf_generated_at, meta
+            finding_id, status, tone, pdf_path, pdf_generated_at, meta
         )
-        VALUES (%s, 'ready_for_review', %s, now(), %s::jsonb)
+        VALUES (%s, 'ready_for_review', %s, %s, now(), %s::jsonb)
         RETURNING id
         """,
         (
             finding_id,
+            tone,
             pdf_rel,
             json.dumps({"category": f_row["category"], "letter_subject": letter["subject"]}),
         ),
     ).fetchone()
     return {"records_request_id": row["id"], "pdf_path": pdf_rel, "created": True}
+
+
+def regenerate_request(conn, request_id: int, *, tone: int) -> dict[str, Any]:
+    """Re-render the PDF for an existing records_request at a new tone.
+    Used by the admin escalation flow when the operator decides the
+    clerk needs a firmer follow-up. Updates pdf_path + tone in place,
+    leaves status alone (a Sent request stays Sent — escalation doesn't
+    reset the clock, it just produces the PDF you'd send next)."""
+    if tone not in (1, 2, 3):
+        raise ValueError(f"tone must be 1, 2, or 3; got {tone!r}")
+
+    rr = conn.execute(
+        """
+        SELECT rr.id, rr.finding_id, rr.tone AS current_tone,
+               cf.category, cf.since_date, cf.statute_label,
+               gb.id AS body_id, gb.name AS body_name, gb.body_type,
+               j.id AS jurisdiction_id, j.display_name AS jurisdiction_name,
+               j.state_abbr
+        FROM records_request rr
+        JOIN compliance_finding cf ON cf.id = rr.finding_id
+        JOIN governing_body gb ON gb.id = cf.governing_body_id
+        JOIN jurisdiction j ON j.id = gb.jurisdiction_id
+        WHERE rr.id = %s
+        """,
+        (request_id,),
+    ).fetchone()
+    if rr is None:
+        raise ValueError(f"records_request {request_id} not found")
+
+    slug = _jurisdiction_slug(rr["jurisdiction_name"], rr["state_abbr"])
+    jurisdiction_cfg = load_config(slug)
+    state_cfg = state_law(rr["state_abbr"])
+    body_row = {"name": rr["body_name"], "body_type": rr["body_type"]}
+    finding_dict = dict(rr)
+
+    letter = _build_letter(finding_dict, body_row, jurisdiction_cfg, state_cfg, tone=tone)
+
+    from sys import path as _sys_path
+    docs_dir = _REPO_ROOT / "docs"
+    if str(docs_dir) not in _sys_path:
+        _sys_path.insert(0, str(docs_dir))
+    from make_records_request_pdf import render  # type: ignore
+
+    today_str = date.today().isoformat()
+    pdf_filename = f"finding-{rr['finding_id']}-tone{tone}-{today_str}.pdf"
+    pdf_full_path = _PDF_OUT_DIR / pdf_filename
+    render(letter, pdf_full_path)
+    pdf_rel = f"/records-requests/{pdf_filename}"
+
+    conn.execute(
+        """
+        UPDATE records_request
+        SET tone = %s, pdf_path = %s, pdf_generated_at = now(), updated_at = now()
+        WHERE id = %s
+        """,
+        (tone, pdf_rel, request_id),
+    )
+    return {"records_request_id": request_id, "pdf_path": pdf_rel, "tone": tone}
 
 
 def _jurisdiction_slug(display_name: str, state_abbr: str) -> str:
@@ -365,9 +578,31 @@ def main() -> int:
     group.add_argument("--finding-id", type=int, help="Prepare for this finding only")
     group.add_argument("--all-open", action="store_true",
                        help="Prepare for every open finding without a non-closed request")
+    group.add_argument("--regenerate-request-id", type=int,
+                       help="Re-render an existing records_request at the given --tone")
+    group.add_argument("--regenerate-all", action="store_true",
+                       help="Re-render every non-closed records_request at the given --tone")
+    parser.add_argument("--tone", type=int, default=1, choices=(1, 2, 3),
+                        help="Tone level: 1=friendly (default), 2=standard, 3=strict")
     args = parser.parse_args()
 
     with connect() as conn:
+        if args.regenerate_request_id:
+            result = regenerate_request(conn, args.regenerate_request_id, tone=args.tone)
+            print(f"  ✓ regenerated request {result['records_request_id']} at tone {result['tone']} → {result['pdf_path']}")
+            return 0
+        if args.regenerate_all:
+            rows = conn.execute(
+                "SELECT id FROM records_request WHERE status <> 'closed' ORDER BY id",
+            ).fetchall()
+            print(f"Regenerating {len(rows)} non-closed request(s) at tone {args.tone}...")
+            for r in rows:
+                try:
+                    result = regenerate_request(conn, r["id"], tone=args.tone)
+                    print(f"  ✓ request {result['records_request_id']} → {result['pdf_path']}")
+                except Exception as e:
+                    print(f"  ✗ request {r['id']}: {type(e).__name__}: {e}")
+            return 0
         if args.finding_id:
             ids = [args.finding_id]
         else:
@@ -384,10 +619,10 @@ def main() -> int:
                 """,
             ).fetchall()
             ids = [r["id"] for r in rows]
-        print(f"Preparing requests for {len(ids)} finding(s)...")
+        print(f"Preparing requests for {len(ids)} finding(s) at tone {args.tone}...")
         for fid in ids:
             try:
-                result = prepare_for_finding(conn, fid)
+                result = prepare_for_finding(conn, fid, tone=args.tone)
                 tag = "✓ created" if result["created"] else "⊘ already exists"
                 print(f"  {tag}  finding {fid} → request {result['records_request_id']} ({result['pdf_path']})")
             except Exception as e:

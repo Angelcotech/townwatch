@@ -109,15 +109,23 @@ def render(letter: dict, output_path: Path) -> Path:
     letter dict shape:
       {
         "date": "May 22, 2026",
-        "recipient": ["Hon. Vicki Capetillo", "City Clerk", "City of Grovetown", "103 Old Wrightsboro Road", "Grovetown, GA 30813"],
-        "delivery_note": "Sent via: email to clerk@cityofgrovetown.com and U.S. Mail.",
-        "subject": "Georgia Open Records Act request — ...",
-        "greeting": "Dear Ms. Capetillo,",
-        "preamble": "Pursuant to the Georgia Open Records Act, OCGA § 50-18-70 et seq., I request access to and copies of the following records:",
-        "items": ["Numbered item 1 text", "Numbered item 2 text", ...],
+        "recipient": [...],
+        "delivery_note": "Sent via: email to ... and U.S. Mail.",
+        "subject": "Records Request from TownWatch — ...",
+        "greeting": "Hi Vicki,",
+        # Paragraphs rendered between greeting and items. Use a list to
+        # carry multiple paragraphs (mission + gratitude + disarm for
+        # friendly tone). String form is accepted for backward compat
+        # with the demo letters at the bottom of this file.
+        "preamble_paragraphs": ["mission para", "gratitude para", ...],
+        # OR legacy single-string form:
+        "preamble": "Pursuant to OCGA § 50-18-70 et seq., I request...",
+        "items": ["Numbered item 1 text", ...],
         "body_paragraphs": [str, str, ...],
         "closing": "Thank you for your assistance. Please reply to:",
-        "sender": ["David Brown", "TownWatch — Civic Records Research", "[ADDRESS]", "[EMAIL]", "[PHONE]"],
+        "sender": [...],
+        # Signoff line above the signature (default "Sincerely,")
+        "signoff": "With appreciation,",
         "signature_name": "David Brown",
         "title": "PDF document title",
       }
@@ -139,7 +147,12 @@ def render(letter: dict, output_path: Path) -> Path:
         story.append(Paragraph(f"<i>{letter['delivery_note']}</i>", s["body"]))
     story.append(Paragraph("RE: " + letter["subject"], s["subject"]))
     story.append(Paragraph(letter["greeting"], s["body"]))
-    story.append(Paragraph(letter["preamble"], s["body"]))
+    # Multi-paragraph preamble (preferred) OR single-string preamble (legacy).
+    preamble_paragraphs = letter.get("preamble_paragraphs")
+    if preamble_paragraphs is None and letter.get("preamble"):
+        preamble_paragraphs = [letter["preamble"]]
+    for para in preamble_paragraphs or []:
+        story.append(Paragraph(para, s["body"]))
     for i, item in enumerate(letter["items"], start=1):
         story.append(Paragraph(f"{i}.&nbsp;&nbsp;{item}", s["numbered"]))
     for para in letter["body_paragraphs"]:
@@ -148,7 +161,7 @@ def render(letter: dict, output_path: Path) -> Path:
     for line in letter["sender"]:
         story.append(Paragraph(line, s["sig"]))
     story.append(Spacer(1, 0.2 * inch))
-    story.append(Paragraph("Sincerely,", s["body"]))
+    story.append(Paragraph(letter.get("signoff", "Sincerely,"), s["body"]))
     story.append(Spacer(1, 0.5 * inch))
     story.append(Paragraph(letter["signature_name"], s["body"]))
     doc.build(story)
