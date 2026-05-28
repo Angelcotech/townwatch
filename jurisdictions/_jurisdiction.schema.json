@@ -189,6 +189,30 @@
         }
       }
     },
+    "elections": {
+      "type": "object",
+      "description": "Election-results data sources for this jurisdiction. Used by ingest_elections.py to pull certified results and update term start/end dates. State-level + federal races appear on the state SOS portal; local races usually only appear on the county Board of Elections page.",
+      "properties": {
+        "results_endpoint": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the most recent certified-results PDF or results-listing page for this jurisdiction. For GA counties this is typically a Clarity Elections landing page."
+        },
+        "results_endpoint_confidence": {
+          "enum": ["high", "medium", "low"],
+          "description": "Set by discover_election_source. Promote to 'high' after manual verification."
+        },
+        "results_format": {
+          "enum": ["clarity_elections", "arcgis", "html", "pdf_only", "custom", "unknown"],
+          "description": "Platform/format hosting the results. Drives which scraper path runs."
+        },
+        "local_board_of_elections_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Direct URL of the county/city Board of Elections page. Used as a fallback when the certified provider doesn't cover local-only races."
+        }
+      }
+    },
     "platform_hints": {
       "type": "object",
       "description": "Which civic platforms this jurisdiction uses — determines which scrapers and ingestors apply.",

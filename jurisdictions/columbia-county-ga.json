@@ -116,5 +116,10 @@
     "platform": "arcgis_online",
     "districts_endpoint": "https://services3.arcgis.com/XqCfDEcWKHtcTHsa/arcgis/rest/services/Columbia_County_GA_Redistricting_2022_Approved_Boundaries_View/FeatureServer/3",
     "districts_endpoint_confidence": "high"
+  },
+  "elections": {
+    "results_endpoint": "https://www.columbiacountyga.gov/320/Election-Results",
+    "results_endpoint_confidence": "high",
+    "results_format": "html"
   }
 }

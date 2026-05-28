@@ -48,6 +48,14 @@
     "qualifying_period_typical": "Last week of August",
     "general_election_date_pattern": "first_tuesday_after_first_monday_november"
   },
+  "election_results_sources": {
+    "_doc": "Where Georgia election results are published. The state SOS uses Clarity Elections (results.enr.clarityelections.com) as its certified-results contractor; per-county pages live under that domain. Per-jurisdiction configs add their specific landing URL when local-only races aren't on the state portal.",
+    "state_certified_provider": "clarity_elections",
+    "state_certified_base_url": "https://results.enr.clarityelections.com/GA/",
+    "state_sos_elections_portal": "https://sos.ga.gov/elections",
+    "city_results_typically_at": "county_board_of_elections",
+    "take_office_date_convention": "first_january_after_general_election"
+  },
   "platform_conventions": {
     "_doc": "What platforms GA jurisdictions tend to use — speeds onboarding.",
     "city_agenda_platform_typical": "civicengage",
