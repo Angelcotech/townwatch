@@ -524,6 +524,28 @@ class ElectionIngest(IngestJob):
             (seat_id, official_id, start_date),
         ).fetchone()
 
+        # Forward-looking check — does a later-starting term on this
+        # seat already exist? That happens when an elected official
+        # vacated mid-term and a successor was appointed or won a
+        # special election. The new term we're about to insert was
+        # superseded by that later one, so it CAN'T be is_current and
+        # its real end_date is just before the later term began.
+        later_term = self.conn.execute(
+            """
+            SELECT start_date FROM term
+            WHERE seat_id = %s AND start_date > %s
+            ORDER BY start_date LIMIT 1
+            """,
+            (seat_id, start_date),
+        ).fetchone()
+
+        if later_term:
+            superseded_end = later_term["start_date"] - timedelta(days=1)
+            end_date = min(end_date, superseded_end)
+            is_current_now = False
+        else:
+            is_current_now = start_date <= date.today() <= end_date
+
         if self.dry_run:
             return {"start": start_date.isoformat(), "end": end_date.isoformat()}
 
@@ -536,8 +558,8 @@ class ElectionIngest(IngestJob):
                 )
             return {"start": start_date.isoformat(), "end": end_date.isoformat()}
 
-        # Close out preceding current terms on this seat
-        is_current_now = start_date <= date.today() <= end_date
+        # Close out preceding current terms on this seat when the new
+        # term we're inserting actually overlaps today.
         if is_current_now:
             self.conn.execute(
                 """
