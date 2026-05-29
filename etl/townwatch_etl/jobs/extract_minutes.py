@@ -37,6 +37,7 @@ from typing import Any
 from ..http_client import civic_get
 
 from .. import identity
+from ..audit import record_failure
 from ..extractors.minutes import (
     AgendaItem,
     IndividualVote,
@@ -466,6 +467,7 @@ def main() -> int:
     parser.add_argument("--meeting-id", type=int, help="Process this single meeting")
     parser.add_argument("--all", action="store_true", help="Process all eligible meetings")
     parser.add_argument("--jurisdiction", help="When used with --all, restrict to this slug")
+    parser.add_argument("--limit", type=int, help="Max meetings to process (with --all) — for bounded backlog drains")
     args = parser.parse_args()
 
     if not args.meeting_id and not args.all:
@@ -493,18 +495,46 @@ def main() -> int:
         sql += " AND j.fips_code = %s"
         params.append(jurisdiction_fips(cfg))
     sql += " ORDER BY m.meeting_date ASC"
+    if args.limit:
+        sql += f" LIMIT {int(args.limit)}"
 
     with connect() as conn:
         rows = conn.execute(sql, params).fetchall()
 
     print(f"Found {len(rows)} meeting(s) to extract")
+    failed = 0
     for r in rows:
         print(f"\n--- meeting {r['id']} ({r['meeting_date']}) {r['jurisdiction']} ---")
         try:
             MinutesExtract(r["id"]).run()
         except Exception as e:
+            failed += 1
             print(f"   ✗ failed: {e}")
+            # Record it so a throttle-driven backlog is VISIBLE in the admin
+            # queue instead of vanishing into stdout. Supersede any prior
+            # unresolved row for this meeting so the nightly cron can't
+            # accumulate duplicates for a persistently-failing URL.
+            try:
+                with connect() as fconn:
+                    fconn.execute(
+                        "UPDATE pipeline_failure SET resolved_at = now(), "
+                        "resolution_notes = 'superseded by later extract_minutes run' "
+                        "WHERE job_name = 'extract_minutes' AND meeting_id = %s AND resolved_at IS NULL",
+                        (r["id"],),
+                    )
+                    record_failure(
+                        fconn,
+                        job_name="extract_minutes",
+                        step="extract_all",
+                        meeting_id=r["id"],
+                        message=f"{type(e).__name__}: {e}",
+                        exception=e,
+                    )
+            except Exception as rec_err:
+                print(f"   ⚠ could not record failure: {rec_err}")
 
+    if failed:
+        print(f"\n{failed} of {len(rows)} extraction(s) failed — recorded to pipeline_failure")
     return 0
 
 
