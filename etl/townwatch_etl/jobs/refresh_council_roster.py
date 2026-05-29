@@ -40,7 +40,7 @@ import json
 import sys
 from typing import Any
 
-import httpx
+from ..http_client import civic_get
 
 from .. import identity
 from ..audit import record_failure
@@ -143,10 +143,9 @@ class CouncilRosterRefresh(IngestJob):
 
         print(f"\n  → {body_name}  ({url})")
         try:
-            with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=30.0, follow_redirects=True) as client:
-                resp = client.get(url)
-                resp.raise_for_status()
-                html = resp.text
+            resp = civic_get(url, timeout=30.0)
+            resp.raise_for_status()
+            html = resp.text
         except Exception as e:
             record_failure(
                 self.conn,

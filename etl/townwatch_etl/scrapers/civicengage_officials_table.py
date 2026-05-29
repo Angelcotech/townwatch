@@ -18,7 +18,7 @@ import sys
 from datetime import datetime, timezone
 from typing import TypedDict
 
-import httpx
+from ..http_client import civic_get
 from bs4 import BeautifulSoup
 
 
@@ -43,14 +43,9 @@ class ScrapeResult(TypedDict):
 
 
 def fetch_html(url: str) -> str:
-    with httpx.Client(
-        headers={"User-Agent": USER_AGENT},
-        follow_redirects=True,
-        timeout=30.0,
-    ) as client:
-        r = client.get(url)
-        r.raise_for_status()
-        return r.text
+    r = civic_get(url, timeout=30.0)
+    r.raise_for_status()
+    return r.text
 
 
 def parse_officials(html: str) -> list[OfficialRecord]:

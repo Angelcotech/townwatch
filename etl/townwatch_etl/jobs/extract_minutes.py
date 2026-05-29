@@ -34,7 +34,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-import httpx
+from ..http_client import civic_get
 
 from .. import identity
 from ..extractors.minutes import (
@@ -96,10 +96,10 @@ class MinutesExtract(IngestJob):
             method = "prebuilt"
             print(f"     method={method}  items={len(extraction.agenda_items)}  confidence={extraction.meeting.extraction_confidence}")
         else:
-            # Download PDF
-            with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=30.0) as client:
-                r = client.get(meeting["minutes_url"])
-                r.raise_for_status()
+            # Download PDF (shared throttled client — same civic hosts as
+            # the scanner / agenda extractor, so it must respect one throttle).
+            r = civic_get(meeting["minutes_url"], timeout=30.0)
+            r.raise_for_status()
 
             with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
                 f.write(r.content)

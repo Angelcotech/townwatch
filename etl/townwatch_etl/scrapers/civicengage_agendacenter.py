@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from typing import Iterator, Optional  # noqa: F401  (kept for older callers)
 
-import httpx
+from ..http_client import civic_request
 from bs4 import BeautifulSoup
 
 
@@ -99,17 +99,18 @@ class MeetingRecord:
 def fetch_year(base_url: str, category_id: int, year: int) -> str:
     """Fetch the HTML fragment for one (body, year) on a CivicEngage site."""
     endpoint = f"{base_url}/AgendaCenter/UpdateCategoryList"
-    with httpx.Client(timeout=30.0, headers={"User-Agent": USER_AGENT}) as client:
-        r = client.post(
-            endpoint,
-            data={"year": year, "catID": category_id},
-            headers={
-                "X-Requested-With": "XMLHttpRequest",
-                "Content-Type": "application/x-www-form-urlencoded",
-            },
-        )
-        r.raise_for_status()
-        return r.text
+    r = civic_request(
+        "POST",
+        endpoint,
+        timeout=30.0,
+        data={"year": year, "catID": category_id},
+        headers={
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+    )
+    r.raise_for_status()
+    return r.text
 
 
 def parse_rows(

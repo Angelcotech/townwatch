@@ -35,7 +35,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-import httpx
+from ..http_client import civic_get
 
 from ..audit import record_failure
 from ..extractors.campaign_finance import (
@@ -113,12 +113,9 @@ class CampaignFinanceExtract(IngestJob):
             return self.file_path, self.content_type
         if self.document_url is None:
             return None, None
-        with httpx.Client(
-            headers={"User-Agent": USER_AGENT}, timeout=120.0, follow_redirects=True,
-        ) as client:
-            r = client.get(self.document_url)
-            r.raise_for_status()
-            ct = self.content_type or r.headers.get("content-type")
+        r = civic_get(self.document_url, timeout=120.0)
+        r.raise_for_status()
+        ct = self.content_type or r.headers.get("content-type")
         with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
             f.write(r.content)
             return Path(f.name), ct

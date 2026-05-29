@@ -26,7 +26,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-import httpx
+from ..http_client import civic_get
 
 from ..db import connect
 from ..extractors.minutes import extract_text_layer_only
@@ -55,9 +55,8 @@ def find_candidates() -> list[dict[str, Any]]:
 def probe_text_layer(minutes_url: str) -> bool:
     """Download a PDF and check if it has an extractable text layer."""
     try:
-        with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=30.0) as client:
-            r = client.get(minutes_url)
-            r.raise_for_status()
+        r = civic_get(minutes_url, timeout=30.0)
+        r.raise_for_status()
     except Exception as e:
         print(f"     ✗ download failed: {e}", file=sys.stderr)
         return True  # conservative — don't accidentally re-extract on download failure

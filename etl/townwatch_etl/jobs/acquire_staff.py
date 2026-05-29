@@ -25,7 +25,7 @@ import json
 import sys
 from urllib.parse import urlparse
 
-import httpx
+from ..http_client import civic_get
 
 from ..ingest_base import IngestJob
 from ..identity import CachedResolver, add_alias, create_official
@@ -45,9 +45,8 @@ def _split_name(full: str) -> tuple[str | None, str]:
 
 
 def _download_image(url: str) -> dict:
-    with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=30.0, follow_redirects=True) as c:
-        r = c.get(url)
-        r.raise_for_status()
+    r = civic_get(url, timeout=30.0)
+    r.raise_for_status()
     content_type = r.headers.get("content-type", "image/jpeg").split(";", 1)[0].strip()
     return {"bytes": r.content, "mime": content_type, "size": len(r.content)}
 
