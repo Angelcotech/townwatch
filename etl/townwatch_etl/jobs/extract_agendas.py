@@ -36,17 +36,13 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
-import httpx
-
 from ..extractors.agendas import (
     AgendaExtraction,
     AgendaItemRecord,
     extract_from_document,
 )
+from ..http_client import civic_get
 from ..ingest_base import IngestJob
-
-
-USER_AGENT = "TownWatch-ETL/0.1 (civic transparency research)"
 
 
 class AgendasExtract(IngestJob):
@@ -95,10 +91,9 @@ class AgendasExtract(IngestJob):
             method = "prebuilt"
             print(f"     method={method}  items={len(extraction.agenda_items)}  confidence={extraction.meeting.extraction_confidence}")
         else:
-            with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=120.0, follow_redirects=True) as client:
-                r = client.get(meeting["agenda_url"])
-                r.raise_for_status()
-                content_type = r.headers.get("content-type")
+            r = civic_get(meeting["agenda_url"], timeout=120.0)
+            r.raise_for_status()
+            content_type = r.headers.get("content-type")
 
             # Suffix is just a hint for shell tools; the dispatcher sniffs magic bytes.
             with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
@@ -118,6 +113,15 @@ class AgendasExtract(IngestJob):
                 "UPDATE meeting SET agenda_ai_summary = %s, updated_at = now() WHERE id = %s",
                 (extraction.document_summary, self.meeting_id),
             )
+
+        # Flag placeholder stubs so the frontend can render "no document
+        # published by city" instead of a dead download link. Set to the
+        # boolean (true/false) on every run, not just when stub — that way
+        # a re-extract after a real document gets uploaded clears the flag.
+        self.conn.execute(
+            "UPDATE meeting SET agenda_is_placeholder = %s WHERE id = %s",
+            (method == "stub_skipped", self.meeting_id),
+        )
 
         # Write agenda_items
         for item in extraction.agenda_items:

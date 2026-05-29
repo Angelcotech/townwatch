@@ -26,16 +26,16 @@ from __future__ import annotations
 import json
 import re
 import sys
-import time
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Iterator
 
-import httpx
+from ..http_client import civic_get
 
 
-USER_AGENT = "TownWatch-ETL/0.1 (civic transparency research)"
-REQUEST_DELAY_SECS = 0.5
+# Per-host throttling, Retry-After honoring, and backoff live in
+# http_client — civic_get() spaces same-host requests, so this scraper no
+# longer sleeps between pages/categories of its own accord.
 # CivicClerk hard-caps OData $top at 200 regardless of what we request.
 # Pagination is server-driven via @odata.nextLink. Setting PAGE_SIZE >200
 # does NOT increase the page; the server silently clamps and the next
@@ -101,10 +101,9 @@ def fetch_categories(tenant: str) -> list[dict]:
     """All publicly visible EventCategories for a CivicClerk tenant.
     Returns [{id, categoryDesc, sortOrder, isPublic, parentId}, ...]"""
     url = f"{_api_base(tenant)}/EventCategories"
-    with httpx.Client(timeout=30.0, headers={"User-Agent": USER_AGENT}) as client:
-        r = client.get(url)
-        r.raise_for_status()
-        data = r.json()
+    r = civic_get(url)
+    r.raise_for_status()
+    data = r.json()
     return [c for c in data.get("value", []) if c.get("isPublic")]
 
 
@@ -119,25 +118,23 @@ def fetch_events(tenant: str, category_id: int) -> Iterator[dict]:
     """
     base = _api_base(tenant)
     skip = 0
-    with httpx.Client(timeout=30.0, headers={"User-Agent": USER_AGENT}) as client:
-        while True:
-            url = (
-                f"{base}/Events"
-                f"?$filter=categoryId+eq+{category_id}"
-                f"&$orderby=eventDate+asc"
-                f"&$top={PAGE_SIZE}"
-                f"&$skip={skip}"
-            )
-            r = client.get(url)
-            r.raise_for_status()
-            data = r.json()
-            batch = data.get("value", [])
-            if not batch:
-                return
-            for event in batch:
-                yield event
-            skip += len(batch)
-            time.sleep(REQUEST_DELAY_SECS)
+    while True:
+        url = (
+            f"{base}/Events"
+            f"?$filter=categoryId+eq+{category_id}"
+            f"&$orderby=eventDate+asc"
+            f"&$top={PAGE_SIZE}"
+            f"&$skip={skip}"
+        )
+        r = civic_get(url)
+        r.raise_for_status()
+        data = r.json()
+        batch = data.get("value", [])
+        if not batch:
+            return
+        for event in batch:
+            yield event
+        skip += len(batch)
 
 
 def _parse_posted_at(s: str | None) -> datetime | None:
@@ -160,7 +157,18 @@ def _parse_posted_at(s: str | None) -> datetime | None:
 
 
 def _attachment_url(tenant: str, file_id: int) -> str:
-    return f"{_api_base(tenant)}/Meetings/GetAttachmentFile(fileId={file_id})"
+    # Use GetMeetingFileStream for all publishedFile types we capture
+    # (Agenda, Agenda Packet, Minutes — fileTypes 1/2/4). GetAttachmentFile
+    # is only valid for fileType 3 (attachments), which we don't currently
+    # scrape. The previous URL pattern (GetAttachmentFile) silently 404'd
+    # on every recent file because CivicClerk routes Agenda/Packet/Minutes
+    # only through GetMeetingFileStream — confirmed against the SPA's own
+    # URL builder. Older fileIds may have worked via GetAttachmentFile
+    # because of historical aliasing; GetMeetingFileStream works for all.
+    return (
+        f"{_api_base(tenant)}/Meetings/"
+        f"GetMeetingFileStream(fileId={file_id},plainText=false)"
+    )
 
 
 def _classify_meeting_type(event: dict) -> str:
@@ -246,7 +254,6 @@ def inventory(
             rec = parse_event(e, tenant, cat_id, cat_name)
             if rec is not None:
                 yield rec
-        time.sleep(REQUEST_DELAY_SECS)
 
 
 def main() -> int:

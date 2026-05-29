@@ -3,20 +3,24 @@ Daily orchestrator — runs the full TownWatch audit pipeline.
 
 Sequence (per jurisdiction, then jurisdiction-agnostic):
 
-  1. meetings_inventory       — scrape AgendaCenter for new meetings
-                                + agenda_posted_at timestamps
-  2. extract_agendas --all    — fetch + extract any meeting that has
-                                an agenda_url and no agenda_items
-  3. extract_minutes --all    — fetch + extract any meeting that has
-                                a minutes_url and no motions
-  4. refresh_council_roster   — vision-extract elected bodies' web
-                                pages to fill term-expires + email
-                                (no-op when source publishes nothing)
+  1. meetings_inventory          — scrape AgendaCenter for new meetings
+                                   + agenda_posted_at timestamps
+  2. scan_document_availability — HEAD-check every agenda/minutes URL;
+                                   flag the dead ones (404, stub PDF)
+                                   so the frontend renders "no document
+                                   published" instead of a dead link
+  3. extract_agendas --all       — fetch + extract any meeting that has
+                                   an agenda_url and no agenda_items
+  4. extract_minutes --all       — fetch + extract any meeting that has
+                                   a minutes_url and no motions
+  5. refresh_council_roster      — vision-extract elected bodies' web
+                                   pages to fill term-expires + email
+                                   (no-op when source publishes nothing)
 
-  5. refresh_findings         — recompute every observer; new gaps
-                                auto-trigger prepare_records_request
-  6. backfill_summaries       — Haiku one-shot summaries for any new
-                                meeting whose AI summary is missing
+  6. refresh_findings            — recompute every observer; new gaps
+                                   auto-trigger prepare_records_request
+  7. backfill_summaries          — Haiku one-shot summaries for any new
+                                   meeting whose AI summary is missing
 
 Each step is its own subprocess so a failure in one doesn't tear down
 the next; failures land in pipeline_failure. Designed for a daily cron
@@ -43,6 +47,7 @@ from ..jurisdiction import list_slugs
 
 PER_JURISDICTION_STEPS = [
     "meetings_inventory",
+    "scan_document_availability",  # before extract, so dead-URL meetings get skipped by extractors
     "extract_agendas",
     "extract_minutes",
     "refresh_council_roster",
@@ -156,6 +161,8 @@ def _per_jurisdiction_args(module: str, slug: str) -> list[str]:
     """Each per-jurisdiction job takes a different argument shape. Map them here."""
     if module == "meetings_inventory":
         return ["--jurisdiction", slug]
+    if module == "scan_document_availability":
+        return ["--jurisdiction", slug, "--only-changed"]
     if module == "extract_agendas":
         return ["--all", "--jurisdiction", slug]
     if module == "extract_minutes":
