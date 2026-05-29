@@ -19,9 +19,6 @@ dependencies = [
     "rapidfuzz>=3.10",
 ]
 
-[project.scripts]
-townwatch-etl = "townwatch_etl.cli:main"
-
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

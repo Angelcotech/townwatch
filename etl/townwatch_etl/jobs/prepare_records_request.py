@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from datetime import date
 from pathlib import Path
@@ -30,11 +31,34 @@ from ..db import connect
 from ..jurisdiction import load_config
 
 
-# Location where rendered PDFs land — the web app serves them from /records-requests/.
-# We resolve relative to this repo, so the prep job stays jurisdiction-agnostic.
 _REPO_ROOT = Path(__file__).resolve().parents[3]   # .../townwatch/
-_PDF_OUT_DIR = _REPO_ROOT.parent / "townwatch-web" / "public" / "records-requests"
-_PDF_OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+# Where rendered records-request PDFs land. Locally this defaults to the
+# sibling townwatch-web repo's static dir (the web app serves them from
+# /records-requests/). In a container the ETL and web services DON'T share a
+# filesystem, so this default writes to an ephemeral, unreachable path — set
+# RECORDS_REQUEST_PDF_DIR to a real destination there.
+#
+# KNOWN GAP: even with a writable dir, cross-service *delivery* is unsolved —
+# the web app has no route serving these PDFs yet, and a Railway volume isn't
+# shared across services. The durable fix is to store the PDF bytes in the
+# DB (the one shared resource) or in object storage. Tracked as an open
+# design item; this env knob is the seam that fix will plug into.
+_PDF_OUT_DIR = Path(
+    os.environ.get(
+        "RECORDS_REQUEST_PDF_DIR",
+        str(_REPO_ROOT.parent / "townwatch-web" / "public" / "records-requests"),
+    )
+)
+
+
+def _pdf_path(filename: str) -> Path:
+    """Resolve a PDF output path, creating the output dir lazily. Done here
+    rather than at import so merely importing this module has no filesystem
+    side effect — importing it used to mkdir at import time, which in a
+    root container silently created a junk /townwatch-web tree."""
+    _PDF_OUT_DIR.mkdir(parents=True, exist_ok=True)
+    return _PDF_OUT_DIR / filename
 
 
 # Per-finding-category letter content. Each entry defines the request-specific
@@ -475,7 +499,7 @@ def prepare_for_finding(conn, finding_id: int, *, tone: int = 1) -> dict[str, An
 
     today_str = date.today().isoformat()
     pdf_filename = f"finding-{finding_id}-{today_str}.pdf"
-    pdf_full_path = _PDF_OUT_DIR / pdf_filename
+    pdf_full_path = _pdf_path(pdf_filename)
     render(letter, pdf_full_path)
     pdf_rel = f"/records-requests/{pdf_filename}"
 
@@ -541,7 +565,7 @@ def regenerate_request(conn, request_id: int, *, tone: int) -> dict[str, Any]:
 
     today_str = date.today().isoformat()
     pdf_filename = f"finding-{rr['finding_id']}-tone{tone}-{today_str}.pdf"
-    pdf_full_path = _PDF_OUT_DIR / pdf_filename
+    pdf_full_path = _pdf_path(pdf_filename)
     render(letter, pdf_full_path)
     pdf_rel = f"/records-requests/{pdf_filename}"
 
@@ -852,7 +876,7 @@ def ensure_consolidated_request(conn, jurisdiction_id: int, *, tone: int = 1) ->
 
     today_str = date.today().isoformat()
     pdf_filename = f"jurisdiction-{jurisdiction_id}-tone{effective_tone}-{today_str}.pdf"
-    pdf_full_path = _PDF_OUT_DIR / pdf_filename
+    pdf_full_path = _pdf_path(pdf_filename)
     render(letter, pdf_full_path)
     pdf_rel = f"/records-requests/{pdf_filename}"
 
