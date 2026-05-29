@@ -25,3 +25,11 @@ townwatch-etl = "townwatch_etl.cli:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+# Be explicit about what ships in the wheel. hatchling can auto-detect a
+# package dir matching the project name, but that heuristic has changed
+# across releases (an empty selection used to build a silent empty wheel;
+# newer versions hard-error — which broke the Docker build). Naming the
+# package removes the guesswork.
+[tool.hatch.build.targets.wheel]
+packages = ["townwatch_etl"]
