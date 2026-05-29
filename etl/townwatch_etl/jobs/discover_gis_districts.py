@@ -46,7 +46,7 @@ from dataclasses import dataclass
 from typing import Literal, Optional
 from urllib.parse import urlparse
 
-import httpx
+from ..http_client import civic_client
 
 from ..jurisdiction import JURISDICTIONS_DIR, list_slugs, load_config
 
@@ -109,7 +109,7 @@ def search_arcgis_online(
         f'"{jurisdiction_name}" districts {state_abbr} type:"Feature Service"',
     ]
     seen_item_ids: set[str] = set()
-    with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=20.0) as client:
+    with civic_client(default_timeout=20.0) as client:
         for q in queries:
             try:
                 r = client.get(
@@ -153,7 +153,7 @@ def search_arcgis_online(
 
 
 def _resolve_district_layer(
-    client: httpx.Client, service_url: str, service_title: str,
+    client, service_url: str, service_title: str,
     body_keywords: list[str], jurisdiction_name: str,
 ) -> tuple[Optional[str], Confidence]:
     """Given a FeatureServer root URL, list its layers and pick the
@@ -264,7 +264,7 @@ def probe_known_patterns(
         return []
     body_keywords = BODY_TYPE_KEYWORDS.get(body_type, ["district"])
     candidates: list[DistrictProposal] = []
-    with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=15.0, follow_redirects=True) as client:
+    with civic_client(default_timeout=15.0) as client:
         for host_pat in PATTERN_HOSTS:
             host = host_pat.format(host=base_host)
             for path in PATTERN_PATHS:

@@ -52,6 +52,7 @@ from __future__ import annotations
 
 import threading
 import time
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from urllib.parse import urlparse
@@ -248,3 +249,42 @@ def civic_request(
 def civic_get(url: str, **kwargs) -> httpx.Response:
     """GET ``url`` through the shared throttled/retrying client."""
     return civic_request("GET", url, **kwargs)
+
+
+class CivicClient:
+    """Drop-in stand-in for ``httpx.Client`` that routes every request
+    through the shared throttled ``civic_request``. Lets existing code that
+    threads a ``client`` object through helper functions adopt the
+    chokepoint without being restructured.
+
+    Constructor args other than ``default_timeout`` are intentionally
+    ignored — the shared client already sets the User-Agent and follows
+    redirects. ``default_timeout`` mirrors ``httpx.Client(timeout=...)``: it
+    applies to any call that doesn't pass its own ``timeout=``.
+    """
+
+    def __init__(self, default_timeout: float | None = None) -> None:
+        self._default_timeout = default_timeout
+
+    def _kw(self, kwargs: dict) -> dict:
+        if self._default_timeout is not None and "timeout" not in kwargs:
+            kwargs["timeout"] = self._default_timeout
+        return kwargs
+
+    def get(self, url: str, **kwargs) -> httpx.Response:
+        return civic_request("GET", url, **self._kw(kwargs))
+
+    def post(self, url: str, **kwargs) -> httpx.Response:
+        return civic_request("POST", url, **self._kw(kwargs))
+
+    def request(self, method: str, url: str, **kwargs) -> httpx.Response:
+        return civic_request(method, url, **self._kw(kwargs))
+
+
+@contextmanager
+def civic_client(default_timeout: float | None = None):
+    """Yield a :class:`CivicClient`. The shape mirrors
+    ``with httpx.Client(...) as client:`` for drop-in adoption — there's
+    nothing to close, since the proxy delegates to the process-wide shared
+    client."""
+    yield CivicClient(default_timeout)

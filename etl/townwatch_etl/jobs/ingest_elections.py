@@ -46,7 +46,7 @@ from datetime import date, timedelta
 from typing import Any, Optional
 from urllib.parse import urljoin
 
-import httpx
+from ..http_client import civic_client
 
 from .. import identity
 from ..audit import record_failure
@@ -101,7 +101,7 @@ class ElectionIngest(IngestJob):
         jurisdiction_id = self._jurisdiction_id()
 
         # 1. Fetch landing page and pull every PDF link off it.
-        with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=30.0, follow_redirects=True) as client:
+        with civic_client(default_timeout=30.0) as client:
             try:
                 resp = client.get(self.endpoint)
                 resp.raise_for_status()
@@ -256,7 +256,7 @@ class ElectionIngest(IngestJob):
         return score
 
     @staticmethod
-    def _download_pdf(client: httpx.Client, url: str) -> bytes:
+    def _download_pdf(client, url: str) -> bytes:
         r = client.get(url, timeout=30.0)
         r.raise_for_status()
         return r.content

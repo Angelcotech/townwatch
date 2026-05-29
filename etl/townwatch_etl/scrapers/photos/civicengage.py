@@ -26,6 +26,7 @@ from urllib.parse import urljoin, urlparse
 import httpx
 from bs4 import BeautifulSoup
 
+from ...http_client import civic_client
 from .base import PhotoCandidate, PhotoScraper
 
 
@@ -38,7 +39,7 @@ class CivicEngagePhotoScraper(PhotoScraper):
 
     def scrape(self, council_url: str, jurisdiction_domain: str) -> list[PhotoCandidate]:
         """Scrape one CivicEngage directory page (council or staff dept) for officials."""
-        with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=TIMEOUT, follow_redirects=True) as client:
+        with civic_client(default_timeout=TIMEOUT) as client:
             return list(self._scrape_directory(client, council_url, jurisdiction_domain))
 
     def scrape_staff(self, directory_index_url: str, jurisdiction_domain: str) -> list[PhotoCandidate]:
@@ -50,7 +51,7 @@ class CivicEngagePhotoScraper(PhotoScraper):
         page, then for each department enumerate its individual EID bio pages.
         """
         candidates: list[PhotoCandidate] = []
-        with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=TIMEOUT, follow_redirects=True) as client:
+        with civic_client(default_timeout=TIMEOUT) as client:
             index_html = client.get(directory_index_url).text
             soup = BeautifulSoup(index_html, "html.parser")
 
@@ -85,7 +86,7 @@ class CivicEngagePhotoScraper(PhotoScraper):
         return out
 
     def _scrape_directory(
-        self, client: httpx.Client, directory_url: str, jurisdiction_domain: str
+        self, client, directory_url: str, jurisdiction_domain: str
     ):
         """Yield PhotoCandidates from one /Directory.aspx page (council or dept)."""
         html = client.get(directory_url).text

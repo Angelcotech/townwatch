@@ -29,7 +29,7 @@ import json
 import sys
 from typing import Any
 
-import httpx
+from ..http_client import civic_client
 
 from ..audit import record_failure
 from ..ingest_base import IngestJob
@@ -178,7 +178,7 @@ class DistrictIngest(IngestJob):
         """Pull every feature from the layer as GeoJSON. ArcGIS REST
         supports `f=geojson` directly with `outSR=4326` (WGS84), so we
         don't have to reproject ourselves."""
-        with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=30.0, follow_redirects=True) as client:
+        with civic_client(default_timeout=30.0) as client:
             resp = client.get(
                 f"{self.endpoint.rstrip('/')}/query",
                 params={

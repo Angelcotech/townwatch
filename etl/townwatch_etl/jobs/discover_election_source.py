@@ -33,7 +33,7 @@ from dataclasses import dataclass
 from typing import Literal, Optional
 from urllib.parse import urljoin, urlparse
 
-import httpx
+from ..http_client import civic_client
 
 from ..jurisdiction import JURISDICTIONS_DIR, list_slugs, load_config
 
@@ -155,7 +155,7 @@ def _candidate_urls(official_website: str) -> list[str]:
     return deduped
 
 
-def _harvest_links_from_sitemap(client: httpx.Client, official_website: str) -> list[str]:
+def _harvest_links_from_sitemap(client, official_website: str) -> list[str]:
     """Fetch /sitemap.xml (and /sitemap_index.xml as fallback) and return
     URLs whose path contains an election-related term. Most CivicEngage,
     CivicPlus, Granicus, and Drupal-based gov sites publish sitemaps —
@@ -206,7 +206,7 @@ def _harvest_links_from_sitemap(client: httpx.Client, official_website: str) -> 
     return out
 
 
-def _harvest_links_from_homepage(client: httpx.Client, homepage_url: str) -> list[str]:
+def _harvest_links_from_homepage(client, homepage_url: str) -> list[str]:
     """Fetch the homepage and pull any <a href> whose URL path or
     visible text mentions election-related terms. Returns absolute URLs."""
     import re as _re
@@ -251,11 +251,7 @@ def discover_one(slug: str) -> list[ElectionSourceProposal]:
 
     proposals: list[ElectionSourceProposal] = []
 
-    with httpx.Client(
-        headers={"User-Agent": USER_AGENT},
-        timeout=15.0,
-        follow_redirects=True,
-    ) as client:
+    with civic_client(default_timeout=15.0) as client:
         # Strategy 1: probe common URL patterns
         print(f"  → probing {len(PATH_PATTERNS) + len(HOST_PATTERNS)} URL patterns...", file=sys.stderr)
         for url in _candidate_urls(official_website):

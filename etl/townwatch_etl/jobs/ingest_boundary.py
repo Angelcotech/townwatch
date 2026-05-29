@@ -29,7 +29,7 @@ import json
 import sys
 from typing import Any
 
-import httpx
+from ..http_client import civic_client
 
 from ..audit import record_failure
 from ..ingest_base import IngestJob
@@ -71,8 +71,7 @@ class BoundaryIngest(IngestJob):
     def ingest(self) -> None:
         assert self.conn is not None
 
-        with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=30.0,
-                          follow_redirects=True) as client:
+        with civic_client(default_timeout=30.0) as client:
             layer_id = self._find_layer_id(client)
             if layer_id is None:
                 record_failure(
@@ -106,7 +105,7 @@ class BoundaryIngest(IngestJob):
         )
         print(f"  ✓ {self.slug}: boundary upserted from TIGERweb layer {layer_id}")
 
-    def _find_layer_id(self, client: httpx.Client) -> int | None:
+    def _find_layer_id(self, client) -> int | None:
         keywords = LAYER_KEYWORDS.get(self.jurisdiction_type)
         if not keywords:
             return None
@@ -122,7 +121,7 @@ class BoundaryIngest(IngestJob):
                 return layer.get("id")
         return None
 
-    def _fetch_geometry(self, client: httpx.Client, layer_id: int) -> dict[str, Any] | None:
+    def _fetch_geometry(self, client, layer_id: int) -> dict[str, Any] | None:
         # TIGERweb's GEOID field naming varies slightly by layer. The
         # safest is the common alias 'GEOID' which all 2020+ layers use.
         # Counties have a 5-char GEOID; places have a 7-char GEOID;
