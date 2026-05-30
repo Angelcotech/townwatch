@@ -482,12 +482,54 @@ class MinutesExtract(IngestJob):
         return None
 
 
+def _process_meeting(r, run_id) -> tuple[str, list]:
+    """Extract one meeting end-to-end. Thread-safe — each call opens its own DB
+    connections (via run() / record_outcome / connect), so it parallelizes
+    cleanly under a thread pool. Records the ledger outcome and, on failure, a
+    pipeline_failure (superseding any prior unresolved row for the meeting).
+    Returns (outcome, anomaly_kinds) for run-level tallying."""
+    from ..db import connect
+    from ..extraction_ledger import record_outcome
+    mid = r["id"]
+    jid = r["jurisdiction_id"]
+    print(f"--- meeting {mid} ({r['meeting_date']}) {r['jurisdiction']} ---")
+    try:
+        job = MinutesExtract(mid)
+        job.run()
+        rep = getattr(job, "report", None)
+        outcome = "clean" if (rep is None or rep.fully_resolved) else "recovered"
+        record_outcome(run_id=run_id, job_name="extract_minutes", meeting_id=mid,
+                       jurisdiction_id=jid, outcome=outcome, report=rep)
+        kinds = [an.kind for an in rep.anomalies] if (rep and rep.anomalies) else []
+        return outcome, kinds
+    except Exception as e:
+        print(f"   ✗ meeting {mid} failed: {e}")
+        record_outcome(run_id=run_id, job_name="extract_minutes", meeting_id=mid,
+                       jurisdiction_id=jid, outcome="failed", report=None)
+        try:
+            with connect() as fconn:
+                fconn.execute(
+                    "UPDATE pipeline_failure SET resolved_at = now(), "
+                    "resolution_notes = 'superseded by later extract_minutes run' "
+                    "WHERE job_name = 'extract_minutes' AND meeting_id = %s AND resolved_at IS NULL",
+                    (mid,),
+                )
+                record_failure(fconn, job_name="extract_minutes", step="extract_all",
+                               meeting_id=mid, message=f"{type(e).__name__}: {e}", exception=e)
+        except Exception as rec_err:
+            print(f"   ⚠ could not record failure for {mid}: {rec_err}")
+        return "failed", []
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--meeting-id", type=int, help="Process this single meeting")
     parser.add_argument("--all", action="store_true", help="Process all eligible meetings")
     parser.add_argument("--jurisdiction", help="When used with --all, restrict to this slug")
     parser.add_argument("--limit", type=int, help="Max meetings to process (with --all) — for bounded backlog drains")
+    parser.add_argument("--workers", type=int, default=1,
+                        help="Parallel extraction workers (extraction is network/think-bound, so "
+                             "threads parallelize the slow Anthropic calls; 3-4 recommended)")
     args = parser.parse_args()
 
     if not args.meeting_id and not args.all:
@@ -521,56 +563,42 @@ def main() -> int:
     with connect() as conn:
         rows = conn.execute(sql, params).fetchall()
 
-    from ..extraction_ledger import new_run_id, record_outcome
+    from ..extraction_ledger import new_run_id
     run_id = new_run_id()
 
-    print(f"Found {len(rows)} meeting(s) to extract")
+    workers = max(1, args.workers)
+    print(f"Found {len(rows)} meeting(s) to extract  (workers={workers})")
     failed = 0
     clean = 0          # fully resolved, no anomalies
     recovered = 0      # produced a record but some pages were flagged
     anomaly_kinds: dict[str, int] = {}
-    for r in rows:
-        print(f"\n--- meeting {r['id']} ({r['meeting_date']}) {r['jurisdiction']} ---")
-        try:
-            job = MinutesExtract(r["id"])
-            job.run()
-            rep = getattr(job, "report", None)
-            outcome = "clean" if (rep is None or rep.fully_resolved) else "recovered"
-            if outcome == "clean":
-                clean += 1
-            else:
-                recovered += 1
-                for an in rep.anomalies:
-                    anomaly_kinds[an.kind] = anomaly_kinds.get(an.kind, 0) + 1
-            record_outcome(run_id=run_id, job_name="extract_minutes", meeting_id=r["id"],
-                           jurisdiction_id=r["jurisdiction_id"], outcome=outcome, report=rep)
-        except Exception as e:
+
+    def _tally(result: tuple[str, list]) -> None:
+        nonlocal failed, clean, recovered
+        outcome, kinds = result
+        if outcome == "clean":
+            clean += 1
+        elif outcome == "recovered":
+            recovered += 1
+            for k in kinds:
+                anomaly_kinds[k] = anomaly_kinds.get(k, 0) + 1
+        else:
             failed += 1
-            print(f"   ✗ failed: {e}")
-            record_outcome(run_id=run_id, job_name="extract_minutes", meeting_id=r["id"],
-                           jurisdiction_id=r["jurisdiction_id"], outcome="failed", report=None)
-            # Record it so a throttle-driven backlog is VISIBLE in the admin
-            # queue instead of vanishing into stdout. Supersede any prior
-            # unresolved row for this meeting so the nightly cron can't
-            # accumulate duplicates for a persistently-failing URL.
-            try:
-                with connect() as fconn:
-                    fconn.execute(
-                        "UPDATE pipeline_failure SET resolved_at = now(), "
-                        "resolution_notes = 'superseded by later extract_minutes run' "
-                        "WHERE job_name = 'extract_minutes' AND meeting_id = %s AND resolved_at IS NULL",
-                        (r["id"],),
-                    )
-                    record_failure(
-                        fconn,
-                        job_name="extract_minutes",
-                        step="extract_all",
-                        meeting_id=r["id"],
-                        message=f"{type(e).__name__}: {e}",
-                        exception=e,
-                    )
-            except Exception as rec_err:
-                print(f"   ⚠ could not record failure: {rec_err}")
+
+    if workers > 1:
+        # Extraction is network/think-bound (minutes per Anthropic call), so
+        # threads parallelize the waiting cleanly — each job opens its own DB
+        # connection, the per-host HTTP throttle is thread-safe, and the
+        # Anthropic SDK self-throttles on rate limits. Wall-clock drops ~Nx.
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        with ThreadPoolExecutor(max_workers=workers) as ex:
+            futs = [ex.submit(_process_meeting, r, run_id) for r in rows]
+            for i, fut in enumerate(as_completed(futs), 1):
+                _tally(fut.result())
+                print(f"   [{i}/{len(rows)}] complete — clean={clean} recovered={recovered} failed={failed}")
+    else:
+        for r in rows:
+            _tally(_process_meeting(r, run_id))
 
     # Run-level success rate — the rollout-confidence metric. "Produced a
     # record" counts clean + recovered (partial) extractions; only total
