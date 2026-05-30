@@ -30,7 +30,9 @@ import anthropic
 from pydantic import BaseModel, Field
 
 from ..config import ANTHROPIC_API_KEY
+from .chunking import extend_unique
 from .pdf_text import extract_text
+from .recovery import ExtractionReport, build_source, extract_with_ladder
 
 
 # =====================================================================
@@ -288,18 +290,27 @@ VISION_MODEL = "claude-sonnet-4-6"
 # API calls
 # =====================================================================
 
-def extract_from_pdf(pdf_path: Path) -> tuple[MeetingExtraction, str]:
+def extract_from_pdf(pdf_path: Path) -> tuple[MeetingExtraction, str, ExtractionReport]:
     """
-    Returns (extraction, method) where method is 'text_layer' or 'vision'.
+    Returns (extraction, method, report).
 
-    Tier 1 only fires when the PDF has a real text layer (digital PDF).
-    Anything else — scanned, image-only, hybrid — goes straight to Claude
-    vision. We do NOT OCR locally; OCR errors break identity resolution.
+    Runs through the escalating-filter ladder (recovery.extract_with_ladder):
+    the document is split into page-windows and each window is resolved by
+    primary extract → retry → sub-chunk → cross-strategy → pdf-repair, with
+    irreducible windows classified as anomalies in the returned report. The
+    text-layer path is preferred when the PDF has real text; otherwise vision.
+    We never OCR locally — OCR errors break identity resolution.
     """
-    text_result = extract_text_layer_only(pdf_path)
-    if text_result is not None:
-        return _extract_from_text(text_result), "text_layer"
-    return _extract_from_pdf_vision(pdf_path), "vision"
+    text_layer = extract_text_layer_only(pdf_path)
+    source = build_source(pdf_path, text_layer)
+    extraction, report = extract_with_ladder(
+        source,
+        text_window_fn=_extract_text_window,
+        vision_window_fn=_extract_vision_window,
+        merge_fn=_merge_extractions,
+    )
+    method = "text_layer" if source.pages_text is not None else "vision"
+    return extraction, method, report
 
 
 def extract_text_layer_only(pdf_path: Path) -> str | None:
@@ -338,32 +349,50 @@ def _parse_json_response(response) -> MeetingExtraction:
     first = text.find("{")
     last = text.rfind("}")
     if first == -1 or last == -1 or last < first:
-        raise ValueError(f"No JSON object found in response: {text[:200]!r}")
+        # Surface stop_reason so a starved/truncated response is diagnosable
+        # rather than a cryptic empty string. stop_reason == 'max_tokens'
+        # means the budget was exhausted (often by thinking) before any JSON.
+        stop = getattr(response, "stop_reason", "?")
+        raise ValueError(f"No JSON object found in response (stop_reason={stop}): {text[:200]!r}")
     payload = text[first : last + 1]
     data = _json.loads(payload)
     return MeetingExtraction.model_validate(data)
 
 
-def _extract_from_text(text: str) -> MeetingExtraction:
-    """Cheap path: Haiku reads the document text and emits JSON."""
+def _extract_text_window(text: str) -> MeetingExtraction:
+    """Extract one window of document text (Haiku → JSON). The page-window
+    chunker (_extract_from_text) maps this over large documents.
+
+    Streamed with a 32K output budget: long minutes produced more JSON than
+    the old 16384 non-streaming cap allowed, truncating it into invalid JSON
+    (JSONDecodeError). Above ~21K tokens the SDK requires streaming, so we
+    stream and collect the final message (same shape as a non-streamed one).
+    """
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-    response = client.messages.create(
+    with client.messages.stream(
         model=TEXT_MODEL,
-        max_tokens=16384,
+        max_tokens=32000,
         messages=[
             {"role": "user", "content": TEXT_INSTRUCTIONS + "\n" + text},
         ],
-    )
+    ) as stream:
+        response = stream.get_final_message()
     return _parse_json_response(response)
 
 
-def _extract_from_pdf_vision(pdf_path: Path) -> MeetingExtraction:
-    """Vision path: Claude reads the scanned PDF directly and emits JSON."""
+def _extract_vision_window(pdf_path: Path) -> MeetingExtraction:
+    """Extract one window sub-PDF via Claude vision. The page-window chunker
+    (_extract_from_pdf_vision) maps this over large documents."""
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
     pdf_b64 = base64.standard_b64encode(pdf_path.read_bytes()).decode("utf-8")
-    response = client.messages.create(
+    # Streamed with a 32K budget. The vision path runs adaptive thinking +
+    # high effort, whose thinking tokens count against max_tokens — under the
+    # old 16384 cap, thinking could starve the JSON output entirely (empty
+    # response) or truncate it. Streaming lifts the SDK's 10-min non-stream
+    # guard so we can afford the larger budget.
+    with client.messages.stream(
         model=VISION_MODEL,
-        max_tokens=16384,
+        max_tokens=32000,
         thinking={"type": "adaptive"},
         output_config={"effort": "high"},
         messages=[
@@ -382,5 +411,78 @@ def _extract_from_pdf_vision(pdf_path: Path) -> MeetingExtraction:
                 ],
             },
         ],
-    )
+    ) as stream:
+        response = stream.get_final_message()
     return _parse_json_response(response)
+
+
+def _merge_extractions(partials: list[tuple[MeetingExtraction, int]]) -> MeetingExtraction:
+    """Reduce per-window extractions into one whole-document extraction.
+    Items are offset-corrected to document page numbers and de-duplicated by
+    (page, title); attendance lists are unioned; meeting metadata comes from
+    the first window; the document summary is synthesized from the windows."""
+    first = partials[0][0]
+    items: list[AgendaItem] = []
+    seen: set[tuple[int, str]] = set()
+    present: list[str] = []
+    absent: list[str] = []
+    staff: list[str] = []
+    others: list[str] = []
+    notes: list[str] = []
+    summaries: list[str] = []
+
+    for ext, offset in partials:
+        for it in ext.agenda_items:
+            it.source_page = it.source_page + offset
+            key = (it.source_page, (it.title or "").strip().casefold())
+            if key in seen:
+                continue
+            seen.add(key)
+            items.append(it)
+        extend_unique(present, ext.attendance.present)
+        extend_unique(absent, ext.attendance.absent)
+        extend_unique(staff, ext.attendance.staff_present)
+        extend_unique(others, ext.attendance.others_present)
+        if ext.extraction_notes.strip():
+            notes.append(ext.extraction_notes.strip())
+        if ext.document_summary.strip():
+            summaries.append(ext.document_summary.strip())
+
+    items.sort(key=lambda it: it.source_page)
+    return MeetingExtraction(
+        meeting=first.meeting,
+        attendance=Attendance(present=present, absent=absent, staff_present=staff, others_present=others),
+        agenda_items=items,
+        document_summary=_synthesize_summary(summaries),
+        extraction_notes=" | ".join(notes)[:2000],
+    )
+
+
+def _synthesize_summary(summaries: list[str]) -> str:
+    """Collapse per-window summaries into one 2-3 sentence whole-meeting
+    summary (one cheap Haiku call). Falls back to the longest window summary
+    if the call fails, so a reduce hiccup never loses the summary."""
+    summaries = [s for s in summaries if s.strip()]
+    if not summaries:
+        return ""
+    if len(summaries) == 1:
+        return summaries[0]
+    joined = "\n".join(f"- {s}" for s in summaries)
+    try:
+        client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        resp = client.messages.create(
+            model=TEXT_MODEL,
+            max_tokens=512,
+            messages=[{"role": "user", "content": (
+                "Below are per-section summaries of one government meeting's minutes. "
+                "Write a single 2-3 sentence plain-English summary for a citizen who "
+                "hasn't read the minutes, leading with the most consequential outcomes "
+                "(what passed, failed, was tabled). Return only the summary.\n\n" + joined
+            )}],
+        )
+        for block in resp.content:
+            if getattr(block, "type", "") == "text" and block.text.strip():
+                return block.text.strip()
+    except Exception:
+        pass
+    return max(summaries, key=len)

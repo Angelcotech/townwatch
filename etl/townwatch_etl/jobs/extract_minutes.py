@@ -108,8 +108,28 @@ class MinutesExtract(IngestJob):
 
             # Extract via tiered pipeline (text layer → OCR → vision fallback)
             print(f"     pdf={len(r.content):,} bytes → extracting...")
-            extraction, method = extract_from_pdf(pdf_path)
+            extraction, method, report = extract_from_pdf(pdf_path)
+            self.report = report
             print(f"     method={method}  items={len(extraction.agenda_items)}  confidence={extraction.meeting.extraction_confidence}")
+            print(f"     recovery: {report.summary()}")
+            # Per-window residue the escalating ladder couldn't resolve →
+            # classified anomalies for admin triage. The document still keeps
+            # everything that DID resolve; only the irreducible pages are flagged.
+            for an in report.anomalies:
+                record_failure(
+                    self.conn,
+                    job_name="extract_minutes",
+                    step=f"recovery_anomaly:{an.kind}",
+                    governing_body_id=meeting["governing_body_id"],
+                    meeting_id=self.meeting_id,
+                    message=f"pages {an.start_page}-{an.end_page} unresolvable: {an.kind}",
+                    context={
+                        "anomaly_kind": an.kind,
+                        "page_range": [an.start_page, an.end_page],
+                        "attempts": an.attempts,
+                        "minutes_url": meeting["minutes_url"],
+                    },
+                )
 
         # Persist the raw extraction so a re-run never needs another API call
         self._attach_raw_payload(meeting["minutes_url"], extraction)
@@ -503,10 +523,21 @@ def main() -> int:
 
     print(f"Found {len(rows)} meeting(s) to extract")
     failed = 0
+    clean = 0          # fully resolved, no anomalies
+    recovered = 0      # produced a record but some pages were flagged
+    anomaly_kinds: dict[str, int] = {}
     for r in rows:
         print(f"\n--- meeting {r['id']} ({r['meeting_date']}) {r['jurisdiction']} ---")
         try:
-            MinutesExtract(r["id"]).run()
+            job = MinutesExtract(r["id"])
+            job.run()
+            rep = getattr(job, "report", None)
+            if rep is None or rep.fully_resolved:
+                clean += 1
+            else:
+                recovered += 1
+                for an in rep.anomalies:
+                    anomaly_kinds[an.kind] = anomaly_kinds.get(an.kind, 0) + 1
         except Exception as e:
             failed += 1
             print(f"   ✗ failed: {e}")
@@ -533,8 +564,19 @@ def main() -> int:
             except Exception as rec_err:
                 print(f"   ⚠ could not record failure: {rec_err}")
 
-    if failed:
-        print(f"\n{failed} of {len(rows)} extraction(s) failed — recorded to pipeline_failure")
+    # Run-level success rate — the rollout-confidence metric. "Produced a
+    # record" counts clean + recovered (partial) extractions; only total
+    # failures and per-page anomalies need a human.
+    total = len(rows)
+    produced = clean + recovered
+    rate = (produced / total * 100) if total else 0.0
+    print(f"\n=== extract_minutes summary ({total} meeting(s)) ===")
+    print(f"  clean:     {clean}")
+    print(f"  recovered: {recovered}  (kept partial records; flagged pages: {anomaly_kinds or 'none'})")
+    print(f"  failed:    {failed}")
+    print(f"  success rate (produced a record): {rate:.0f}%")
+    if failed or recovered:
+        print("  anomalies recorded to pipeline_failure for admin triage")
     return 0
 
 
