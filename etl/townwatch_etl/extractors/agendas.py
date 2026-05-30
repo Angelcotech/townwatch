@@ -34,6 +34,7 @@ import anthropic
 from pydantic import BaseModel, Field
 
 from ..config import ANTHROPIC_API_KEY
+from .recovery import ExtractionReport, build_source, extract_with_ladder
 
 
 # =====================================================================
@@ -261,25 +262,33 @@ STUB_PDF_SIZE_BYTES = 5_000
 # API calls
 # =====================================================================
 
-def extract_from_pdf(pdf_path: Path) -> tuple[AgendaExtraction, str]:
+def extract_from_pdf(pdf_path: Path) -> tuple[AgendaExtraction, str, ExtractionReport]:
     """
-    Returns (extraction, method) where method is 'text_layer', 'vision',
-    or 'stub_skipped'.
+    Returns (extraction, method, report) where method is 'text_layer',
+    'vision', or 'stub_skipped'.
 
-    Tier 1 fires only when the PDF has a real text layer. Tiny PDFs with
-    no text layer are recognised as CivicEngage placeholder stubs and
-    skipped without an API call. Anything else goes to Sonnet vision.
-    No OCR tier — OCR errors break identity resolution.
+    Tiny PDFs with no text layer are recognised as CivicEngage placeholder
+    stubs and skipped without an API call. Everything else runs through the
+    escalating-filter ladder (recovery.extract_with_ladder): page-windowed,
+    with primary → retry → sub-chunk → cross-strategy → pdf-repair recovery
+    and classified anomalies in the report. No OCR tier — OCR errors break
+    identity resolution.
     """
-    text_result = extract_text_layer_only(pdf_path)
-    if text_result is not None:
-        return _extract_from_text(text_result), "text_layer"
+    text_layer = extract_text_layer_only(pdf_path)
+    # Stub detection BEFORE the ladder: empty text layer + tiny file =
+    # placeholder PDF, return an empty extraction with no API call.
+    if text_layer is None and pdf_path.stat().st_size <= STUB_PDF_SIZE_BYTES:
+        return _stub_extraction(pdf_path), "stub_skipped", ExtractionReport(total_units=1, clean=1)
 
-    # Stub detection: empty text layer + tiny file = placeholder PDF
-    if pdf_path.stat().st_size <= STUB_PDF_SIZE_BYTES:
-        return _stub_extraction(pdf_path), "stub_skipped"
-
-    return _extract_from_pdf_vision(pdf_path), "vision"
+    source = build_source(pdf_path, text_layer)
+    extraction, report = extract_with_ladder(
+        source,
+        text_window_fn=_extract_text_window,
+        vision_window_fn=_extract_vision_window,
+        merge_fn=_merge_extractions,
+    )
+    method = "text_layer" if source.pages_text is not None else "vision"
+    return extraction, method, report
 
 
 def _stub_extraction(pdf_path: Path) -> AgendaExtraction:
@@ -333,11 +342,13 @@ def _sniff_ct_from_magic(path: Path) -> str | None:
 def extract_from_document(
     path: Path,
     content_type: str | None = None,
-) -> tuple[AgendaExtraction, str]:
+) -> tuple[AgendaExtraction, str, ExtractionReport]:
     """Dispatch extraction by content type.
 
-    Returns (extraction, method) where method is one of
+    Returns (extraction, method, report) where method is one of
     'text_layer', 'vision', 'stub_skipped', 'docx_text', 'doc_libreoffice'.
+    DOCX/DOC/stub paths return a trivially-clean report; the PDF path returns
+    the recovery ladder's report.
 
     content_type may be passed straight from an HTTP Content-Type header;
     if absent or unrecognised, we sniff the file's magic bytes. Raises
@@ -353,9 +364,9 @@ def extract_from_document(
     if ct == PDF_CT:
         return extract_from_pdf(path)
     if ct == DOCX_CT:
-        return _extract_from_docx(path), "docx_text"
+        return _extract_from_docx(path), "docx_text", ExtractionReport(total_units=1, clean=1)
     if ct == DOC_CT:
-        return _extract_from_doc(path), "doc_libreoffice"
+        return _extract_from_doc(path), "doc_libreoffice", ExtractionReport(total_units=1, clean=1)
 
     raise RuntimeError(
         f"unsupported document type {content_type!r} for {path.name} "
@@ -383,7 +394,7 @@ def _extract_from_docx(doc_path: Path) -> AgendaExtraction:
             if row_text.strip(" |"):
                 parts.append(row_text)
     text = "\n".join(parts)
-    return _extract_from_text(text)
+    return _extract_text_window(text)
 
 
 def _extract_from_doc(doc_path: Path) -> AgendaExtraction:
@@ -415,7 +426,7 @@ def _extract_from_doc(doc_path: Path) -> AgendaExtraction:
         if not txt_path.exists():
             raise RuntimeError(f"libreoffice did not produce {txt_path.name}")
         text = txt_path.read_text(encoding="utf-8", errors="replace")
-    return _extract_from_text(text)
+    return _extract_text_window(text)
 
 
 def extract_text_layer_only(pdf_path: Path) -> str | None:
@@ -448,30 +459,35 @@ def _parse_json_response(response) -> AgendaExtraction:
     first = text.find("{")
     last = text.rfind("}")
     if first == -1 or last == -1 or last < first:
-        raise ValueError(f"No JSON object found in response: {text[:200]!r}")
+        stop = getattr(response, "stop_reason", "?")
+        raise ValueError(f"No JSON object found in response (stop_reason={stop}): {text[:200]!r}")
     return AgendaExtraction.model_validate(_json.loads(text[first : last + 1]))
 
 
-def _extract_from_text(text: str) -> AgendaExtraction:
-    """Cheap path: Haiku reads the agenda text and emits JSON."""
+def _extract_text_window(text: str) -> AgendaExtraction:
+    """Extract one window of agenda text (Haiku → JSON), streamed with a 32K
+    budget. The page-window ladder maps this over large documents."""
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-    response = client.messages.create(
+    with client.messages.stream(
         model=TEXT_MODEL,
-        max_tokens=16384,
+        max_tokens=32000,
         messages=[
             {"role": "user", "content": TEXT_INSTRUCTIONS + "\n" + text},
         ],
-    )
+    ) as stream:
+        response = stream.get_final_message()
     return _parse_json_response(response)
 
 
-def _extract_from_pdf_vision(pdf_path: Path) -> AgendaExtraction:
-    """Vision path: Sonnet reads the scanned agenda PDF directly."""
+def _extract_vision_window(pdf_path: Path) -> AgendaExtraction:
+    """Extract one window sub-PDF via Sonnet vision, streamed with a 32K
+    budget (thinking + output share the budget — streaming lifts the SDK's
+    10-min non-stream guard). The ladder maps this over large documents."""
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
     pdf_b64 = base64.standard_b64encode(pdf_path.read_bytes()).decode("utf-8")
-    response = client.messages.create(
+    with client.messages.stream(
         model=VISION_MODEL,
-        max_tokens=16384,
+        max_tokens=32000,
         thinking={"type": "adaptive"},
         output_config={"effort": "high"},
         messages=[
@@ -490,5 +506,66 @@ def _extract_from_pdf_vision(pdf_path: Path) -> AgendaExtraction:
                 ],
             },
         ],
-    )
+    ) as stream:
+        response = stream.get_final_message()
     return _parse_json_response(response)
+
+
+def _merge_extractions(partials: list[tuple[AgendaExtraction, int]]) -> AgendaExtraction:
+    """Reduce per-window agenda extractions into one. Items are offset-
+    corrected to document page numbers and de-duplicated by (page, title);
+    meeting metadata comes from the first window; the document summary is
+    synthesized from the per-window summaries."""
+    first = partials[0][0]
+    items: list[AgendaItemRecord] = []
+    seen: set[tuple[int, str]] = set()
+    notes: list[str] = []
+    summaries: list[str] = []
+    for ext, offset in partials:
+        for it in ext.agenda_items:
+            it.source_page = it.source_page + offset
+            key = (it.source_page, (it.title or "").strip().casefold())
+            if key in seen:
+                continue
+            seen.add(key)
+            items.append(it)
+        if ext.extraction_notes.strip():
+            notes.append(ext.extraction_notes.strip())
+        if ext.document_summary.strip():
+            summaries.append(ext.document_summary.strip())
+    items.sort(key=lambda it: it.source_page)
+    return AgendaExtraction(
+        meeting=first.meeting,
+        agenda_items=items,
+        document_summary=_synthesize_summary(summaries),
+        extraction_notes=" | ".join(notes)[:2000],
+    )
+
+
+def _synthesize_summary(summaries: list[str]) -> str:
+    """Collapse per-window agenda summaries into one 2-3 sentence summary
+    (one cheap Haiku call). Falls back to the longest window summary on
+    failure so a reduce hiccup never loses the summary."""
+    summaries = [s for s in summaries if s.strip()]
+    if not summaries:
+        return ""
+    if len(summaries) == 1:
+        return summaries[0]
+    joined = "\n".join(f"- {s}" for s in summaries)
+    try:
+        client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        resp = client.messages.create(
+            model=TEXT_MODEL,
+            max_tokens=512,
+            messages=[{"role": "user", "content": (
+                "Below are per-section summaries of one government meeting agenda. "
+                "Write a single 2-3 sentence plain-English summary for a citizen of "
+                "what's on the docket. Return only the summary.\n\n" + joined
+            )}],
+        )
+        for block in resp.content:
+            if getattr(block, "type", "") == "text" and block.text.strip():
+                return block.text.strip()
+    except Exception:
+        pass
+    return max(summaries, key=len)
