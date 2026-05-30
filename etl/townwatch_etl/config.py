@@ -13,3 +13,9 @@ DATABASE_URL = os.environ["DATABASE_URL"]
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-opus-4-7")
 DRY_RUN = os.environ.get("DRY_RUN", "false").lower() == "true"
+
+# Vision-path rasterization DPI. 0/unset → send the raw PDF document (current
+# default, no behaviour change). Set a DPI (e.g. 150) to rasterize scanned
+# pages to images at that resolution before sending — smaller payload, lower
+# latency. Tune to the accuracy knee found by jobs.dpi_sweep.
+VISION_RENDER_DPI = int(os.environ.get("VISION_RENDER_DPI", "0")) or None

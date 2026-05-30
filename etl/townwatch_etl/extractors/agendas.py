@@ -23,7 +23,6 @@ resolution. Vision reads original glyphs.
 
 from __future__ import annotations
 
-import base64
 import shutil
 import subprocess
 import tempfile
@@ -33,7 +32,8 @@ from typing import Literal
 import anthropic
 from pydantic import BaseModel, Field
 
-from ..config import ANTHROPIC_API_KEY
+from ..config import ANTHROPIC_API_KEY, VISION_RENDER_DPI
+from .rasterize import vision_content
 from .recovery import ExtractionReport, build_source, extract_with_ladder
 
 
@@ -480,33 +480,19 @@ def _extract_text_window(text: str) -> AgendaExtraction:
     return _parse_json_response(response)
 
 
-def _extract_vision_window(pdf_path: Path) -> AgendaExtraction:
-    """Extract one window sub-PDF via Sonnet vision, streamed with a 32K
-    budget (thinking + output share the budget — streaming lifts the SDK's
-    10-min non-stream guard). The ladder maps this over large documents."""
+def _extract_vision_window(pdf_path: Path, dpi: int | None = VISION_RENDER_DPI) -> AgendaExtraction:
+    """Extract one window sub-PDF via Sonnet vision, streamed with a 32K budget
+    (thinking + output share it — streaming lifts the SDK's 10-min non-stream
+    guard). The ladder maps this over large documents. ``dpi`` controls
+    rasterization: None ships the raw PDF (default), an int rasterizes pages to
+    images at that resolution. Defaults to config.VISION_RENDER_DPI."""
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-    pdf_b64 = base64.standard_b64encode(pdf_path.read_bytes()).decode("utf-8")
     with client.messages.stream(
         model=VISION_MODEL,
         max_tokens=32000,
         thinking={"type": "adaptive"},
         output_config={"effort": "high"},
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "document",
-                        "source": {
-                            "type": "base64",
-                            "media_type": "application/pdf",
-                            "data": pdf_b64,
-                        },
-                    },
-                    {"type": "text", "text": VISION_INSTRUCTIONS},
-                ],
-            },
-        ],
+        messages=[{"role": "user", "content": vision_content(pdf_path, VISION_INSTRUCTIONS, dpi=dpi)}],
     ) as stream:
         response = stream.get_final_message()
     return _parse_json_response(response)

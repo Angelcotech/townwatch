@@ -22,16 +22,16 @@ Five extraction priorities (in order):
 
 from __future__ import annotations
 
-import base64
 from pathlib import Path
 from typing import Literal
 
 import anthropic
 from pydantic import BaseModel, Field
 
-from ..config import ANTHROPIC_API_KEY
+from ..config import ANTHROPIC_API_KEY, VISION_RENDER_DPI
 from .chunking import extend_unique
 from .pdf_text import extract_text
+from .rasterize import vision_content
 from .recovery import ExtractionReport, build_source, extract_with_ladder
 
 
@@ -381,37 +381,23 @@ def _extract_text_window(text: str) -> MeetingExtraction:
     return _parse_json_response(response)
 
 
-def _extract_vision_window(pdf_path: Path) -> MeetingExtraction:
+def _extract_vision_window(pdf_path: Path, dpi: int | None = VISION_RENDER_DPI) -> MeetingExtraction:
     """Extract one window sub-PDF via Claude vision. The page-window chunker
-    (_extract_from_pdf_vision) maps this over large documents."""
+    maps this over large documents.
+
+    Streamed with a 32K budget — the vision path runs adaptive thinking + high
+    effort, whose thinking tokens count against max_tokens; streaming lifts the
+    SDK's 10-min non-stream guard so the larger budget fits. ``dpi`` controls
+    rasterization: None ships the raw PDF (default), an int rasterizes pages to
+    images at that resolution (smaller payload, lower latency). Defaults to
+    config.VISION_RENDER_DPI; the sweep passes an explicit value."""
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-    pdf_b64 = base64.standard_b64encode(pdf_path.read_bytes()).decode("utf-8")
-    # Streamed with a 32K budget. The vision path runs adaptive thinking +
-    # high effort, whose thinking tokens count against max_tokens — under the
-    # old 16384 cap, thinking could starve the JSON output entirely (empty
-    # response) or truncate it. Streaming lifts the SDK's 10-min non-stream
-    # guard so we can afford the larger budget.
     with client.messages.stream(
         model=VISION_MODEL,
         max_tokens=32000,
         thinking={"type": "adaptive"},
         output_config={"effort": "high"},
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "document",
-                        "source": {
-                            "type": "base64",
-                            "media_type": "application/pdf",
-                            "data": pdf_b64,
-                        },
-                    },
-                    {"type": "text", "text": VISION_INSTRUCTIONS},
-                ],
-            },
-        ],
+        messages=[{"role": "user", "content": vision_content(pdf_path, VISION_INSTRUCTIONS, dpi=dpi)}],
     ) as stream:
         response = stream.get_final_message()
     return _parse_json_response(response)
