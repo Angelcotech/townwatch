@@ -310,6 +310,7 @@ def extract_from_pdf(pdf_path: Path) -> tuple[MeetingExtraction, str, Extraction
         merge_fn=_merge_extractions,
     )
     method = "text_layer" if source.pages_text is not None else "vision"
+    report.method = method
     return extraction, method, report
 
 

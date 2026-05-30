@@ -86,6 +86,7 @@ class ExtractionReport:
     clean: int = 0                # resolved on the first primary attempt
     recovered: int = 0            # resolved only after escalating
     anomalies: list[WindowAnomaly] = field(default_factory=list)
+    method: str = ""              # dominant extraction modality (text_layer/vision/...)
 
     @property
     def resolved(self) -> int:

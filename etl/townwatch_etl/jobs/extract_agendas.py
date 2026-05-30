@@ -248,7 +248,7 @@ def main() -> int:
     # --all: every meeting with agenda_url but no agenda_items yet
     from ..db import connect
     sql = """
-        SELECT m.id, m.meeting_date, j.display_name AS jurisdiction
+        SELECT m.id, m.meeting_date, j.id AS jurisdiction_id, j.display_name AS jurisdiction
         FROM meeting m
         JOIN governing_body gb ON gb.id = m.governing_body_id
         JOIN jurisdiction j ON j.id = gb.jurisdiction_id
@@ -268,6 +268,9 @@ def main() -> int:
     with connect() as conn:
         rows = conn.execute(sql, params).fetchall()
 
+    from ..extraction_ledger import new_run_id, record_outcome
+    run_id = new_run_id()
+
     print(f"Found {len(rows)} meeting(s) to extract")
     failed = 0
     clean = 0
@@ -279,15 +282,20 @@ def main() -> int:
             job = AgendasExtract(r["id"])
             job.run()
             rep = getattr(job, "report", None)
-            if rep is None or rep.fully_resolved:
+            outcome = "clean" if (rep is None or rep.fully_resolved) else "recovered"
+            if outcome == "clean":
                 clean += 1
             else:
                 recovered += 1
                 for an in rep.anomalies:
                     anomaly_kinds[an.kind] = anomaly_kinds.get(an.kind, 0) + 1
+            record_outcome(run_id=run_id, job_name="extract_agendas", meeting_id=r["id"],
+                           jurisdiction_id=r["jurisdiction_id"], outcome=outcome, report=rep)
         except Exception as e:
             failed += 1
             print(f"   ✗ failed: {e}")
+            record_outcome(run_id=run_id, job_name="extract_agendas", meeting_id=r["id"],
+                           jurisdiction_id=r["jurisdiction_id"], outcome="failed", report=None)
             # Record it so a throttle-driven backlog is VISIBLE in the admin
             # queue instead of vanishing into stdout (the old behavior, which
             # hid hundreds of unextracted Columbia County agendas). Supersede
