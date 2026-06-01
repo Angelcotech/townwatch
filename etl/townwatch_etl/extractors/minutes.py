@@ -30,6 +30,7 @@ from pydantic import BaseModel, Field
 
 from ..config import ANTHROPIC_API_KEY, VISION_RENDER_DPI
 from .chunking import extend_unique
+from .mistral_ocr import ocr_pdf
 from .pdf_text import extract_text
 from .rasterize import vision_content
 from .recovery import ExtractionReport, build_source, extract_with_ladder
@@ -302,6 +303,13 @@ def extract_from_pdf(pdf_path: Path) -> tuple[MeetingExtraction, str, Extraction
     We never OCR locally — OCR errors break identity resolution.
     """
     text_layer = extract_text_layer_only(pdf_path)
+    method = "text_layer"
+    if text_layer is None:
+        # Scanned: Mistral OCR is the primary path — cheaper, faster, and more
+        # complete than vision. If OCR yields nothing, the source has no text
+        # layer and the ladder falls back to vision per-window.
+        text_layer = ocr_pdf(pdf_path)
+        method = "ocr" if text_layer else "vision"
     source = build_source(pdf_path, text_layer)
     extraction, report = extract_with_ladder(
         source,
@@ -309,7 +317,6 @@ def extract_from_pdf(pdf_path: Path) -> tuple[MeetingExtraction, str, Extraction
         vision_window_fn=_extract_vision_window,
         merge_fn=_merge_extractions,
     )
-    method = "text_layer" if source.pages_text is not None else "vision"
     report.method = method
     return extraction, method, report
 

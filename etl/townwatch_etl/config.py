@@ -11,6 +11,10 @@ load_dotenv(override=True)
 
 DATABASE_URL = os.environ["DATABASE_URL"]
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
+# Mistral OCR — primary text extraction for scanned PDFs (validated ~50x
+# cheaper, ~25x faster, and MORE complete than frontier vision). When unset,
+# the pipeline falls back to vision for scanned docs.
+MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY")
 ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-opus-4-7")
 DRY_RUN = os.environ.get("DRY_RUN", "false").lower() == "true"
 

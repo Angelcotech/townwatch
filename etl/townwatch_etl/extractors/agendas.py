@@ -33,6 +33,7 @@ import anthropic
 from pydantic import BaseModel, Field
 
 from ..config import ANTHROPIC_API_KEY, VISION_RENDER_DPI
+from .mistral_ocr import ocr_pdf
 from .rasterize import vision_content
 from .recovery import ExtractionReport, build_source, extract_with_ladder
 
@@ -275,11 +276,16 @@ def extract_from_pdf(pdf_path: Path) -> tuple[AgendaExtraction, str, ExtractionR
     identity resolution.
     """
     text_layer = extract_text_layer_only(pdf_path)
-    # Stub detection BEFORE the ladder: empty text layer + tiny file =
-    # placeholder PDF, return an empty extraction with no API call.
+    # Stub detection BEFORE OCR: empty text layer + tiny file = placeholder
+    # PDF, return an empty extraction with no API call.
     if text_layer is None and pdf_path.stat().st_size <= STUB_PDF_SIZE_BYTES:
-        return _stub_extraction(pdf_path), "stub_skipped", ExtractionReport(total_units=1, clean=1)
+        return _stub_extraction(pdf_path), "stub_skipped", ExtractionReport(total_units=1, clean=1, method="stub_skipped")
 
+    method = "text_layer"
+    if text_layer is None:
+        # Scanned: Mistral OCR primary; vision fallback if OCR yields nothing.
+        text_layer = ocr_pdf(pdf_path)
+        method = "ocr" if text_layer else "vision"
     source = build_source(pdf_path, text_layer)
     extraction, report = extract_with_ladder(
         source,
@@ -287,7 +293,6 @@ def extract_from_pdf(pdf_path: Path) -> tuple[AgendaExtraction, str, ExtractionR
         vision_window_fn=_extract_vision_window,
         merge_fn=_merge_extractions,
     )
-    method = "text_layer" if source.pages_text is not None else "vision"
     report.method = method
     return extraction, method, report
 
