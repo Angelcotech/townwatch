@@ -27,7 +27,7 @@ import json
 import re
 import sys
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, time
 from typing import Iterator
 
 from ..http_client import civic_get
@@ -91,6 +91,7 @@ class MeetingRecord:
     agenda_url: str | None
     minutes_url: str | None
     agenda_posted_at: datetime | None = None
+    meeting_time: time | None = None   # scheduled start (local wall-clock)
 
 
 def _api_base(tenant: str) -> str:
@@ -191,6 +192,25 @@ def _meeting_date(event: dict) -> date | None:
         return None
 
 
+def _meeting_time(event: dict) -> "time | None":
+    """Scheduled start time-of-day. CivicClerk stamps eventDate/startDateTime
+    with a 'Z', but the value is the LOCAL wall-clock time (a 6:00 PM council
+    meeting is '...T18:00:00Z', i.e. 18:00 local — not UTC), so we take the
+    naive time component as-is without any timezone conversion. Midnight is
+    treated as 'no time published' (the platform's default when unset)."""
+    val = event.get("startDateTime") or event.get("eventDate")
+    if not val:
+        return None
+    try:
+        dt = datetime.fromisoformat(val.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    t = dt.time().replace(microsecond=0)
+    if t == time(0, 0, 0):
+        return None
+    return t
+
+
 def _agenda_and_minutes(event: dict, tenant: str) -> tuple[str | None, str | None]:
     """Pick the canonical Agenda file (preferred over Agenda Packet) and
     the Minutes file. Returns (agenda_url, minutes_url) — either may be None."""
@@ -231,6 +251,7 @@ def parse_event(event: dict, tenant: str, category_id: int, category_name: str) 
         agenda_url=agenda_url,
         minutes_url=minutes_url,
         agenda_posted_at=_parse_posted_at(event.get("publishedAgendaTimeStamp")),
+        meeting_time=_meeting_time(event),
     )
 
 

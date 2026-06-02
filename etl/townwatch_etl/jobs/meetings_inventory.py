@@ -196,15 +196,26 @@ class MeetingsInventory(IngestJob):
 
     def _upsert_meeting(self, body_id: int, m: _MeetingRecordProto) -> None:
         assert self.conn is not None and self.data_source_id is not None
+        # NULL-safe match (IS NOT DISTINCT FROM): plain `agenda_url = %s` is
+        # never true when agenda_url is NULL (SQL NULL ≠ NULL), so agenda-less
+        # meetings (every UPCOMING meeting, before its agenda posts) failed to
+        # match and got DUPLICATED on every inventory run. IS NOT DISTINCT FROM
+        # treats NULL = NULL as true, so they update in place.
         existing = self.conn.execute(
             """
             SELECT id FROM meeting
-            WHERE governing_body_id = %s AND meeting_date = %s AND agenda_url = %s
+            WHERE governing_body_id = %s AND meeting_date = %s
+              AND agenda_url IS NOT DISTINCT FROM %s
             """,
             (body_id, m.meeting_date, m.agenda_url),
         ).fetchone()
 
         status = self._derive_status(m)
+        # Scheduled start time from the calendar feed (CivicClerk has it;
+        # CivicEngage's listing doesn't — getattr keeps both shapes working).
+        # This is the only source of time for UPCOMING meetings, which have no
+        # agenda/minutes yet.
+        meeting_time = getattr(m, "meeting_time", None)
         if existing:
             self.conn.execute(
                 """
@@ -212,10 +223,11 @@ class MeetingsInventory(IngestJob):
                 SET minutes_url = %s,
                     status = %s,
                     agenda_posted_at = COALESCE(%s, agenda_posted_at),
+                    meeting_time = COALESCE(%s::time, meeting_time),
                     updated_at = now()
                 WHERE id = %s
                 """,
-                (m.minutes_url, status, m.agenda_posted_at, existing["id"]),
+                (m.minutes_url, status, m.agenda_posted_at, meeting_time, existing["id"]),
             )
             self.rows_skipped += 1
             return
@@ -228,6 +240,7 @@ class MeetingsInventory(IngestJob):
             "minutes_url":       m.minutes_url,
             "status":            status,
             "agenda_posted_at":  m.agenda_posted_at,
+            "meeting_time":      meeting_time,
         })
 
     @staticmethod
