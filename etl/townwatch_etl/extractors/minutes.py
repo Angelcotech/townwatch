@@ -56,6 +56,18 @@ class MeetingMeta(BaseModel):
     date: str = Field(description="YYYY-MM-DD format")
     body_name: str = Field(description="The governing body (e.g. 'City Council')")
     meeting_type: MeetingType
+    meeting_time: str | None = Field(
+        default=None,
+        description="Scheduled start time of the meeting in 24-hour HH:MM, if "
+                    "stated (e.g. a header line like 'Regular Meeting — 6:00 PM' "
+                    "→ '18:00'). Null if not stated.",
+    )
+    location: str | None = Field(
+        default=None,
+        description="Where the meeting was held, if stated — e.g. "
+                    "'Evans Government Center, Building A' or "
+                    "'Council Chambers, 100 Main St'. Null if not stated.",
+    )
     called_to_order_at: str | None = Field(default=None, description="HH:MM if recorded")
     adjourned_at: str | None = Field(default=None, description="HH:MM if recorded")
     extraction_confidence: Confidence
@@ -291,7 +303,7 @@ VISION_MODEL = "claude-sonnet-4-6"
 # change in a way that should re-extract existing documents — a bump invalidates
 # all cached minutes (they re-extract under the new version on next process).
 # Keep the model names in it so a model swap is a visible, intentional re-spend.
-EXTRACTOR_VERSION = f"minutes-v1:{TEXT_MODEL}+{VISION_MODEL}"
+EXTRACTOR_VERSION = f"minutes-v2:{TEXT_MODEL}+{VISION_MODEL}"  # v2: + meeting_time, location
 
 
 # =====================================================================

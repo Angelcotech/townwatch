@@ -267,6 +267,10 @@ class MinutesExtract(IngestJob):
         )
         called_to_order = extraction.meeting.called_to_order_at
         adjourned = extraction.meeting.adjourned_at
+        # Scheduled meeting time: prefer the stated start; fall back to the
+        # gavel ("called to order") time when the scheduled time isn't printed.
+        meeting_time = extraction.meeting.meeting_time or called_to_order
+        location = extraction.meeting.location or None
 
         # Only overwrite the summary when extraction produced one — empty
         # default from old/batched payloads must NOT clobber a real summary.
@@ -279,6 +283,8 @@ class MinutesExtract(IngestJob):
                 attendance_notes    = %s,
                 called_to_order_at  = %s,
                 adjourned_at        = %s,
+                meeting_time        = COALESCE(%s::time, meeting_time),
+                location            = COALESCE(%s, location),
                 staff_present       = %s::jsonb,
                 others_present      = %s::jsonb,
                 minutes_ai_summary  = COALESCE(%s, minutes_ai_summary),
@@ -290,6 +296,8 @@ class MinutesExtract(IngestJob):
                 attendance_summary,
                 called_to_order,
                 adjourned,
+                meeting_time,
+                location,
                 json.dumps(staff_present) if staff_present is not None else None,
                 json.dumps(others_present) if others_present is not None else None,
                 new_summary,

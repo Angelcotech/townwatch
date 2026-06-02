@@ -167,6 +167,19 @@ class AgendasExtract(IngestJob):
                 (extraction.document_summary, self.meeting_id),
             )
 
+        # Scheduled time + location from the agenda header. This is the primary
+        # source for UPCOMING meetings (they have an agenda, not minutes yet) —
+        # what powers the "Next meeting" card's time/location. COALESCE so a
+        # blank extraction never clobbers a value already set (e.g. by minutes).
+        a_time = extraction.meeting.scheduled_start_at or None
+        a_location = extraction.meeting.location or None
+        if a_time or a_location:
+            self.conn.execute(
+                "UPDATE meeting SET meeting_time = COALESCE(%s::time, meeting_time), "
+                "location = COALESCE(%s, location), updated_at = now() WHERE id = %s",
+                (a_time, a_location, self.meeting_id),
+            )
+
         # Flag placeholder stubs so the frontend can render "no document
         # published by city" instead of a dead download link. Set to the
         # boolean (true/false) on every run, not just when stub — that way

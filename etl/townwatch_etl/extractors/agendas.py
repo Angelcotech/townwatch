@@ -84,7 +84,13 @@ class AgendaMeetingMeta(BaseModel):
     date: str = Field(description="YYYY-MM-DD format")
     body_name: str = Field(description="The governing body (e.g. 'Planning Commission')")
     meeting_type: MeetingType
-    scheduled_start_at: str | None = Field(default=None, description="HH:MM if printed on the agenda")
+    scheduled_start_at: str | None = Field(default=None, description="HH:MM (24-hour) if printed on the agenda")
+    location: str | None = Field(
+        default=None,
+        description="Where the meeting is held, if printed on the agenda — e.g. "
+                    "'Council Chambers, 100 Main St' or 'Evans Government Center, "
+                    "Building A'. Null if not stated.",
+    )
     extraction_confidence: Confidence
 
 
@@ -254,7 +260,7 @@ VISION_MODEL = "claude-sonnet-4-6"
 
 # Extraction-cache version — bump when the prompt/schema/models change to force
 # re-extraction of cached agendas under the new version (see extraction_cache).
-EXTRACTOR_VERSION = f"agenda-v1:{TEXT_MODEL}+{VISION_MODEL}"
+EXTRACTOR_VERSION = f"agenda-v2:{TEXT_MODEL}+{VISION_MODEL}"  # v2: + location on meeting meta
 
 # CivicEngage sometimes serves placeholder PDFs for older meetings whose
 # agendas were never actually uploaded — valid PDF header, zero-content
