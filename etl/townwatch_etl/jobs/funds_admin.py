@@ -67,6 +67,8 @@ def main() -> int:
     p.add_argument("--list", action="store_true", help="list all funded jurisdictions")
     p.add_argument("--release-stale", type=int, metavar="MIN",
                    help="release reservations older than MIN minutes (janitor)")
+    p.add_argument("--no-trigger", action="store_true",
+                   help="don't auto-start a pipeline run after a deposit")
     args = p.parse_args()
 
     with connect() as conn:
@@ -92,6 +94,7 @@ def main() -> int:
             p.error("--jurisdiction is required (or use --list / --release-stale)")
         jid = _jid(conn, args.jurisdiction)
 
+        deposited = args.deposit is not None and Decimal(args.deposit) > 0
         if args.deposit is not None:
             lid = funds.deposit(conn, jid, Decimal(args.deposit), ref_kind="manual",
                                 description="admin deposit")
@@ -114,6 +117,14 @@ def main() -> int:
             print("resumed (status=active)")
 
         _print_status(conn, jid, args.jurisdiction)
+
+    # After the deposit COMMITS, kick off a pipeline run for this jurisdiction
+    # (onboarding / current-state audit + resume of pending work) unless one is
+    # already running. Outside the connection block so the spawned run sees the
+    # funds. This is the deposit → work-starts-now behaviour.
+    if deposited and not args.no_trigger:
+        from .daily_refresh import trigger
+        trigger(args.jurisdiction)
     return 0
 
 

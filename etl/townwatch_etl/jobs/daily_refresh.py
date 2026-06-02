@@ -35,6 +35,7 @@ Run manually:
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import subprocess
 import sys
@@ -43,6 +44,7 @@ from datetime import datetime, timezone
 
 from ..db import connect
 from ..jurisdiction import list_slugs
+from ..run_lock import jurisdiction_lock, is_running
 
 
 PER_JURISDICTION_STEPS = [
@@ -91,18 +93,27 @@ def _run_step(module: str, args: list[str]) -> tuple[bool, str]:
         return False, "timeout"
 
 
-def _fund_state(slug: str) -> tuple[bool, str]:
-    """Return (spending_allowed, human_status) for a jurisdiction's fund.
-    No fund → ungated. Resolves the slug to its jurisdiction id via fips."""
+def _jid_for(slug: str) -> int | None:
+    """Resolve a jurisdiction slug to its DB id (via fips), or None if absent."""
     from ..jurisdiction import load_config, jurisdiction_fips
-    from .. import funds
     try:
         fips = jurisdiction_fips(load_config(slug))
         with connect() as conn:
             row = conn.execute("SELECT id FROM jurisdiction WHERE fips_code = %s", (fips,)).fetchone()
-            if row is None:
-                return True, "no-jurisdiction-row"
-            jid = row["id"]
+            return row["id"] if row else None
+    except Exception:
+        return None
+
+
+def _fund_state(slug: str) -> tuple[bool, str]:
+    """Return (spending_allowed, human_status) for a jurisdiction's fund.
+    No fund → ungated. Resolves the slug to its jurisdiction id via fips."""
+    from .. import funds
+    try:
+        jid = _jid_for(slug)
+        if jid is None:
+            return True, "no-jurisdiction-row"
+        with connect() as conn:
             fund = funds.get_fund(conn, jid)
             if fund is None:
                 return True, "ungated"
@@ -111,6 +122,47 @@ def _fund_state(slug: str) -> tuple[bool, str]:
     except Exception as e:  # never let a fund lookup error block the catalog steps
         print(f"  ⚠ fund lookup failed for {slug}: {e} — treating as ungated")
         return True, "lookup-error"
+
+
+def _run_jurisdiction(slug: str, skip: set[str], ignore_funds: bool, summary: dict) -> None:
+    """Run one jurisdiction's pipeline steps in order. Cheap mapping steps always
+    run; spending steps are skipped when the fund is paused/suspended."""
+    can_spend, fund_status = (True, "ignored") if ignore_funds else _fund_state(slug)
+    print(f"\n--- {slug} ---  [fund: {fund_status}]")
+    for module in PER_JURISDICTION_STEPS:
+        if module in skip:
+            print(f"  ⊘ {module} (skipped)")
+            continue
+        # Gate the expensive steps on funds; keep cheap mapping always-on so the
+        # catalog stays fresh and paid extraction activates on demand.
+        if module in SPENDING_STEPS and not can_spend:
+            print(f"  ⏸ {module} (skipped — fund {fund_status}; deposit to resume)")
+            summary["steps"].append(
+                {"module": module, "slug": slug, "ok": True, "skipped": "funds"})
+            continue
+        step_args = _per_jurisdiction_args(module, slug)
+        ok, output = _run_step(module, step_args)
+        summary["steps"].append({"module": module, "slug": slug, "ok": ok})
+
+
+def trigger(slug: str) -> bool:
+    """Kick off a pipeline run for one jurisdiction unless one is already running
+    for it. Returns True if a (detached) run was started, False if one was
+    already in progress (the deposit/cron will be picked up by that run).
+
+    This is what makes a fund deposit feel instant: fund a town → an
+    onboarding / current-state audit + resume of pending work starts right away,
+    while a run already in flight is left alone."""
+    jid = _jid_for(slug)
+    if jid is not None and is_running(jid):
+        print(f"trigger: {slug} already has a run in progress — leaving it")
+        return False
+    subprocess.Popen(
+        [sys.executable, "-m", "townwatch_etl.jobs.daily_refresh", "--jurisdiction", slug],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True,
+    )
+    print(f"trigger: started a pipeline run for {slug}")
+    return True
 
 
 def _record_run_summary(summary: dict) -> None:
@@ -158,26 +210,19 @@ def main() -> int:
 
     summary: dict = {"started_at": started_at, "jurisdictions": slugs, "steps": []}
 
-    # Per-jurisdiction steps
+    # Per-jurisdiction steps. One advisory lock per jurisdiction so a
+    # deposit-triggered run never doubles up with the cron (or another trigger):
+    # whoever holds the lock processes it; everyone else skips it this pass.
     for slug in slugs:
-        can_spend, fund_status = (True, "ignored") if args.ignore_funds else _fund_state(slug)
-        print(f"\n--- {slug} ---  [fund: {fund_status}]")
-        for module in PER_JURISDICTION_STEPS:
-            if module in skip:
-                print(f"  ⊘ {module} (skipped)")
-                continue
-            # Gate the expensive steps on funds; keep cheap mapping always-on so
-            # the catalog stays fresh and paid extraction activates on demand.
-            if module in SPENDING_STEPS and not can_spend:
-                print(f"  ⏸ {module} (skipped — fund {fund_status}; deposit to resume)")
+        jid = _jid_for(slug)
+        lock_cm = jurisdiction_lock(jid) if jid is not None else contextlib.nullcontext(True)
+        with lock_cm as got:
+            if not got:
+                print(f"\n--- {slug} ---  ⊘ already being processed by another run — skipping")
                 summary["steps"].append(
-                    {"module": module, "slug": slug, "ok": True, "skipped": "funds"})
+                    {"module": "(lock)", "slug": slug, "ok": True, "skipped": "already-running"})
                 continue
-            step_args = _per_jurisdiction_args(module, slug)
-            ok, output = _run_step(module, step_args)
-            summary["steps"].append(
-                {"module": module, "slug": slug, "ok": ok}
-            )
+            _run_jurisdiction(slug, skip, args.ignore_funds, summary)
 
     # Jurisdiction-agnostic steps
     print(f"\n--- global ---")
