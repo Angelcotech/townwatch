@@ -59,8 +59,11 @@ PER_JURISDICTION_STEPS = [
 # paused (out of money) or suspended (manual hold) — but the cheap mapping steps
 # (meetings_inventory, scan_document_availability) always run, so we keep the
 # catalog fresh for everyone and activate paid extraction on demand. A deposit
-# clears a pause, so the next run resumes these automatically.
-SPENDING_STEPS = {"extract_agendas", "extract_minutes", "refresh_council_roster"}
+# clears a pause, so the next run resumes these automatically. Includes the
+# global backfill_summaries, which is gated when a run is scoped to one
+# jurisdiction (so a deposit for town A never buys summaries for town B).
+SPENDING_STEPS = {"extract_agendas", "extract_minutes", "refresh_council_roster",
+                  "backfill_summaries"}
 
 JURISDICTION_AGNOSTIC_STEPS = [
     "refresh_findings",
@@ -224,14 +227,28 @@ def main() -> int:
                 continue
             _run_jurisdiction(slug, skip, args.ignore_funds, summary)
 
-    # Jurisdiction-agnostic steps
-    print(f"\n--- global ---")
+    # Jurisdiction-agnostic steps. On a SCOPED run (--jurisdiction, e.g. a
+    # deposit-triggered one) these are scoped to that jurisdiction and the
+    # spending one is fund-gated, so a single jurisdiction's run never does
+    # global paid work for everyone. On a full run (no --jurisdiction) they run
+    # globally as before.
+    scoped = args.jurisdiction
+    print("\n--- global ---" if not scoped else f"\n--- global (scoped to {scoped}) ---")
+    can_spend_scoped = True
+    if scoped and not args.ignore_funds:
+        can_spend_scoped, _ = _fund_state(scoped)
     for module in JURISDICTION_AGNOSTIC_STEPS:
         if module in skip:
             print(f"  ⊘ {module} (skipped)")
             continue
-        ok, output = _run_step(module, [])
-        summary["steps"].append({"module": module, "slug": None, "ok": ok})
+        if scoped and module in SPENDING_STEPS and not can_spend_scoped:
+            print(f"  ⏸ {module} (skipped — fund paused; deposit to resume)")
+            summary["steps"].append(
+                {"module": module, "slug": scoped, "ok": True, "skipped": "funds"})
+            continue
+        gargs = ["--jurisdiction", scoped] if scoped else []
+        ok, output = _run_step(module, gargs)
+        summary["steps"].append({"module": module, "slug": scoped, "ok": ok})
 
     finished_at = datetime.now(timezone.utc).isoformat()
     summary["finished_at"] = finished_at
