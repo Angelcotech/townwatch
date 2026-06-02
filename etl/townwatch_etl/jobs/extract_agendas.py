@@ -65,12 +65,17 @@ class AgendasExtract(IngestJob):
         meeting_id: int,
         *,
         prebuilt_extraction: AgendaExtraction | None = None,
+        force: bool = False,
     ) -> None:
         super().__init__()
         self.meeting_id = meeting_id
         self.source_name = "agendas_extract"
         self.source_url = None
         self.prebuilt_extraction = prebuilt_extraction
+        # force=True re-extracts a meeting that already has agenda_items,
+        # replacing them. Used to backfill new schema fields (e.g. meeting
+        # time/location) into already-extracted agendas.
+        self.force = force
 
     # ---- main flow -------------------------------------------------------
 
@@ -85,8 +90,15 @@ class AgendasExtract(IngestJob):
             return
 
         if self._already_extracted(self.meeting_id):
-            print(f"  ⊘ meeting {self.meeting_id} already has agenda_items — skipping")
-            return
+            if not self.force:
+                print(f"  ⊘ meeting {self.meeting_id} already has agenda_items — skipping")
+                return
+            # --force: replace the existing agenda_items. Cleared in this ingest's
+            # transaction, so a failed re-extract rolls back and the old rows survive.
+            ndel = self.conn.execute(
+                "DELETE FROM agenda_item WHERE meeting_id = %s", (self.meeting_id,)
+            ).rowcount
+            print(f"  ↻ meeting {self.meeting_id}: --force, cleared {ndel} prior agenda_item(s)")
 
         # Update provenance from the actual agenda URL for this meeting
         self.source_url = meeting["agenda_url"]
@@ -283,17 +295,24 @@ def main() -> int:
     parser.add_argument("--all", action="store_true", help="Process all eligible meetings")
     parser.add_argument("--jurisdiction", help="When used with --all, restrict to this slug")
     parser.add_argument("--limit", type=int, help="Max meetings to process (with --all) — for bounded backlog drains")
+    parser.add_argument("--force", action="store_true",
+                        help="Re-extract meetings that ALREADY have agenda_items, replacing them "
+                             "(e.g. to backfill new schema fields like meeting time/location).")
+    parser.add_argument("--upcoming", action="store_true",
+                        help="With --all, restrict to meetings on/after today — cheap targeted "
+                             "backfill of what the 'Next meeting' card shows.")
     args = parser.parse_args()
 
     if not args.meeting_id and not args.all:
         parser.error("specify --meeting-id N or --all")
 
     if args.meeting_id:
-        result = AgendasExtract(args.meeting_id).run()
+        result = AgendasExtract(args.meeting_id, force=args.force).run()
         print(json.dumps(result, indent=2, default=str))
         return 0
 
-    # --all: every meeting with agenda_url but no agenda_items yet
+    # --all: meetings with agenda_url and no agenda_items yet — or, with --force,
+    # every meeting with agenda_url (re-extract + replace).
     from ..db import connect
     sql = """
         SELECT m.id, m.meeting_date, j.id AS jurisdiction_id, j.display_name AS jurisdiction
@@ -301,9 +320,12 @@ def main() -> int:
         JOIN governing_body gb ON gb.id = m.governing_body_id
         JOIN jurisdiction j ON j.id = gb.jurisdiction_id
         WHERE m.agenda_url IS NOT NULL
-          AND NOT EXISTS (SELECT 1 FROM agenda_item ai WHERE ai.meeting_id = m.id)
     """
     params: list = []
+    if not args.force:
+        sql += " AND NOT EXISTS (SELECT 1 FROM agenda_item ai WHERE ai.meeting_id = m.id)"
+    if args.upcoming:
+        sql += " AND m.meeting_date >= CURRENT_DATE"
     if args.jurisdiction:
         from ..jurisdiction import load_config, jurisdiction_fips
         cfg = load_config(args.jurisdiction)
@@ -350,7 +372,7 @@ def main() -> int:
                 # connections) with backoff so one blip doesn't cascade into mass
                 # failure at scale; non-transient errors fall straight through.
                 try:
-                    job = AgendasExtract(r["id"])
+                    job = AgendasExtract(r["id"], force=args.force)
                     job.run()
                     rep = getattr(job, "report", None)
                     outcome = "clean" if (rep is None or rep.fully_resolved) else "recovered"
