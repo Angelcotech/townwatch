@@ -19,6 +19,8 @@ dependencies = [
     "reportlab>=4.5",
     "click>=8.1",
     "rapidfuzz>=3.10",
+    "fastapi>=0.115",   # correction-intake service (the one always-on ETL endpoint)
+    "uvicorn>=0.30",    # ASGI server for the intake service
 ]
 
 [build-system]
