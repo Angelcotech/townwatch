@@ -53,6 +53,13 @@ PER_JURISDICTION_STEPS = [
     "refresh_council_roster",
 ]
 
+# Steps that spend money (model / OCR). Skipped for a jurisdiction whose fund is
+# paused (out of money) or suspended (manual hold) — but the cheap mapping steps
+# (meetings_inventory, scan_document_availability) always run, so we keep the
+# catalog fresh for everyone and activate paid extraction on demand. A deposit
+# clears a pause, so the next run resumes these automatically.
+SPENDING_STEPS = {"extract_agendas", "extract_minutes", "refresh_council_roster"}
+
 JURISDICTION_AGNOSTIC_STEPS = [
     "refresh_findings",
     "backfill_summaries",
@@ -84,6 +91,28 @@ def _run_step(module: str, args: list[str]) -> tuple[bool, str]:
         return False, "timeout"
 
 
+def _fund_state(slug: str) -> tuple[bool, str]:
+    """Return (spending_allowed, human_status) for a jurisdiction's fund.
+    No fund → ungated. Resolves the slug to its jurisdiction id via fips."""
+    from ..jurisdiction import load_config, jurisdiction_fips
+    from .. import funds
+    try:
+        fips = jurisdiction_fips(load_config(slug))
+        with connect() as conn:
+            row = conn.execute("SELECT id FROM jurisdiction WHERE fips_code = %s", (fips,)).fetchone()
+            if row is None:
+                return True, "no-jurisdiction-row"
+            jid = row["id"]
+            fund = funds.get_fund(conn, jid)
+            if fund is None:
+                return True, "ungated"
+            avail = funds.available(conn, jid)
+            return fund["status"] == "active", f"{fund['status']} (avail ${avail:.2f})"
+    except Exception as e:  # never let a fund lookup error block the catalog steps
+        print(f"  ⚠ fund lookup failed for {slug}: {e} — treating as ungated")
+        return True, "lookup-error"
+
+
 def _record_run_summary(summary: dict) -> None:
     """Record the daily run summary to pipeline_failure if anything broke,
     so the admin queue surfaces problems even without paging through logs."""
@@ -113,6 +142,10 @@ def main() -> int:
         default="",
         help="Comma-separated module names to skip (e.g. 'extract_minutes,backfill_summaries')",
     )
+    parser.add_argument(
+        "--ignore-funds", action="store_true",
+        help="Run spending steps regardless of fund status (admin override).",
+    )
     args = parser.parse_args()
     skip = {s.strip() for s in args.skip.split(",") if s.strip()}
 
@@ -127,10 +160,18 @@ def main() -> int:
 
     # Per-jurisdiction steps
     for slug in slugs:
-        print(f"\n--- {slug} ---")
+        can_spend, fund_status = (True, "ignored") if args.ignore_funds else _fund_state(slug)
+        print(f"\n--- {slug} ---  [fund: {fund_status}]")
         for module in PER_JURISDICTION_STEPS:
             if module in skip:
                 print(f"  ⊘ {module} (skipped)")
+                continue
+            # Gate the expensive steps on funds; keep cheap mapping always-on so
+            # the catalog stays fresh and paid extraction activates on demand.
+            if module in SPENDING_STEPS and not can_spend:
+                print(f"  ⏸ {module} (skipped — fund {fund_status}; deposit to resume)")
+                summary["steps"].append(
+                    {"module": module, "slug": slug, "ok": True, "skipped": "funds"})
                 continue
             step_args = _per_jurisdiction_args(module, slug)
             ok, output = _run_step(module, step_args)

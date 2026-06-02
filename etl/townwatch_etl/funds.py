@@ -72,6 +72,16 @@ def status(conn, jurisdiction_id: int) -> str:
     return row["status"] if row else "active"
 
 
+def spending_allowed(conn, jurisdiction_id: int) -> bool:
+    """True if model/OCR spend is allowed for this jurisdiction right now: either
+    it has no fund (ungated/legacy) or its fund is 'active'. False when paused
+    (out of funds) or suspended (manual hold). The driver uses this to skip the
+    expensive steps for a jurisdiction that can't pay, while leaving the cheap
+    mapping steps (inventory/scan) always-on."""
+    row = get_fund(conn, jurisdiction_id)
+    return row is None or row["status"] == "active"
+
+
 def pause(conn, jurisdiction_id: int, reason: str) -> None:
     ensure_fund(conn, jurisdiction_id)
     conn.execute(
