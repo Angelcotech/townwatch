@@ -43,6 +43,7 @@ from typing import Any
 from ..http_client import civic_get
 
 from .. import identity
+from .. import funds
 from ..audit import record_failure
 from ..db import connect
 from ..extractors.council_roster import (
@@ -81,11 +82,21 @@ class CouncilRosterRefresh(IngestJob):
     def ingest(self) -> None:
         assert self.conn is not None
 
-        body_id = self._find_jurisdiction_id()
+        jurisdiction_id = self._find_jurisdiction_id()
         for body in self.config.get("governing_bodies", []):
             if body.get("body_type") not in ELECTED_BODY_TYPES:
                 continue
-            self._refresh_body(body, body_id)
+            # Per-jurisdiction spend gate: the roster refresh is a paid vision/
+            # Haiku call, so it reserves/settles against the fund like the other
+            # extractors. Once the fund pauses, stop refreshing this jurisdiction.
+            with funds.gate(jurisdiction_id, job_name="refresh_council_roster",
+                            ref_kind="governing_body", ref_id=str(jurisdiction_id),
+                            description="council_roster") as g:
+                if g.paused:
+                    print(f"  ⏸ {self.slug}: jurisdiction paused (insufficient funds) "
+                          f"— skipping roster refresh")
+                    break
+                self._refresh_body(body, jurisdiction_id)
 
     def _find_jurisdiction_id(self) -> int:
         """Lookup by fips_code, which counties store as county_fips and

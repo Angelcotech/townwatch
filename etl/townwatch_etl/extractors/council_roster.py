@@ -27,6 +27,7 @@ import anthropic
 from pydantic import BaseModel, Field
 
 from ..config import ANTHROPIC_API_KEY
+from ..llm_client import record_anthropic
 
 
 Confidence = Literal["high", "medium", "low"]
@@ -194,6 +195,7 @@ def extract_from_html(html: str, *, page_url: str | None = None) -> CouncilRoste
         max_tokens=8192,
         messages=[{"role": "user", "content": instructions + "\n" + html}],
     )
+    record_anthropic(HTML_MODEL, response.usage)
     return _parse_json_response(response)
 
 
@@ -224,6 +226,7 @@ def extract_from_screenshot(image_path: Path, *, media_type: str = "image/png") 
             },
         ],
     )
+    record_anthropic(VISION_MODEL, response.usage)
     return _parse_json_response(response)
 
 

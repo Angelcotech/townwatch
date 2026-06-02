@@ -28,6 +28,8 @@ import anthropic
 
 from ..config import ANTHROPIC_API_KEY
 from ..db import connect
+from .. import funds
+from ..llm_client import record_anthropic
 
 
 SUMMARY_MODEL = "claude-haiku-4-5"
@@ -85,6 +87,7 @@ def _summarize(client: anthropic.Anthropic, prompt: str) -> str:
         max_tokens=MAX_TOKENS,
         messages=[{"role": "user", "content": prompt}],
     )
+    record_anthropic(SUMMARY_MODEL, resp.usage)
     text = ""
     for block in resp.content:
         if getattr(block, "type", "") == "text":
@@ -146,7 +149,8 @@ def _list_pending(
     """Meetings that have extracted data but no summary in the target column."""
     if kind == "agenda":
         sql = """
-            SELECT m.id, m.meeting_date, gb.name AS body_name, j.display_name AS jurisdiction
+            SELECT m.id, m.meeting_date, gb.name AS body_name,
+                   j.display_name AS jurisdiction, j.id AS jurisdiction_id
             FROM meeting m
             JOIN governing_body gb ON gb.id = m.governing_body_id
             JOIN jurisdiction j ON j.id = gb.jurisdiction_id
@@ -155,7 +159,8 @@ def _list_pending(
         """
     else:
         sql = """
-            SELECT m.id, m.meeting_date, gb.name AS body_name, j.display_name AS jurisdiction
+            SELECT m.id, m.meeting_date, gb.name AS body_name,
+                   j.display_name AS jurisdiction, j.id AS jurisdiction_id
             FROM meeting m
             JOIN governing_body gb ON gb.id = m.governing_body_id
             JOIN jurisdiction j ON j.id = gb.jurisdiction_id
@@ -186,37 +191,51 @@ def run_kind(
         print(f"[{kind}] {len(pending)} meeting(s) need a summary")
         succeeded = 0
         errored = 0
+        paused_jids: set[int] = set()
         for m in pending:
-            try:
-                if kind == "agenda":
-                    docket = _agenda_docket_json(conn, m["id"])
-                    prompt = AGENDA_PROMPT.format(
-                        body_name=m["body_name"],
-                        meeting_date=m["meeting_date"],
-                        docket_json=docket,
-                    )
-                else:
-                    motions = _minutes_motions_json(conn, m["id"])
-                    prompt = MINUTES_PROMPT.format(
-                        body_name=m["body_name"],
-                        meeting_date=m["meeting_date"],
-                        motions_json=motions,
-                    )
-                summary = _summarize(client, prompt)
-                if not summary:
-                    print(f"  ✗ meeting {m['id']}: empty summary returned")
-                    errored += 1
+            jid = m["jurisdiction_id"]
+            if jid in paused_jids:
+                continue
+            # Per-jurisdiction spend gate: this is a paid Haiku call, so it must
+            # reserve/settle against the fund like the other extractors — else a
+            # funded jurisdiction's balance under-counts its true spend.
+            with funds.gate(jid, meeting_id=m["id"], job_name="backfill_summaries",
+                            ref_kind="meeting", ref_id=str(m["id"]),
+                            description=f"summary:{kind}") as g:
+                if g.paused:
+                    paused_jids.add(jid)
+                    print(f"  ⏸ meeting {m['id']}: jurisdiction paused (insufficient funds) — skipping")
                     continue
-                column = "agenda_ai_summary" if kind == "agenda" else "minutes_ai_summary"
-                conn.execute(
-                    f"UPDATE meeting SET {column} = %s, updated_at = now() WHERE id = %s",
-                    (summary, m["id"]),
-                )
-                succeeded += 1
-                print(f"  ✓ meeting {m['id']} ({m['body_name']} {m['meeting_date']}): {summary[:100]}{'...' if len(summary) > 100 else ''}")
-            except Exception as e:
-                errored += 1
-                print(f"  ✗ meeting {m['id']}: {e}")
+                try:
+                    if kind == "agenda":
+                        docket = _agenda_docket_json(conn, m["id"])
+                        prompt = AGENDA_PROMPT.format(
+                            body_name=m["body_name"],
+                            meeting_date=m["meeting_date"],
+                            docket_json=docket,
+                        )
+                    else:
+                        motions = _minutes_motions_json(conn, m["id"])
+                        prompt = MINUTES_PROMPT.format(
+                            body_name=m["body_name"],
+                            meeting_date=m["meeting_date"],
+                            motions_json=motions,
+                        )
+                    summary = _summarize(client, prompt)
+                    if not summary:
+                        print(f"  ✗ meeting {m['id']}: empty summary returned")
+                        errored += 1
+                        continue
+                    column = "agenda_ai_summary" if kind == "agenda" else "minutes_ai_summary"
+                    conn.execute(
+                        f"UPDATE meeting SET {column} = %s, updated_at = now() WHERE id = %s",
+                        (summary, m["id"]),
+                    )
+                    succeeded += 1
+                    print(f"  ✓ meeting {m['id']} ({m['body_name']} {m['meeting_date']}): {summary[:100]}{'...' if len(summary) > 100 else ''}")
+                except Exception as e:
+                    errored += 1
+                    print(f"  ✗ meeting {m['id']}: {e}")
         return succeeded, errored
 
 
