@@ -33,6 +33,7 @@ import anthropic
 from pydantic import BaseModel, Field
 
 from ..config import ANTHROPIC_API_KEY, VISION_RENDER_DPI
+from ..llm_client import record_anthropic
 from .mistral_ocr import ocr_pdf
 from .rasterize import vision_content
 from .recovery import ExtractionReport, build_source, extract_with_ladder
@@ -250,6 +251,10 @@ Now extract from the attached PDF.
 # Models match minutes.py: Haiku for text layer, Sonnet vision for everything else.
 TEXT_MODEL = "claude-haiku-4-5"
 VISION_MODEL = "claude-sonnet-4-6"
+
+# Extraction-cache version — bump when the prompt/schema/models change to force
+# re-extraction of cached agendas under the new version (see extraction_cache).
+EXTRACTOR_VERSION = f"agenda-v1:{TEXT_MODEL}+{VISION_MODEL}"
 
 # CivicEngage sometimes serves placeholder PDFs for older meetings whose
 # agendas were never actually uploaded — valid PDF header, zero-content
@@ -482,6 +487,7 @@ def _extract_text_window(text: str) -> AgendaExtraction:
         ],
     ) as stream:
         response = stream.get_final_message()
+    record_anthropic(TEXT_MODEL, response.usage)
     return _parse_json_response(response)
 
 
@@ -500,6 +506,7 @@ def _extract_vision_window(pdf_path: Path, dpi: int | None = VISION_RENDER_DPI) 
         messages=[{"role": "user", "content": vision_content(pdf_path, VISION_INSTRUCTIONS, dpi=dpi)}],
     ) as stream:
         response = stream.get_final_message()
+    record_anthropic(VISION_MODEL, response.usage)
     return _parse_json_response(response)
 
 
@@ -555,6 +562,7 @@ def _synthesize_summary(summaries: list[str]) -> str:
                 "what's on the docket. Return only the summary.\n\n" + joined
             )}],
         )
+        record_anthropic(TEXT_MODEL, resp.usage)
         for block in resp.content:
             if getattr(block, "type", "") == "text" and block.text.strip():
                 return block.text.strip()

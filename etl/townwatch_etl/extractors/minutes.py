@@ -31,6 +31,7 @@ from pydantic import BaseModel, Field
 from ..config import ANTHROPIC_API_KEY, VISION_RENDER_DPI
 from .chunking import extend_unique
 from .mistral_ocr import ocr_pdf
+from ..llm_client import record_anthropic
 from .pdf_text import extract_text
 from .rasterize import vision_content
 from .recovery import ExtractionReport, build_source, extract_with_ladder
@@ -286,6 +287,12 @@ Now extract from the attached PDF.
 TEXT_MODEL = "claude-haiku-4-5"
 VISION_MODEL = "claude-sonnet-4-6"
 
+# Extraction-cache version. BUMP THIS when the prompt, schema, or models above
+# change in a way that should re-extract existing documents — a bump invalidates
+# all cached minutes (they re-extract under the new version on next process).
+# Keep the model names in it so a model swap is a visible, intentional re-spend.
+EXTRACTOR_VERSION = f"minutes-v1:{TEXT_MODEL}+{VISION_MODEL}"
+
 
 # =====================================================================
 # API calls
@@ -385,6 +392,7 @@ def _extract_text_window(text: str) -> MeetingExtraction:
         ],
     ) as stream:
         response = stream.get_final_message()
+    record_anthropic(TEXT_MODEL, response.usage)
     return _parse_json_response(response)
 
 
@@ -407,6 +415,7 @@ def _extract_vision_window(pdf_path: Path, dpi: int | None = VISION_RENDER_DPI) 
         messages=[{"role": "user", "content": vision_content(pdf_path, VISION_INSTRUCTIONS, dpi=dpi)}],
     ) as stream:
         response = stream.get_final_message()
+    record_anthropic(VISION_MODEL, response.usage)
     return _parse_json_response(response)
 
 
@@ -474,6 +483,7 @@ def _synthesize_summary(summaries: list[str]) -> str:
                 "(what passed, failed, was tabled). Return only the summary.\n\n" + joined
             )}],
         )
+        record_anthropic(TEXT_MODEL, resp.usage)
         for block in resp.content:
             if getattr(block, "type", "") == "text" and block.text.strip():
                 return block.text.strip()

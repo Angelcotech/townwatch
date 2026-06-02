@@ -32,18 +32,29 @@ import argparse
 import json
 import sys
 import tempfile
+import time
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+from .. import extraction_cache
+from .. import funds
 from ..extractors.agendas import (
     AgendaExtraction,
     AgendaItemRecord,
+    EXTRACTOR_VERSION,
     extract_from_document,
 )
+from ..extractors.recovery import ExtractionReport
 from ..audit import record_failure
 from ..http_client import civic_get
 from ..ingest_base import IngestJob
+from ..resilience import is_transient_error
+
+# Per-unit retry policy for transient infra hiccups (shared semantics with
+# extract_minutes): 5 attempts, exponential backoff 4 → 8 → 16 → 32s.
+_MAX_ATTEMPTS = 5
+_BACKOFF_BASE_SECS = 4
 
 
 class AgendasExtract(IngestJob):
@@ -95,32 +106,56 @@ class AgendasExtract(IngestJob):
             r = civic_get(meeting["agenda_url"], timeout=120.0)
             r.raise_for_status()
             content_type = r.headers.get("content-type")
+            chash = extraction_cache.content_hash(r.content)
 
-            # Suffix is just a hint for shell tools; the dispatcher sniffs magic bytes.
-            with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
-                f.write(r.content)
-                doc_path = Path(f.name)
+            # Content-addressed cache: replay an already-extracted document for
+            # $0 (no model call). Only a genuine miss costs money.
+            cached = extraction_cache.get(self.conn, chash, "agenda", EXTRACTOR_VERSION)
+            if cached is not None:
+                extraction = AgendaExtraction.model_validate(cached["extraction"])
+                method = "cached"
+                report = ExtractionReport(total_units=1, clean=1, recovered=0,
+                                          anomalies=[], method="cached")
+                self.report = report
+                print(f"     ✓ cache hit {chash[:12]} — replaying {len(extraction.agenda_items)} "
+                      f"items for $0 (orig method={cached['method']})")
+            else:
+                # Suffix is just a hint for shell tools; the dispatcher sniffs magic bytes.
+                with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+                    f.write(r.content)
+                    doc_path = Path(f.name)
 
-            print(f"     doc={len(r.content):,} bytes content-type={content_type!r} → extracting...")
-            extraction, method, report = extract_from_document(doc_path, content_type)
-            self.report = report
-            print(f"     method={method}  items={len(extraction.agenda_items)}  confidence={extraction.meeting.extraction_confidence}")
-            print(f"     recovery: {report.summary()}")
-            for an in report.anomalies:
-                record_failure(
-                    self.conn,
-                    job_name="extract_agendas",
-                    step=f"recovery_anomaly:{an.kind}",
-                    governing_body_id=meeting.get("governing_body_id"),
-                    meeting_id=self.meeting_id,
-                    message=f"pages {an.start_page}-{an.end_page} unresolvable: {an.kind}",
-                    context={
-                        "anomaly_kind": an.kind,
-                        "page_range": [an.start_page, an.end_page],
-                        "attempts": an.attempts,
-                        "agenda_url": meeting["agenda_url"],
-                    },
-                )
+                print(f"     doc={len(r.content):,} bytes content-type={content_type!r} → extracting...")
+                extraction, method, report = extract_from_document(doc_path, content_type)
+                self.report = report
+                print(f"     method={method}  items={len(extraction.agenda_items)}  confidence={extraction.meeting.extraction_confidence}")
+                print(f"     recovery: {report.summary()}")
+                for an in report.anomalies:
+                    record_failure(
+                        self.conn,
+                        job_name="extract_agendas",
+                        step=f"recovery_anomaly:{an.kind}",
+                        governing_body_id=meeting.get("governing_body_id"),
+                        meeting_id=self.meeting_id,
+                        message=f"pages {an.start_page}-{an.end_page} unresolvable: {an.kind}",
+                        context={
+                            "anomaly_kind": an.kind,
+                            "page_range": [an.start_page, an.end_page],
+                            "attempts": an.attempts,
+                            "agenda_url": meeting["agenda_url"],
+                        },
+                    )
+                # Cache a usable result so the next run of this document is free.
+                if extraction.agenda_items or method in ("text_layer", "ocr", "vision", "docx", "doc"):
+                    from ..llm_client import current_usage
+                    from ..pricing import cost_usd as _cost_usd
+                    _u = current_usage()
+                    extraction_cache.put(
+                        self.conn, chash, "agenda", EXTRACTOR_VERSION,
+                        extraction_json=extraction.model_dump_json(), method=method,
+                        source_url=meeting["agenda_url"],
+                        cost_usd=(_cost_usd(_u) if _u is not None else None),
+                    )
 
         # Persist the raw extraction so a re-run never needs another API call
         self._attach_raw_payload(meeting["agenda_url"], extraction)
@@ -275,50 +310,85 @@ def main() -> int:
     failed = 0
     clean = 0
     recovered = 0
+    paused = 0
+    paused_jids: set[int] = set()
     anomaly_kinds: dict[str, int] = {}
     for r in rows:
+        jid = r["jurisdiction_id"]
+        # Once a jurisdiction auto-pauses (out of funds), skip its remaining
+        # meetings rather than re-attempting a reservation that will refuse.
+        if jid in paused_jids:
+            paused += 1
+            continue
         print(f"\n--- meeting {r['id']} ({r['meeting_date']}) {r['jurisdiction']} ---")
-        try:
-            job = AgendasExtract(r["id"])
-            job.run()
-            rep = getattr(job, "report", None)
-            outcome = "clean" if (rep is None or rep.fully_resolved) else "recovered"
-            if outcome == "clean":
-                clean += 1
-            else:
-                recovered += 1
-                for an in rep.anomalies:
-                    anomaly_kinds[an.kind] = anomaly_kinds.get(an.kind, 0) + 1
-            record_outcome(run_id=run_id, job_name="extract_agendas", meeting_id=r["id"],
-                           jurisdiction_id=r["jurisdiction_id"], outcome=outcome, report=rep)
-        except Exception as e:
-            failed += 1
-            print(f"   ✗ failed: {e}")
-            record_outcome(run_id=run_id, job_name="extract_agendas", meeting_id=r["id"],
-                           jurisdiction_id=r["jurisdiction_id"], outcome="failed", report=None)
-            # Record it so a throttle-driven backlog is VISIBLE in the admin
-            # queue instead of vanishing into stdout (the old behavior, which
-            # hid hundreds of unextracted Columbia County agendas). Supersede
-            # any prior unresolved row for this meeting so a nightly cron
-            # can't accumulate duplicates for a persistently-failing URL.
-            try:
-                with connect() as fconn:
-                    fconn.execute(
-                        "UPDATE pipeline_failure SET resolved_at = now(), "
-                        "resolution_notes = 'superseded by later extract_agendas run' "
-                        "WHERE job_name = 'extract_agendas' AND meeting_id = %s AND resolved_at IS NULL",
-                        (r["id"],),
-                    )
-                    record_failure(
-                        fconn,
-                        job_name="extract_agendas",
-                        step="extract_all",
-                        meeting_id=r["id"],
-                        message=f"{type(e).__name__}: {e}",
-                        exception=e,
-                    )
-            except Exception as rec_err:
-                print(f"   ⚠ could not record failure: {rec_err}")
+        # Shared per-jurisdiction spend gate: reserve before, settle metered cost
+        # after. Unfunded jurisdictions run ungated/unmetered as before.
+        with funds.gate(jid, run_id=run_id, meeting_id=r["id"], job_name="extract_agendas",
+                        ref_kind="meeting", ref_id=str(r["id"]), description="extract_agendas") as g:
+            if g.paused:
+                print("   ⏸ jurisdiction paused (insufficient funds) — skipping")
+                paused += 1
+                paused_jids.add(jid)
+                continue
+            last_err: Exception | None = None
+            succeeded = False
+            for attempt in range(1, _MAX_ATTEMPTS + 1):
+                # Retry transient infra hiccups (DNS-resolver overload, dropped
+                # connections) with backoff so one blip doesn't cascade into mass
+                # failure at scale; non-transient errors fall straight through.
+                try:
+                    job = AgendasExtract(r["id"])
+                    job.run()
+                    rep = getattr(job, "report", None)
+                    outcome = "clean" if (rep is None or rep.fully_resolved) else "recovered"
+                    if outcome == "clean":
+                        clean += 1
+                    else:
+                        recovered += 1
+                        for an in rep.anomalies:
+                            anomaly_kinds[an.kind] = anomaly_kinds.get(an.kind, 0) + 1
+                    record_outcome(run_id=run_id, job_name="extract_agendas", meeting_id=r["id"],
+                                   jurisdiction_id=jid, outcome=outcome, report=rep)
+                    succeeded = True
+                    break
+                except Exception as e:
+                    last_err = e
+                    if is_transient_error(e) and attempt < _MAX_ATTEMPTS:
+                        backoff = _BACKOFF_BASE_SECS * (2 ** (attempt - 1))
+                        print(f"   ⏳ meeting {r['id']} transient error (attempt {attempt}/{_MAX_ATTEMPTS}): "
+                              f"{str(e)[:90]} — retrying in {backoff}s")
+                        time.sleep(backoff)
+                        continue
+                    break
+            if not succeeded:
+                e = last_err
+                failed += 1
+                print(f"   ✗ failed: {e}")
+                record_outcome(run_id=run_id, job_name="extract_agendas", meeting_id=r["id"],
+                               jurisdiction_id=jid, outcome="failed", report=None)
+                # Record it so a throttle-driven backlog is VISIBLE in the admin
+                # queue instead of vanishing into stdout (the old behavior, which
+                # hid hundreds of unextracted Columbia County agendas). Supersede
+                # any prior unresolved row for this meeting so a nightly cron
+                # can't accumulate duplicates for a persistently-failing URL.
+                try:
+                    with connect() as fconn:
+                        fconn.execute(
+                            "UPDATE pipeline_failure SET resolved_at = now(), "
+                            "resolution_notes = 'superseded by later extract_agendas run' "
+                            "WHERE job_name = 'extract_agendas' AND meeting_id = %s AND resolved_at IS NULL",
+                            (r["id"],),
+                        )
+                        record_failure(
+                            fconn,
+                            job_name="extract_agendas",
+                            step="extract_all",
+                            meeting_id=r["id"],
+                            message=f"{type(e).__name__}: {e}",
+                            exception=e,
+                        )
+                except Exception as rec_err:
+                    print(f"   ⚠ could not record failure: {rec_err}")
 
     # Run-level success rate — the rollout-confidence metric.
     total = len(rows)
@@ -328,6 +398,8 @@ def main() -> int:
     print(f"  clean:     {clean}")
     print(f"  recovered: {recovered}  (kept partial records; flagged pages: {anomaly_kinds or 'none'})")
     print(f"  failed:    {failed}")
+    if paused:
+        print(f"  paused:    {paused}  (skipped — jurisdiction out of funds)")
     print(f"  success rate (produced a record): {rate:.0f}%")
     if failed or recovered:
         print("  anomalies recorded to pipeline_failure for admin triage")

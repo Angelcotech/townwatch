@@ -30,6 +30,7 @@ import argparse
 import json
 import sys
 import tempfile
+import time
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -37,15 +38,19 @@ from typing import Any
 from ..http_client import civic_get
 
 from .. import identity
+from .. import extraction_cache
 from ..audit import record_failure
 from ..extractors.minutes import (
     AgendaItem,
+    EXTRACTOR_VERSION,
     IndividualVote,
     MeetingExtraction,
     Recusal,
     extract_from_pdf,
 )
+from ..extractors.recovery import ExtractionReport
 from ..ingest_base import IngestJob
+from ..resilience import is_transient_error
 
 
 USER_AGENT = "TownWatch-ETL/0.1 (civic transparency research)"
@@ -54,7 +59,8 @@ USER_AGENT = "TownWatch-ETL/0.1 (civic transparency research)"
 class MinutesExtract(IngestJob):
     source_type = "scrape"
 
-    def __init__(self, meeting_id: int, *, prebuilt_extraction: MeetingExtraction | None = None) -> None:
+    def __init__(self, meeting_id: int, *, prebuilt_extraction: MeetingExtraction | None = None,
+                 force: bool = False) -> None:
         super().__init__()
         self.meeting_id = meeting_id
         # source_name + source_url are set per-meeting in ingest() so the
@@ -64,6 +70,9 @@ class MinutesExtract(IngestJob):
         # When set, skip the PDF-fetch + Sonnet step and persist this result
         # directly. Used by the batched extraction job.
         self.prebuilt_extraction = prebuilt_extraction
+        # force=True re-extracts a meeting that already has motions, replacing
+        # the (incomplete, old-pipeline) record. Used by the corpus audit/re-run.
+        self.force = force
 
     # ---- main flow -------------------------------------------------------
 
@@ -78,8 +87,21 @@ class MinutesExtract(IngestJob):
             return
 
         if self._already_extracted(self.meeting_id):
-            print(f"  ⊘ meeting {self.meeting_id} already has motions — skipping")
-            return
+            if not self.force:
+                print(f"  ⊘ meeting {self.meeting_id} already has motions — skipping")
+                return
+            # --force: this meeting's prior extraction is being replaced. Clear
+            # the old motions + their votes now; the re-extract writes a clean,
+            # complete record. This runs inside ingest()'s transaction, so if
+            # extraction later fails, run() rolls back and the old data survives.
+            self.conn.execute(
+                "DELETE FROM vote WHERE motion_id IN (SELECT id FROM motion WHERE meeting_id = %s)",
+                (self.meeting_id,),
+            )
+            ndel = self.conn.execute(
+                "DELETE FROM motion WHERE meeting_id = %s", (self.meeting_id,)
+            ).rowcount
+            print(f"  ↻ meeting {self.meeting_id}: --force, cleared {ndel} prior motion(s) for re-extract")
 
         # Update provenance from the actual minutes URL for this meeting
         from urllib.parse import urlparse
@@ -101,35 +123,62 @@ class MinutesExtract(IngestJob):
             # the scanner / agenda extractor, so it must respect one throttle).
             r = civic_get(meeting["minutes_url"], timeout=30.0)
             r.raise_for_status()
+            chash = extraction_cache.content_hash(r.content)
 
-            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
-                f.write(r.content)
-                pdf_path = Path(f.name)
+            # Content-addressed cache: if this exact document was already
+            # extracted under the current extractor version, replay it for $0.
+            # This is what makes re-runs / resumes / outage-restarts free — the
+            # model is only called on a genuine miss.
+            cached = extraction_cache.get(self.conn, chash, "minutes", EXTRACTOR_VERSION)
+            if cached is not None:
+                extraction = MeetingExtraction.model_validate(cached["extraction"])
+                method = "cached"
+                report = ExtractionReport(total_units=1, clean=1, recovered=0,
+                                          anomalies=[], method="cached")
+                self.report = report
+                print(f"     ✓ cache hit {chash[:12]} — replaying {len(extraction.agenda_items)} "
+                      f"items for $0 (orig method={cached['method']})")
+            else:
+                with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+                    f.write(r.content)
+                    pdf_path = Path(f.name)
 
-            # Extract via tiered pipeline (text layer → OCR → vision fallback)
-            print(f"     pdf={len(r.content):,} bytes → extracting...")
-            extraction, method, report = extract_from_pdf(pdf_path)
-            self.report = report
-            print(f"     method={method}  items={len(extraction.agenda_items)}  confidence={extraction.meeting.extraction_confidence}")
-            print(f"     recovery: {report.summary()}")
-            # Per-window residue the escalating ladder couldn't resolve →
-            # classified anomalies for admin triage. The document still keeps
-            # everything that DID resolve; only the irreducible pages are flagged.
-            for an in report.anomalies:
-                record_failure(
-                    self.conn,
-                    job_name="extract_minutes",
-                    step=f"recovery_anomaly:{an.kind}",
-                    governing_body_id=meeting["governing_body_id"],
-                    meeting_id=self.meeting_id,
-                    message=f"pages {an.start_page}-{an.end_page} unresolvable: {an.kind}",
-                    context={
-                        "anomaly_kind": an.kind,
-                        "page_range": [an.start_page, an.end_page],
-                        "attempts": an.attempts,
-                        "minutes_url": meeting["minutes_url"],
-                    },
-                )
+                # Extract via tiered pipeline (text layer → OCR → vision fallback)
+                print(f"     pdf={len(r.content):,} bytes → extracting...")
+                extraction, method, report = extract_from_pdf(pdf_path)
+                self.report = report
+                print(f"     method={method}  items={len(extraction.agenda_items)}  confidence={extraction.meeting.extraction_confidence}")
+                print(f"     recovery: {report.summary()}")
+                # Per-window residue the escalating ladder couldn't resolve →
+                # classified anomalies for admin triage. The document still keeps
+                # everything that DID resolve; only the irreducible pages are flagged.
+                for an in report.anomalies:
+                    record_failure(
+                        self.conn,
+                        job_name="extract_minutes",
+                        step=f"recovery_anomaly:{an.kind}",
+                        governing_body_id=meeting["governing_body_id"],
+                        meeting_id=self.meeting_id,
+                        message=f"pages {an.start_page}-{an.end_page} unresolvable: {an.kind}",
+                        context={
+                            "anomaly_kind": an.kind,
+                            "page_range": [an.start_page, an.end_page],
+                            "attempts": an.attempts,
+                            "minutes_url": meeting["minutes_url"],
+                        },
+                    )
+                # Store in the cache so the NEXT run of this document is free.
+                # Only cache a usable result (don't cache a total failure).
+                if extraction.agenda_items or method in ("text_layer", "ocr", "vision"):
+                    from ..llm_client import current_usage
+                    from ..pricing import cost_usd as _cost_usd
+                    _u = current_usage()
+                    extraction_cache.put(
+                        self.conn, chash, "minutes", EXTRACTOR_VERSION,
+                        extraction_json=extraction.model_dump_json(), method=method,
+                        source_url=meeting["minutes_url"],
+                        cost_usd=(_cost_usd(_u) if _u is not None else None),
+                    )
 
         # Persist the raw extraction so a re-run never needs another API call
         self._attach_raw_payload(meeting["minutes_url"], extraction)
@@ -482,27 +531,60 @@ class MinutesExtract(IngestJob):
         return None
 
 
-def _process_meeting(r, run_id) -> tuple[str, list]:
+_MAX_ATTEMPTS = 5
+_BACKOFF_BASE_SECS = 4  # sleeps 4, 8, 16, 32s between attempts
+
+
+def _process_meeting(r, run_id, force: bool = False) -> tuple[str, list]:
     """Extract one meeting end-to-end. Thread-safe — each call opens its own DB
     connections (via run() / record_outcome / connect), so it parallelizes
-    cleanly under a thread pool. Records the ledger outcome and, on failure, a
-    pipeline_failure (superseding any prior unresolved row for the meeting).
-    Returns (outcome, anomaly_kinds) for run-level tallying."""
-    from ..db import connect
+    cleanly under a thread pool. Transient network errors (DNS-resolver overload,
+    momentary socket/proxy blips) are retried with exponential backoff so a
+    resolver hiccup self-heals instead of cascading into mass failure; DNS
+    failures surface at connect() — before any extraction — so a retry is cheap.
+
+    Spend runs through the shared per-jurisdiction gate (funds.gate): reserve
+    before, settle the real metered cost after (success or failure). A funded
+    jurisdiction that can't afford the floor is skipped ('paused'); an unfunded
+    one is ungated and runs exactly as before. Cache hits settle $0, so a
+    re-run draws nothing. Returns (outcome, anomaly_kinds)."""
     from ..extraction_ledger import record_outcome
+    from .. import funds
     mid = r["id"]
     jid = r["jurisdiction_id"]
     print(f"--- meeting {mid} ({r['meeting_date']}) {r['jurisdiction']} ---")
-    try:
-        job = MinutesExtract(mid)
-        job.run()
-        rep = getattr(job, "report", None)
-        outcome = "clean" if (rep is None or rep.fully_resolved) else "recovered"
-        record_outcome(run_id=run_id, job_name="extract_minutes", meeting_id=mid,
-                       jurisdiction_id=jid, outcome=outcome, report=rep)
-        kinds = [an.kind for an in rep.anomalies] if (rep and rep.anomalies) else []
-        return outcome, kinds
-    except Exception as e:
+
+    with funds.gate(jid, run_id=run_id, meeting_id=mid, job_name="extract_minutes",
+                    ref_kind="meeting", ref_id=str(mid), description="extract_minutes") as g:
+        if g.paused:
+            print(f"   ⏸ meeting {mid}: jurisdiction paused (insufficient funds, "
+                  f"floor reached) — skipping")
+            return "paused", []
+
+        last_err: Exception | None = None
+        for attempt in range(1, _MAX_ATTEMPTS + 1):
+            try:
+                job = MinutesExtract(mid, force=force)
+                job.run()
+                rep = getattr(job, "report", None)
+                outcome = "clean" if (rep is None or rep.fully_resolved) else "recovered"
+                record_outcome(run_id=run_id, job_name="extract_minutes", meeting_id=mid,
+                               jurisdiction_id=jid, outcome=outcome, report=rep)
+                kinds = [an.kind for an in rep.anomalies] if (rep and rep.anomalies) else []
+                return outcome, kinds
+            except Exception as e:
+                last_err = e
+                if is_transient_error(e) and attempt < _MAX_ATTEMPTS:
+                    backoff = _BACKOFF_BASE_SECS * (2 ** (attempt - 1))
+                    print(f"   ⏳ meeting {mid} transient error (attempt {attempt}/{_MAX_ATTEMPTS}): "
+                          f"{str(e)[:90]} — retrying in {backoff}s")
+                    time.sleep(backoff)
+                    continue
+                break
+
+        # Permanent failure (non-transient, or retries exhausted).
+        from ..db import connect
+        e = last_err
         print(f"   ✗ meeting {mid} failed: {e}")
         record_outcome(run_id=run_id, job_name="extract_minutes", meeting_id=mid,
                        jurisdiction_id=jid, outcome="failed", report=None)
@@ -530,17 +612,26 @@ def main() -> int:
     parser.add_argument("--workers", type=int, default=1,
                         help="Parallel extraction workers (extraction is network/think-bound, so "
                              "threads parallelize the slow Anthropic calls; 3-4 recommended)")
+    parser.add_argument("--force", action="store_true",
+                        help="Re-extract meetings that ALREADY have motions, replacing the old "
+                             "(incomplete) record. For the corpus audit/re-run via the new pipeline.")
+    parser.add_argument("--reextract-before", metavar="TIMESTAMP",
+                        help="Makes --force resumable: only (re)extract meetings whose existing "
+                             "motions all predate TIMESTAMP (ISO 8601). Pass the campaign START time "
+                             "— meetings already redone this pass have fresh motions and are skipped, "
+                             "so an interrupted run resumes without re-spending on completed work.")
     args = parser.parse_args()
 
     if not args.meeting_id and not args.all:
         parser.error("specify --meeting-id N or --all")
 
     if args.meeting_id:
-        result = MinutesExtract(args.meeting_id).run()
+        result = MinutesExtract(args.meeting_id, force=args.force).run()
         print(json.dumps(result, indent=2, default=str))
         return 0
 
-    # --all: pick every meeting with minutes_url but no motions yet
+    # --all: pick every meeting with minutes_url and no motions yet — or,
+    # with --force, EVERY meeting with minutes_url (re-extract + replace).
     from ..db import connect
     sql = """
         SELECT m.id, m.meeting_date, j.id AS jurisdiction_id, j.display_name AS jurisdiction
@@ -548,9 +639,17 @@ def main() -> int:
         JOIN governing_body gb ON gb.id = m.governing_body_id
         JOIN jurisdiction j ON j.id = gb.jurisdiction_id
         WHERE m.minutes_url IS NOT NULL
-          AND NOT EXISTS (SELECT 1 FROM motion mo WHERE mo.meeting_id = m.id)
     """
     params: list = []
+    if not args.force:
+        sql += " AND NOT EXISTS (SELECT 1 FROM motion mo WHERE mo.meeting_id = m.id)"
+    elif args.reextract_before:
+        # Resume guard: a meeting redone this pass has motions created at/after
+        # the campaign start, so excluding any meeting that already has a
+        # post-cutoff motion makes --force safe to interrupt and re-run.
+        sql += (" AND NOT EXISTS (SELECT 1 FROM motion mo "
+                "WHERE mo.meeting_id = m.id AND mo.created_at >= %s)")
+        params.append(args.reextract_before)
     if args.jurisdiction:
         from ..jurisdiction import load_config, jurisdiction_fips
         cfg = load_config(args.jurisdiction)
@@ -571,10 +670,11 @@ def main() -> int:
     failed = 0
     clean = 0          # fully resolved, no anomalies
     recovered = 0      # produced a record but some pages were flagged
+    paused = 0         # skipped: jurisdiction out of funds (floor reached)
     anomaly_kinds: dict[str, int] = {}
 
     def _tally(result: tuple[str, list]) -> None:
-        nonlocal failed, clean, recovered
+        nonlocal failed, clean, recovered, paused
         outcome, kinds = result
         if outcome == "clean":
             clean += 1
@@ -582,6 +682,8 @@ def main() -> int:
             recovered += 1
             for k in kinds:
                 anomaly_kinds[k] = anomaly_kinds.get(k, 0) + 1
+        elif outcome == "paused":
+            paused += 1
         else:
             failed += 1
 
@@ -592,13 +694,22 @@ def main() -> int:
         # Anthropic SDK self-throttles on rate limits. Wall-clock drops ~Nx.
         from concurrent.futures import ThreadPoolExecutor, as_completed
         with ThreadPoolExecutor(max_workers=workers) as ex:
-            futs = [ex.submit(_process_meeting, r, run_id) for r in rows]
+            futs = [ex.submit(_process_meeting, r, run_id, args.force) for r in rows]
             for i, fut in enumerate(as_completed(futs), 1):
                 _tally(fut.result())
                 print(f"   [{i}/{len(rows)}] complete — clean={clean} recovered={recovered} failed={failed}")
     else:
+        paused_jids: set[int] = set()
         for r in rows:
-            _tally(_process_meeting(r, run_id))
+            # Once a jurisdiction auto-pauses (out of funds), skip its remaining
+            # meetings instead of re-attempting a reservation that will refuse.
+            if r["jurisdiction_id"] in paused_jids:
+                _tally(("paused", []))
+                continue
+            outcome, kinds = _process_meeting(r, run_id, args.force)
+            if outcome == "paused":
+                paused_jids.add(r["jurisdiction_id"])
+            _tally((outcome, kinds))
 
     # Run-level success rate — the rollout-confidence metric. "Produced a
     # record" counts clean + recovered (partial) extractions; only total
@@ -610,6 +721,8 @@ def main() -> int:
     print(f"  clean:     {clean}")
     print(f"  recovered: {recovered}  (kept partial records; flagged pages: {anomaly_kinds or 'none'})")
     print(f"  failed:    {failed}")
+    if paused:
+        print(f"  paused:    {paused}  (skipped — jurisdiction out of funds)")
     print(f"  success rate (produced a record): {rate:.0f}%")
     if failed or recovered:
         print("  anomalies recorded to pipeline_failure for admin triage")

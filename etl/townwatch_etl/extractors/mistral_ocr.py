@@ -30,6 +30,7 @@ from pathlib import Path
 import httpx
 
 from ..config import MISTRAL_API_KEY
+from ..llm_client import record_mistral_pages
 from .chunking import PAGE_BREAK
 
 _OCR_URL = "https://api.mistral.ai/v1/ocr"
@@ -61,6 +62,7 @@ def ocr_pdf(pdf_path: Path, timeout: float = 240.0) -> str | None:
         )
         resp.raise_for_status()
         pages = resp.json().get("pages", [])
+        record_mistral_pages(len(pages))  # metered for the fund ledger
         text = PAGE_BREAK.join((p.get("markdown") or "") for p in pages).strip()
         return text or None
     except Exception as e:  # noqa: BLE001 — any failure → vision fallback
