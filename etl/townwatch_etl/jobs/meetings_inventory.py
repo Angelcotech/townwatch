@@ -121,9 +121,13 @@ class MeetingsInventory(IngestJob):
     """Platform-agnostic inventory job."""
     source_type = "scrape"
 
-    def __init__(self, slug: str) -> None:
+    def __init__(self, slug: str, *, calendar_from: "date | None" = None) -> None:
         super().__init__()
         self.slug = slug
+        # CivicEngage calendar pass scrapes upcoming meetings from this date
+        # forward (default today). A past date backfills/enriches existing
+        # meetings with time + location.
+        self.calendar_from = calendar_from
         self.config = load_config(slug)
         platform = (self.config.get("platform_hints") or {}).get("agenda_platform")
         if not platform:
@@ -172,6 +176,66 @@ class MeetingsInventory(IngestJob):
                 count += 1
             print(f"  ✓ {body_name}: processed {count} meetings")
 
+        # CivicEngage AgendaCenter only has meetings whose agenda is already
+        # posted (past / imminent). The public calendar lists meetings further
+        # out, with time + location — pull those so cities have a forward view.
+        if self.platform == "civicengage":
+            self._ingest_calendar()
+
+    def _ingest_calendar(self) -> None:
+        """Forward-looking upcoming meetings from the CivicEngage public calendar
+        (date / time / location). Inserts agenda-less rows that the AgendaCenter
+        pass later upgrades when the agenda posts (see _upsert_meeting step 2)."""
+        from ..scrapers.civicengage_calendar import upcoming_meetings, default_body_keywords
+        base_url = (self.config.get("platform_hints") or {}).get("agenda_base_url")
+        if not base_url:
+            return
+        body_keywords = default_body_keywords(self.config.get("governing_bodies", []))
+        if not body_keywords:
+            return
+        from_date = self.calendar_from or datetime.now().date()
+        print(f"  → scraping upcoming meetings (civicengage calendar, from {from_date})")
+        count = 0
+        for mt in upcoming_meetings(base_url=base_url, body_keywords=body_keywords, from_date=from_date):
+            body_id = self._find_body(mt.body_name)
+            if body_id is None:
+                continue
+            self._upsert_calendar_meeting(body_id, mt)
+            count += 1
+        print(f"  ✓ calendar: {count} upcoming meeting(s)")
+
+    def _upsert_calendar_meeting(self, body_id: int, mt) -> None:
+        """A calendar meeting is identified by (body, date) — the agenda_url is an
+        attribute filled later, not an identity. So if ANY row already exists for
+        that (body, date) — whether AgendaCenter created it (has an agenda) or a
+        prior calendar run did — ENRICH it with time/location rather than insert a
+        duplicate. Otherwise insert a new agenda-less 'scheduled' row. Prefers the
+        agenda-bearing row when more than one exists."""
+        assert self.conn is not None
+        row = self.conn.execute(
+            "SELECT id FROM meeting WHERE governing_body_id = %s AND meeting_date = %s "
+            "ORDER BY (agenda_url IS NOT NULL) DESC, id ASC LIMIT 1",
+            (body_id, mt.meeting_date),
+        ).fetchone()
+        if row:
+            self.conn.execute(
+                "UPDATE meeting SET meeting_time = COALESCE(%s::time, meeting_time), "
+                "location = COALESCE(%s, location), updated_at = now() WHERE id = %s",
+                (mt.meeting_time, mt.location, row["id"]),
+            )
+            self.rows_skipped += 1
+            return
+        self.insert("meeting", {
+            "governing_body_id": body_id,
+            "meeting_date":      mt.meeting_date,
+            "meeting_type":      "regular",
+            "agenda_url":        None,
+            "minutes_url":       None,
+            "status":            "scheduled",
+            "meeting_time":      mt.meeting_time,
+            "location":          mt.location,
+        })
+
     def _find_body(self, body_name: str) -> int | None:
         """Find body by name, scoped to THIS jurisdiction. Without scoping,
         cities and counties that share body names (Planning Commission is
@@ -196,42 +260,56 @@ class MeetingsInventory(IngestJob):
 
     def _upsert_meeting(self, body_id: int, m: _MeetingRecordProto) -> None:
         assert self.conn is not None and self.data_source_id is not None
-        # NULL-safe match (IS NOT DISTINCT FROM): plain `agenda_url = %s` is
-        # never true when agenda_url is NULL (SQL NULL ≠ NULL), so agenda-less
-        # meetings (every UPCOMING meeting, before its agenda posts) failed to
-        # match and got DUPLICATED on every inventory run. IS NOT DISTINCT FROM
-        # treats NULL = NULL as true, so they update in place.
+        status = self._derive_status(m)
+        # meeting_time + location: CivicClerk events and the CivicEngage calendar
+        # both carry these; the AgendaCenter listing doesn't (getattr keeps every
+        # record shape working). For UPCOMING meetings — which have no agenda yet
+        # — this is the only source of time/location.
+        meeting_time = getattr(m, "meeting_time", None)
+        location = getattr(m, "location", None)
+
+        # 1. Exact match. NULL-safe (IS NOT DISTINCT FROM): plain `agenda_url = %s`
+        #    is never true when agenda_url is NULL, so agenda-less meetings would
+        #    otherwise duplicate on every run.
         existing = self.conn.execute(
-            """
-            SELECT id FROM meeting
-            WHERE governing_body_id = %s AND meeting_date = %s
-              AND agenda_url IS NOT DISTINCT FROM %s
-            """,
+            "SELECT id FROM meeting WHERE governing_body_id = %s AND meeting_date = %s "
+            "AND agenda_url IS NOT DISTINCT FROM %s",
             (body_id, m.meeting_date, m.agenda_url),
         ).fetchone()
-
-        status = self._derive_status(m)
-        # Scheduled start time from the calendar feed (CivicClerk has it;
-        # CivicEngage's listing doesn't — getattr keeps both shapes working).
-        # This is the only source of time for UPCOMING meetings, which have no
-        # agenda/minutes yet.
-        meeting_time = getattr(m, "meeting_time", None)
         if existing:
             self.conn.execute(
-                """
-                UPDATE meeting
-                SET minutes_url = %s,
-                    status = %s,
-                    agenda_posted_at = COALESCE(%s, agenda_posted_at),
-                    meeting_time = COALESCE(%s::time, meeting_time),
-                    updated_at = now()
-                WHERE id = %s
-                """,
-                (m.minutes_url, status, m.agenda_posted_at, meeting_time, existing["id"]),
+                "UPDATE meeting SET minutes_url = %s, status = %s, "
+                "agenda_posted_at = COALESCE(%s, agenda_posted_at), "
+                "meeting_time = COALESCE(%s::time, meeting_time), "
+                "location = COALESCE(%s, location), updated_at = now() WHERE id = %s",
+                (m.minutes_url, status, m.agenda_posted_at, meeting_time, location, existing["id"]),
             )
             self.rows_skipped += 1
             return
 
+        # 2. Reconcile a calendar pre-seed: a record that HAS an agenda_url
+        #    (AgendaCenter, once the agenda posts) should UPGRADE the bare row the
+        #    calendar created earlier for the same (body, date) — agenda AND
+        #    minutes both still NULL — rather than insert a duplicate.
+        if m.agenda_url is not None:
+            preseed = self.conn.execute(
+                "SELECT id FROM meeting WHERE governing_body_id = %s AND meeting_date = %s "
+                "AND agenda_url IS NULL AND minutes_url IS NULL LIMIT 1",
+                (body_id, m.meeting_date),
+            ).fetchone()
+            if preseed:
+                self.conn.execute(
+                    "UPDATE meeting SET agenda_url = %s, minutes_url = %s, status = %s, "
+                    "agenda_posted_at = COALESCE(%s, agenda_posted_at), "
+                    "meeting_time = COALESCE(%s::time, meeting_time), "
+                    "location = COALESCE(%s, location), updated_at = now() WHERE id = %s",
+                    (m.agenda_url, m.minutes_url, status, m.agenda_posted_at,
+                     meeting_time, location, preseed["id"]),
+                )
+                self.rows_skipped += 1
+                return
+
+        # 3. New meeting.
         self.insert("meeting", {
             "governing_body_id": body_id,
             "meeting_date":      m.meeting_date,
@@ -241,6 +319,7 @@ class MeetingsInventory(IngestJob):
             "status":            status,
             "agenda_posted_at":  m.agenda_posted_at,
             "meeting_time":      meeting_time,
+            "location":          location,
         })
 
     @staticmethod
@@ -260,8 +339,13 @@ CivicEngageMeetingsInventory = MeetingsInventory
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--jurisdiction", required=True)
+    parser.add_argument("--calendar-since", metavar="YYYY-MM-DD",
+                        help="CivicEngage calendar pass starts here instead of today "
+                             "(backfill/enrich existing meetings with time + location).")
     args = parser.parse_args()
-    result = MeetingsInventory(args.jurisdiction).run()
+    cal_from = (datetime.strptime(args.calendar_since, "%Y-%m-%d").date()
+                if args.calendar_since else None)
+    result = MeetingsInventory(args.jurisdiction, calendar_from=cal_from).run()
     print(json.dumps(result, indent=2, default=str))
     return 0
 
