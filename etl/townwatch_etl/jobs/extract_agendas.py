@@ -76,6 +76,10 @@ class AgendasExtract(IngestJob):
         # replacing them. Used to backfill new schema fields (e.g. meeting
         # time/location) into already-extracted agendas.
         self.force = force
+        # Per-document provenance, set in ingest() once read method + document
+        # confidence are known, then stamped onto every agenda_item.
+        self.read_method: str | None = None
+        self.doc_confidence: str | None = None
 
     # ---- main flow -------------------------------------------------------
 
@@ -113,6 +117,7 @@ class AgendasExtract(IngestJob):
         if self.prebuilt_extraction is not None:
             extraction = self.prebuilt_extraction
             method = "prebuilt"
+            self.read_method = "prebuilt"
             print(f"     method={method}  items={len(extraction.agenda_items)}  confidence={extraction.meeting.extraction_confidence}")
         else:
             r = civic_get(meeting["agenda_url"], timeout=120.0)
@@ -126,6 +131,8 @@ class AgendasExtract(IngestJob):
             if cached is not None:
                 extraction = AgendaExtraction.model_validate(cached["extraction"])
                 method = "cached"
+                # Record the TRUE underlying read method, not "cached".
+                self.read_method = cached.get("method") or "cached"
                 report = ExtractionReport(total_units=1, clean=1, recovered=0,
                                           anomalies=[], method="cached")
                 self.report = report
@@ -140,6 +147,7 @@ class AgendasExtract(IngestJob):
                 print(f"     doc={len(r.content):,} bytes content-type={content_type!r} → extracting...")
                 extraction, method, report = extract_from_document(doc_path, content_type)
                 self.report = report
+                self.read_method = method
                 print(f"     method={method}  items={len(extraction.agenda_items)}  confidence={extraction.meeting.extraction_confidence}")
                 print(f"     recovery: {report.summary()}")
                 for an in report.anomalies:
@@ -168,6 +176,9 @@ class AgendasExtract(IngestJob):
                         source_url=meeting["agenda_url"],
                         cost_usd=(_cost_usd(_u) if _u is not None else None),
                     )
+
+        # Document-level confidence stamped onto every agenda_item from this doc.
+        self.doc_confidence = extraction.meeting.extraction_confidence
 
         # Persist the raw extraction so a re-run never needs another API call
         self._attach_raw_payload(meeting["agenda_url"], extraction)
@@ -252,9 +263,10 @@ class AgendasExtract(IngestJob):
                 meeting_id, item_number, title, description, item_type,
                 applicant_name, recommended_action, hearing_status,
                 locations, documents_referenced, source_page,
+                extraction_method, extraction_confidence,
                 data_source_id
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb, %s::jsonb, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb, %s::jsonb, %s, %s, %s, %s)
             ON CONFLICT (meeting_id, lower(title)) DO UPDATE SET
                 item_number          = EXCLUDED.item_number,
                 description          = EXCLUDED.description,
@@ -265,6 +277,8 @@ class AgendasExtract(IngestJob):
                 locations            = EXCLUDED.locations,
                 documents_referenced = EXCLUDED.documents_referenced,
                 source_page          = EXCLUDED.source_page,
+                extraction_method    = EXCLUDED.extraction_method,
+                extraction_confidence = EXCLUDED.extraction_confidence,
                 updated_at           = now()
             RETURNING id
             """,
@@ -280,6 +294,8 @@ class AgendasExtract(IngestJob):
                 json.dumps(locations) if locations else None,
                 json.dumps(documents) if documents else None,
                 item.source_page,
+                self.read_method,
+                self.doc_confidence,
                 self.data_source_id,
             ),
         ).fetchone()
@@ -287,6 +303,78 @@ class AgendasExtract(IngestJob):
             self.rows_written += 1
             return row["id"]
         return None
+
+
+def _run_provenance_backfill(*, limit: int | None = None) -> int:
+    """
+    Backfill extraction_method / extraction_confidence onto agenda_items for $0.
+
+    Each extracted meeting stored its full agenda extraction in
+    data_source.raw_payload. Replay each meeting's OWN stored extraction through
+    the prebuilt+force path: no fetch, no model call, just a re-ingest that now
+    writes the honesty columns. Targets only meetings with an agenda_item still
+    missing extraction_confidence and a replayable payload; a meeting leaves the
+    set once filled, so it's idempotent and safe to re-run.
+    """
+    from ..db import connect
+
+    sql = """
+        SELECT DISTINCT m.id
+        FROM meeting m
+        WHERE m.agenda_url IS NOT NULL
+          AND EXISTS (SELECT 1 FROM agenda_item ai
+                      WHERE ai.meeting_id = m.id AND ai.extraction_confidence IS NULL)
+          AND EXISTS (SELECT 1 FROM data_source ds
+                      WHERE ds.source_url = m.agenda_url AND ds.raw_payload IS NOT NULL)
+        ORDER BY m.id
+    """
+    if limit:
+        sql += f" LIMIT {int(limit)}"
+
+    with connect() as conn:
+        ids = [r["id"] for r in conn.execute(sql).fetchall()]
+
+    print(f"Agenda provenance backfill: {len(ids)} meeting(s) with replayable "
+          f"stored extractions ($0, no model calls)")
+    filled = skipped = failed = 0
+    for mid in ids:
+        with connect() as conn:
+            row = conn.execute(
+                """
+                SELECT ds.raw_payload
+                FROM data_source ds
+                WHERE ds.source_url = (SELECT agenda_url FROM meeting WHERE id = %s)
+                  AND ds.raw_payload IS NOT NULL
+                ORDER BY ds.ingested_at DESC NULLS LAST
+                LIMIT 1
+                """,
+                (mid,),
+            ).fetchone()
+        if row is None or row["raw_payload"] is None:
+            skipped += 1
+            continue
+        raw = row["raw_payload"]
+        try:
+            extraction = (
+                AgendaExtraction.model_validate_json(raw)
+                if isinstance(raw, str)
+                else AgendaExtraction.model_validate(raw)
+            )
+        except Exception as e:
+            print(f"  ⊘ meeting {mid}: stored agenda extraction not replayable "
+                  f"({type(e).__name__}) — skipping")
+            skipped += 1
+            continue
+        try:
+            AgendasExtract(mid, prebuilt_extraction=extraction, force=True).run()
+            filled += 1
+            print(f"  ✓ meeting {mid}: agenda provenance backfilled")
+        except Exception as e:
+            failed += 1
+            print(f"  ✗ meeting {mid}: {type(e).__name__}: {e}")
+
+    print(f"\nDone. filled={filled} skipped={skipped} failed={failed}")
+    return 0
 
 
 def main() -> int:
@@ -301,10 +389,19 @@ def main() -> int:
     parser.add_argument("--upcoming", action="store_true",
                         help="With --all, restrict to meetings on/after today — cheap targeted "
                              "backfill of what the 'Next meeting' card shows.")
+    parser.add_argument("--backfill-provenance", action="store_true",
+                        help="Backfill extraction_method / extraction_confidence onto agenda_items "
+                             "extracted before those columns existed, by replaying each meeting's "
+                             "OWN stored extraction ($0, no model calls). Targets only items still "
+                             "missing extraction_confidence that have a replayable payload. "
+                             "Idempotent and re-runnable.")
     args = parser.parse_args()
 
-    if not args.meeting_id and not args.all:
-        parser.error("specify --meeting-id N or --all")
+    if not args.meeting_id and not args.all and not args.backfill_provenance:
+        parser.error("specify --meeting-id N, --all, or --backfill-provenance")
+
+    if args.backfill_provenance:
+        return _run_provenance_backfill(limit=args.limit)
 
     if args.meeting_id:
         result = AgendasExtract(args.meeting_id, force=args.force).run()
