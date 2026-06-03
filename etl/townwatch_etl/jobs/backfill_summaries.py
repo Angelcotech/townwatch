@@ -199,12 +199,14 @@ def run_kind(
             # Per-jurisdiction spend gate: this is a paid Haiku call, so it must
             # reserve/settle against the fund like the other extractors — else a
             # funded jurisdiction's balance under-counts its true spend.
+            # Summary backfill is discretionary — it yields to the operating
+            # reserve so it never starves daily refresh or comment moderation.
             with funds.gate(jid, meeting_id=m["id"], job_name="backfill_summaries",
                             ref_kind="meeting", ref_id=str(m["id"]),
-                            description=f"summary:{kind}") as g:
+                            description=f"summary:{kind}", essential=False) as g:
                 if g.paused:
                     paused_jids.add(jid)
-                    print(f"  ⏸ meeting {m['id']}: jurisdiction paused (insufficient funds) — skipping")
+                    print(f"  ⏸ meeting {m['id']}: skipped (funds — paused or protecting reserve)")
                     continue
                 try:
                     if kind == "agenda":

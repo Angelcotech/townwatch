@@ -73,3 +73,41 @@ def is_running(jurisdiction_id: int) -> bool:
     real guard is jurisdiction_lock() inside the run itself.)"""
     with jurisdiction_lock(jurisdiction_id) as got:
         return not got
+
+
+# Separate namespace for process-wide (not per-jurisdiction) job locks, so a
+# global job's key can't collide with a jurisdiction id under the other lock.
+_GLOBAL_NAMESPACE = 30472
+
+
+@contextlib.contextmanager
+def global_lock(key: int):
+    """Hold a process-wide advisory lock for the block. Yields True if acquired,
+    False if another holder exists (caller should exit). For global jobs that
+    must not run concurrently with another copy of themselves — e.g. a provenance
+    backfill, where two --force re-extracts racing on the same meeting violate
+    FK constraints (one deletes a motion the other just attached a vote to)."""
+    conn = _lock_conn()
+    got = False
+    try:
+        got = conn.execute(
+            "SELECT pg_try_advisory_lock(%s, %s) AS ok",
+            (_GLOBAL_NAMESPACE, key),
+        ).fetchone()["ok"]
+        yield got
+    finally:
+        try:
+            if got:
+                conn.execute("SELECT pg_advisory_unlock(%s, %s)", (_GLOBAL_NAMESPACE, key))
+        except Exception:
+            pass
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+# Stable keys for the global jobs (minutes vs agenda backfill can run together —
+# different tables — but two of the same cannot).
+BACKFILL_LOCK_MINUTES = 1
+BACKFILL_LOCK_AGENDA = 2

@@ -31,8 +31,10 @@ from fastapi import FastAPI, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from . import corrections
+from . import accounts
+from . import comments
 
-app = FastAPI(title="TownWatch correction intake", docs_url=None, redoc_url=None)
+app = FastAPI(title="TownWatch intake", docs_url=None, redoc_url=None)
 
 
 class CorrectionIn(BaseModel):
@@ -43,6 +45,24 @@ class CorrectionIn(BaseModel):
     suggested_value: str | None = Field(default=None, max_length=2000)
     source_note: str | None = Field(default=None, max_length=2000)
     reporter_contact: str | None = Field(default=None, max_length=320)
+
+
+class UserSyncIn(BaseModel):
+    clerk_user_id: str = Field(..., min_length=1, max_length=255)
+    email: str | None = Field(default=None, max_length=320)
+    display_name: str | None = Field(default=None, max_length=200)
+
+
+class HomeJurisdictionIn(BaseModel):
+    clerk_user_id: str = Field(..., min_length=1, max_length=255)
+    jurisdiction_id: int = Field(..., gt=0)
+
+
+class CommentIn(BaseModel):
+    clerk_user_id: str = Field(..., min_length=1, max_length=255)
+    agenda_item_id: int = Field(..., gt=0)
+    stance: str = Field(..., description="support|oppose|neutral")
+    body: str = Field(..., min_length=1, max_length=4000)
 
 
 @app.get("/healthz")
@@ -75,6 +95,64 @@ def post_correction(
             source_note=body.source_note,
             reporter_contact=body.reporter_contact,
             reporter_ip=client_ip,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"ok": True, **result}
+
+
+@app.post("/users/sync")
+def post_user_sync(
+    body: UserSyncIn,
+    x_intake_token: str | None = Header(default=None),
+) -> dict[str, object]:
+    """Mirror a Clerk user into app_user (called by the web Clerk-webhook forwarder)."""
+    _check_token(x_intake_token)
+    try:
+        uid = accounts.upsert_user(
+            clerk_user_id=body.clerk_user_id,
+            email=body.email,
+            display_name=body.display_name,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"ok": True, "app_user_id": uid}
+
+
+@app.post("/users/home-jurisdiction")
+def post_home_jurisdiction(
+    body: HomeJurisdictionIn,
+    x_intake_token: str | None = Header(default=None),
+) -> dict[str, object]:
+    """Set a user's self-declared home jurisdiction (onboarding standing)."""
+    _check_token(x_intake_token)
+    try:
+        uid = accounts.set_home_jurisdiction(
+            clerk_user_id=body.clerk_user_id,
+            jurisdiction_id=body.jurisdiction_id,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"ok": True, "app_user_id": uid}
+
+
+@app.post("/comments")
+def post_comment(
+    body: CommentIn,
+    request: Request,
+    x_intake_token: str | None = Header(default=None),
+) -> dict[str, object]:
+    """Record + moderate one public comment. The web forwarder supplies the
+    SERVER-VERIFIED clerk_user_id (from Clerk auth()), never the browser."""
+    _check_token(x_intake_token)
+    client_ip = request.client.host if request.client else None
+    try:
+        result = comments.submit(
+            clerk_user_id=body.clerk_user_id,
+            agenda_item_id=body.agenda_item_id,
+            stance=body.stance,
+            body=body.body,
+            ip=client_ip,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

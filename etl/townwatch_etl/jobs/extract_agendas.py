@@ -306,6 +306,16 @@ class AgendasExtract(IngestJob):
 
 
 def _run_provenance_backfill(*, limit: int | None = None) -> int:
+    """Concurrency guard: only one agenda provenance backfill at a time."""
+    from ..run_lock import global_lock, BACKFILL_LOCK_AGENDA
+    with global_lock(BACKFILL_LOCK_AGENDA) as got:
+        if not got:
+            print("⚠ another agenda provenance backfill is already running — exiting")
+            return 1
+        return _do_provenance_backfill(limit=limit)
+
+
+def _do_provenance_backfill(*, limit: int | None = None) -> int:
     """
     Backfill extraction_method / extraction_confidence onto agenda_items for $0.
 
@@ -455,10 +465,13 @@ def main() -> int:
         print(f"\n--- meeting {r['id']} ({r['meeting_date']}) {r['jurisdiction']} ---")
         # Shared per-jurisdiction spend gate: reserve before, settle metered cost
         # after. Unfunded jurisdictions run ungated/unmetered as before.
+        # New-agenda extraction is essential; --force/backfill re-extraction is
+        # discretionary and yields to the operating reserve.
         with funds.gate(jid, run_id=run_id, meeting_id=r["id"], job_name="extract_agendas",
-                        ref_kind="meeting", ref_id=str(r["id"]), description="extract_agendas") as g:
+                        ref_kind="meeting", ref_id=str(r["id"]), description="extract_agendas",
+                        essential=not args.force) as g:
             if g.paused:
-                print("   ⏸ jurisdiction paused (insufficient funds) — skipping")
+                print("   ⏸ skipped (funds — paused or protecting the operating reserve)")
                 paused += 1
                 paused_jids.add(jid)
                 continue

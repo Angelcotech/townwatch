@@ -61,6 +61,9 @@ def main() -> int:
     p.add_argument("--jurisdiction", help="jurisdiction slug")
     p.add_argument("--deposit", type=str, help="add USD (creates the fund / opts in)")
     p.add_argument("--set-floor", type=str, help="set the pause floor in USD")
+    p.add_argument("--set-reserve", type=str,
+                   help="set the operating reserve in USD (protects daily refresh + "
+                        "comment moderation from discretionary spend)")
     p.add_argument("--pause", type=str, metavar="REASON", help="manually pause processing")
     p.add_argument("--resume", action="store_true", help="resume after a pause")
     p.add_argument("--status", action="store_true", help="show this jurisdiction's fund")
@@ -99,9 +102,15 @@ def main() -> int:
             lid = funds.deposit(conn, jid, Decimal(args.deposit), ref_kind="manual",
                                 description="admin deposit")
             print(f"deposited ${Decimal(args.deposit):.2f} (ledger #{lid})")
+            # Funding a town "builds" it — seed the operating reserve so daily
+            # refresh + comment moderation are protected from discretionary spend.
+            funds.ensure_reserve_default(conn, jid)
         if args.set_floor is not None:
             funds.set_floor(conn, jid, Decimal(args.set_floor))
             print(f"floor set to ${Decimal(args.set_floor):.2f}")
+        if args.set_reserve is not None:
+            funds.set_reserve(conn, jid, Decimal(args.set_reserve))
+            print(f"operating reserve set to ${Decimal(args.set_reserve):.2f}")
         if args.pause is not None:
             # suspend = manual hold that auto-resume won't clear
             funds.ensure_fund(conn, jid)

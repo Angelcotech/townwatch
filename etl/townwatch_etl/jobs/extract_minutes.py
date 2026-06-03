@@ -597,11 +597,15 @@ def _process_meeting(r, run_id, force: bool = False) -> tuple[str, list]:
     jid = r["jurisdiction_id"]
     print(f"--- meeting {mid} ({r['meeting_date']}) {r['jurisdiction']} ---")
 
+    # Normal extraction of a newly-found meeting is ESSENTIAL (draws to the hard
+    # floor). A --force/backfill re-extraction is DISCRETIONARY — it yields to the
+    # operating reserve so it can never starve daily refresh or comment moderation.
     with funds.gate(jid, run_id=run_id, meeting_id=mid, job_name="extract_minutes",
-                    ref_kind="meeting", ref_id=str(mid), description="extract_minutes") as g:
+                    ref_kind="meeting", ref_id=str(mid), description="extract_minutes",
+                    essential=not force) as g:
         if g.paused:
-            print(f"   ⏸ meeting {mid}: jurisdiction paused (insufficient funds, "
-                  f"floor reached) — skipping")
+            print(f"   ⏸ meeting {mid}: skipped (funds — paused or protecting the "
+                  f"operating reserve for essential ops)")
             return "paused", []
 
         last_err: Exception | None = None
@@ -647,6 +651,18 @@ def _process_meeting(r, run_id, force: bool = False) -> tuple[str, list]:
 
 
 def _run_provenance_backfill(*, limit: int | None = None) -> int:
+    """Concurrency guard: only one minutes provenance backfill at a time. Two
+    --force re-extracts racing on the same meeting violate FK constraints (one
+    deletes a motion the other just attached a vote to)."""
+    from ..run_lock import global_lock, BACKFILL_LOCK_MINUTES
+    with global_lock(BACKFILL_LOCK_MINUTES) as got:
+        if not got:
+            print("⚠ another minutes provenance backfill is already running — exiting")
+            return 1
+        return _do_provenance_backfill(limit=limit)
+
+
+def _do_provenance_backfill(*, limit: int | None = None) -> int:
     """
     Backfill datum provenance onto pre-provenance motions/votes for $0.
 

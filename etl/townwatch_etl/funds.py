@@ -67,6 +67,35 @@ def set_floor(conn, jurisdiction_id: int, floor: Any) -> None:
     )
 
 
+# Default operating reserve set when a town is first funded. Sized to comfortably
+# cover a stretch of daily-refresh extraction + comment moderation (a meeting
+# extraction settles ~$0.06; a comment moderation ~$0.0002), so discretionary
+# re-processing yields well before recurring ops are at risk. Tune per policy.
+DEFAULT_OPERATING_RESERVE = Decimal("1.00")
+
+
+def set_reserve(conn, jurisdiction_id: int, amount: Any) -> None:
+    """Set the protected operating reserve (the band below which discretionary
+    work is declined so essential recurring ops keep running)."""
+    ensure_fund(conn, jurisdiction_id)
+    conn.execute(
+        "UPDATE jurisdiction_fund SET operating_reserve = %s, updated_at = now() "
+        "WHERE jurisdiction_id = %s",
+        (_dec(amount), jurisdiction_id),
+    )
+
+
+def ensure_reserve_default(conn, jurisdiction_id: int) -> None:
+    """On first funding, seed the operating reserve if it's still zero. Leaves a
+    manually-set reserve untouched."""
+    ensure_fund(conn, jurisdiction_id)
+    conn.execute(
+        "UPDATE jurisdiction_fund SET operating_reserve = %s, updated_at = now() "
+        "WHERE jurisdiction_id = %s AND operating_reserve = 0",
+        (DEFAULT_OPERATING_RESERVE, jurisdiction_id),
+    )
+
+
 def status(conn, jurisdiction_id: int) -> str:
     row = get_fund(conn, jurisdiction_id)
     return row["status"] if row else "active"
@@ -148,17 +177,27 @@ def deposit(conn, jurisdiction_id: int, amount: Any, *, kind: str = "deposit",
 # ── reserve / settle / release ───────────────────────────────────────────────
 
 def reserve(conn, jurisdiction_id: int, expected_cost: Any, *, run_id=None,
-            meeting_id: int | None = None, job_name: str | None = None) -> int | None:
+            meeting_id: int | None = None, job_name: str | None = None,
+            essential: bool = True) -> int | None:
     """Atomically gate-and-hold for one unit of work.
 
     Locks the jurisdiction_fund row, then: if the fund is not 'active', or
     available − expected_cost would fall below the floor, returns None (and
     auto-pauses on the insufficient-funds case). Otherwise inserts a hold and
     returns its reservation id. Run inside a short `with connect()` so the lock
-    releases on commit."""
+    releases on commit.
+
+    `essential` controls the operating reserve. Essential work (a built town's
+    daily-refresh extraction of newly-found meetings, comment moderation) gates
+    at the hard min_balance_floor and keeps running. Discretionary work
+    (--force re-extraction, --backfill-*) gates at floor + operating_reserve: it
+    is DECLINED (None) once the balance dips into the reserve band, but the
+    jurisdiction is NOT paused — so essential ops continue and no deposit is
+    needed to resume them. Only a true hard-floor breach pauses the jurisdiction.
+    """
     ensure_fund(conn, jurisdiction_id)
     fund = conn.execute(
-        "SELECT min_balance_floor, status FROM jurisdiction_fund "
+        "SELECT min_balance_floor, operating_reserve, status FROM jurisdiction_fund "
         "WHERE jurisdiction_id = %s FOR UPDATE",
         (jurisdiction_id,),
     ).fetchone()
@@ -166,14 +205,20 @@ def reserve(conn, jurisdiction_id: int, expected_cost: Any, *, run_id=None,
         return None
 
     floor = _dec(fund["min_balance_floor"])
+    reserve_band = ZERO if essential else _dec(fund["operating_reserve"])
     expected = _dec(expected_cost)
     avail = available(conn, jurisdiction_id)
+    # Hard floor: a true insufficient-funds breach pauses the whole jurisdiction.
     if avail - expected < floor:
         pause(
             conn, jurisdiction_id,
             f"insufficient funds: available ${avail:.4f} − expected ${expected:.4f} "
             f"< floor ${floor:.4f}",
         )
+        return None
+    # Operating reserve: protect the recurring-ops band from discretionary spend.
+    # Decline this unit without pausing — essential work still draws to the floor.
+    if reserve_band > 0 and avail - expected < floor + reserve_band:
         return None
 
     row = conn.execute(
@@ -252,7 +297,8 @@ class Gate:
 @contextlib.contextmanager
 def gate(jurisdiction_id: int, *, run_id=None, meeting_id: int | None = None,
          job_name: str | None = None, ref_kind: str = "meeting",
-         ref_id: str | None = None, description: str | None = None):
+         ref_id: str | None = None, description: str | None = None,
+         essential: bool = True):
     """The ONE per-jurisdiction spend gate, shared by every job that spends.
 
     On enter: if the jurisdiction has a fund, RESERVE the estimated cost (and set
@@ -278,7 +324,8 @@ def gate(jurisdiction_id: int, *, run_id=None, meeting_id: int | None = None,
         if get_fund(gc, jurisdiction_id) is not None:
             est = estimate_cost(gc, jurisdiction_id)
             reservation_id = reserve(gc, jurisdiction_id, est, run_id=run_id,
-                                     meeting_id=meeting_id, job_name=job_name)
+                                     meeting_id=meeting_id, job_name=job_name,
+                                     essential=essential)
             if reservation_id is None:
                 g.paused = True
     if g.paused:
