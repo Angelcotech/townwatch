@@ -1,0 +1,26 @@
+# Railway config for the comment-DIGEST cron service (townwatch-comments-digest).
+#
+# Separate from railway.toml (the daily extraction worker) and railway.intake.toml
+# (the always-on intake service) because the forum digest has its own cadence:
+# it must run HOURLY, not daily. A meeting's comment window closes 12h before it
+# begins; an evening meeting's cutoff falls mid-day, which a once-daily run would
+# miss entirely (the digest would go out after the meeting, or not at all). Hourly
+# catches every cutoff. The job is idempotent (meeting.comments_submitted_at guards
+# a double-send), so re-running each hour is safe.
+#
+# Same Dockerfile/image as the worker; point a Railway service at this config
+# (Settings → Config-as-code → railway.comments.toml). Env vars on the service:
+#   DATABASE_URL      — shared Postgres
+#   ANTHROPIC_API_KEY — the agent's final digest review (cheap Haiku)
+#   RESEND_API_KEY    — outbound email; UNSET = safe no-op (logs, never sends)
+#   RESEND_FROM       — verified Resend sender, e.g. "TownWatch <forum@townwatch.org>"
+# Without RESEND_API_KEY the cron runs harmlessly (compiles + reviews, logs what
+# it would send) — so it's safe to deploy before email is configured.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "etl/Dockerfile"
+
+[deploy]
+startCommand = "python -m townwatch_etl.jobs.submit_comments"
+cronSchedule = "0 * * * *"   # hourly — catches each meeting's −12h cutoff
