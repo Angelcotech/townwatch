@@ -1,26 +1,30 @@
-# Railway config for the comment-DIGEST cron service (townwatch-comments-digest).
+# Railway config for the FORUM-TICK cron service (townwatch-forum-tick).
 #
 # Separate from railway.toml (the daily extraction worker) and railway.intake.toml
-# (the always-on intake service) because the forum digest has its own cadence:
-# it must run HOURLY, not daily. A meeting's comment window closes 12h before it
-# begins; an evening meeting's cutoff falls mid-day, which a once-daily run would
-# miss entirely (the digest would go out after the meeting, or not at all). Hourly
-# catches every cutoff. The job is idempotent (meeting.comments_submitted_at guards
-# a double-send), so re-running each hour is safe.
+# (the always-on intake service) because the live forum is time-sensitive on both
+# ends and the daily worker is too coarse:
+#   - OPEN  — a forum goes live when a meeting's agenda is published + extracted.
+#             Agendas post days ahead on the government's schedule; waiting for the
+#             06:00 daily run blows the comment window. forum_tick extracts upcoming
+#             agendas hourly, so a forum opens within an hour of the agenda posting.
+#   - CLOSE — the window closes 12h before the meeting (digest compiled, agent-
+#             reviewed, emailed to the clerk). An evening meeting's cutoff lands
+#             mid-day; a daily run would miss it. forum_tick submits due digests
+#             hourly. Idempotent (comments_submitted_at guards a double-send).
 #
 # Same Dockerfile/image as the worker; point a Railway service at this config
 # (Settings → Config-as-code → railway.comments.toml). Env vars on the service:
 #   DATABASE_URL      — shared Postgres
-#   ANTHROPIC_API_KEY — the agent's final digest review (cheap Haiku)
+#   ANTHROPIC_API_KEY — agenda extraction + the agent's digest review
 #   RESEND_API_KEY    — outbound email; UNSET = safe no-op (logs, never sends)
 #   RESEND_FROM       — verified Resend sender, e.g. "TownWatch <forum@townwatch.org>"
-# Without RESEND_API_KEY the cron runs harmlessly (compiles + reviews, logs what
-# it would send) — so it's safe to deploy before email is configured.
+# Spend is fund-gated per jurisdiction, and the open step only spends when a NEW
+# agenda appears (already-extracted meetings are skipped), so most ticks are cheap.
 
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "etl/Dockerfile"
 
 [deploy]
-startCommand = "python -m townwatch_etl.jobs.submit_comments"
-cronSchedule = "0 * * * *"   # hourly — catches each meeting's −12h cutoff
+startCommand = "python -m townwatch_etl.jobs.forum_tick"
+cronSchedule = "0 * * * *"   # hourly — opens forums on time, closes them at −12h
