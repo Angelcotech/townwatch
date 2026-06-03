@@ -8,15 +8,21 @@
 # "Railway Config File" path = railway.intake.toml.
 #
 # Same Dockerfile/image as the worker; only the start command differs. The
-# image installs townwatch_etl (pip install ./etl), so `uvicorn
-# townwatch_etl.api:app` imports cleanly. Requires DATABASE_URL + INTAKE_TOKEN
-# in the service's env vars (config.py reads DATABASE_URL at import time).
+# image installs townwatch_etl (pip install ./etl), so the module runs cleanly.
+# Requires DATABASE_URL + INTAKE_TOKEN in the service's env vars (config.py
+# reads DATABASE_URL at import time).
+#
+# Start via `python -m townwatch_etl.api` (NOT the bare `uvicorn ... --port
+# $PORT` form): Railway exec's the start command without a shell, so a literal
+# "$PORT" never gets expanded and uvicorn rejects it. api.main() reads the PORT
+# env var in Python and launches uvicorn on 0.0.0.0:$PORT itself, sidestepping
+# shell interpolation entirely.
 
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "etl/Dockerfile"
 
 [deploy]
-startCommand = "uvicorn townwatch_etl.api:app --host 0.0.0.0 --port $PORT"
+startCommand = "python -m townwatch_etl.api"
 # No cronSchedule: this is a persistent web service, not a scheduled job.
 restartPolicyType = "ON_FAILURE"
