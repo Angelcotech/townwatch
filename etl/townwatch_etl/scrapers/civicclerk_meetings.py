@@ -90,6 +90,7 @@ class MeetingRecord:
     description: str | None
     agenda_url: str | None
     minutes_url: str | None
+    packet_url: str | None = None      # combined supporting-docs deck
     agenda_posted_at: datetime | None = None
     meeting_time: time | None = None   # scheduled start (local wall-clock)
 
@@ -211,9 +212,10 @@ def _meeting_time(event: dict) -> "time | None":
     return t
 
 
-def _agenda_and_minutes(event: dict, tenant: str) -> tuple[str | None, str | None]:
-    """Pick the canonical Agenda file (preferred over Agenda Packet) and
-    the Minutes file. Returns (agenda_url, minutes_url) — either may be None."""
+def _agenda_and_minutes(event: dict, tenant: str) -> tuple[str | None, str | None, str | None]:
+    """Pick the canonical Agenda file (preferred over Agenda Packet), the Minutes
+    file, and the Agenda Packet (the combined deck of supporting documents — the
+    actual proposals). Returns (agenda_url, minutes_url, packet_url); any may be None."""
     agenda_file_id: int | None = None
     agenda_packet_file_id: int | None = None
     minutes_file_id: int | None = None
@@ -228,19 +230,22 @@ def _agenda_and_minutes(event: dict, tenant: str) -> tuple[str | None, str | Non
             agenda_packet_file_id = fid
         elif ptype == MINUTES_TYPE and minutes_file_id is None:
             minutes_file_id = fid
+    # The packet is the deck of supporting documents — captured separately so we
+    # can segment it into per-item proposals.
+    packet_url = _attachment_url(tenant, agenda_packet_file_id) if agenda_packet_file_id else None
     # Fall back to the packet only if no agenda was published.
     if agenda_file_id is None:
         agenda_file_id = agenda_packet_file_id
     agenda_url = _attachment_url(tenant, agenda_file_id) if agenda_file_id else None
     minutes_url = _attachment_url(tenant, minutes_file_id) if minutes_file_id else None
-    return agenda_url, minutes_url
+    return agenda_url, minutes_url, packet_url
 
 
 def parse_event(event: dict, tenant: str, category_id: int, category_name: str) -> MeetingRecord | None:
     mdate = _meeting_date(event)
     if mdate is None:
         return None
-    agenda_url, minutes_url = _agenda_and_minutes(event, tenant)
+    agenda_url, minutes_url, packet_url = _agenda_and_minutes(event, tenant)
     return MeetingRecord(
         agenda_id=event["id"],
         meeting_date=mdate,
@@ -250,6 +255,7 @@ def parse_event(event: dict, tenant: str, category_id: int, category_name: str) 
         description=(event.get("eventName") or event.get("eventDescription") or None),
         agenda_url=agenda_url,
         minutes_url=minutes_url,
+        packet_url=packet_url,
         agenda_posted_at=_parse_posted_at(event.get("publishedAgendaTimeStamp")),
         meeting_time=_meeting_time(event),
     )

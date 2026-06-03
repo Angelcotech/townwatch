@@ -40,9 +40,12 @@ def _run(label: str, module: str, args: list[str]) -> bool:
 def main() -> int:
     # 1. Open forums: extract any newly-published upcoming agendas.
     ok_open = _run("open (extract upcoming agendas)", "extract_agendas", ["--all", "--upcoming"])
-    # 2. Close + deliver: submit digests for meetings past their −12h cutoff.
+    # 2. Segment packets: map agenda items to the actual proposal documents +
+    #    summaries, so the forum shows what's really being decided.
+    ok_pkt = _run("packets (segment upcoming agenda packets)", "extract_packets", ["--all", "--upcoming"])
+    # 3. Close + deliver: submit digests for meetings past their −12h cutoff.
     ok_close = _run("close (submit comment digests)", "submit_comments", [])
-    return 0 if (ok_open and ok_close) else 1
+    return 0 if (ok_open and ok_pkt and ok_close) else 1
 
 
 if __name__ == "__main__":

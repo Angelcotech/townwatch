@@ -267,6 +267,7 @@ class MeetingsInventory(IngestJob):
         # — this is the only source of time/location.
         meeting_time = getattr(m, "meeting_time", None)
         location = getattr(m, "location", None)
+        packet_url = getattr(m, "packet_url", None)  # supporting-docs deck (CivicClerk)
 
         # 1. Exact match. NULL-safe (IS NOT DISTINCT FROM): plain `agenda_url = %s`
         #    is never true when agenda_url is NULL, so agenda-less meetings would
@@ -281,8 +282,9 @@ class MeetingsInventory(IngestJob):
                 "UPDATE meeting SET minutes_url = %s, status = %s, "
                 "agenda_posted_at = COALESCE(%s, agenda_posted_at), "
                 "meeting_time = COALESCE(%s::time, meeting_time), "
-                "location = COALESCE(%s, location), updated_at = now() WHERE id = %s",
-                (m.minutes_url, status, m.agenda_posted_at, meeting_time, location, existing["id"]),
+                "location = COALESCE(%s, location), "
+                "packet_url = COALESCE(%s, packet_url), updated_at = now() WHERE id = %s",
+                (m.minutes_url, status, m.agenda_posted_at, meeting_time, location, packet_url, existing["id"]),
             )
             self.rows_skipped += 1
             return
@@ -302,9 +304,10 @@ class MeetingsInventory(IngestJob):
                     "UPDATE meeting SET agenda_url = %s, minutes_url = %s, status = %s, "
                     "agenda_posted_at = COALESCE(%s, agenda_posted_at), "
                     "meeting_time = COALESCE(%s::time, meeting_time), "
-                    "location = COALESCE(%s, location), updated_at = now() WHERE id = %s",
+                    "location = COALESCE(%s, location), "
+                    "packet_url = COALESCE(%s, packet_url), updated_at = now() WHERE id = %s",
                     (m.agenda_url, m.minutes_url, status, m.agenda_posted_at,
-                     meeting_time, location, preseed["id"]),
+                     meeting_time, location, packet_url, preseed["id"]),
                 )
                 self.rows_skipped += 1
                 return
@@ -316,6 +319,7 @@ class MeetingsInventory(IngestJob):
             "meeting_type":      m.meeting_type,
             "agenda_url":        m.agenda_url,
             "minutes_url":       m.minutes_url,
+            "packet_url":        packet_url,
             "status":            status,
             "agenda_posted_at":  m.agenda_posted_at,
             "meeting_time":      meeting_time,
