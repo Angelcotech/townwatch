@@ -1,0 +1,22 @@
+# Railway config for the correction-INTAKE service (townwatch-intake).
+#
+# Separate from railway.toml because that file configures the primary
+# daily-cron worker (startCommand=daily_refresh + cronSchedule). The intake
+# service is the opposite: a long-running HTTP server, no cron. Railway only
+# allows ONE auto-detected config per repo (railway.toml), so this service
+# must be pointed at this file explicitly via its Settings → Config-as-code →
+# "Railway Config File" path = railway.intake.toml.
+#
+# Same Dockerfile/image as the worker; only the start command differs. The
+# image installs townwatch_etl (pip install ./etl), so `uvicorn
+# townwatch_etl.api:app` imports cleanly. Requires DATABASE_URL + INTAKE_TOKEN
+# in the service's env vars (config.py reads DATABASE_URL at import time).
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "etl/Dockerfile"
+
+[deploy]
+startCommand = "uvicorn townwatch_etl.api:app --host 0.0.0.0 --port $PORT"
+# No cronSchedule: this is a persistent web service, not a scheduled job.
+restartPolicyType = "ON_FAILURE"
