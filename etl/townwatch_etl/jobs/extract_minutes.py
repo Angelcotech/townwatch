@@ -646,6 +646,83 @@ def _process_meeting(r, run_id, force: bool = False) -> tuple[str, list]:
         return "failed", []
 
 
+def _run_provenance_backfill(*, limit: int | None = None) -> int:
+    """
+    Backfill datum provenance onto pre-provenance motions/votes for $0.
+
+    Every extracted meeting stored its full extraction in data_source.raw_payload,
+    and that payload already carries source_page per item plus the document
+    confidence — the old ingest simply never persisted them onto the motion/vote
+    rows. Replay each meeting's OWN stored extraction through the prebuilt+force
+    path: no PDF fetch, no model call, just a re-ingest that now writes the
+    provenance columns. Idempotent — a meeting leaves the candidate set the
+    moment its source_page is filled, so this is safe to run repeatedly and fits
+    the automation pipeline (run it after any schema/ingest change that adds a
+    persisted-from-payload field).
+    """
+    from ..db import connect
+
+    sql = """
+        SELECT DISTINCT m.id
+        FROM meeting m
+        WHERE m.minutes_url IS NOT NULL
+          AND EXISTS (SELECT 1 FROM motion mo
+                      WHERE mo.meeting_id = m.id AND mo.source_page IS NULL)
+          AND EXISTS (SELECT 1 FROM data_source ds
+                      WHERE ds.source_url = m.minutes_url AND ds.raw_payload IS NOT NULL)
+        ORDER BY m.id
+    """
+    if limit:
+        sql += f" LIMIT {int(limit)}"
+
+    with connect() as conn:
+        ids = [r["id"] for r in conn.execute(sql).fetchall()]
+
+    print(f"Provenance backfill: {len(ids)} meeting(s) with replayable stored "
+          f"extractions ($0, no model calls)")
+    filled = skipped = failed = 0
+    for mid in ids:
+        with connect() as conn:
+            row = conn.execute(
+                """
+                SELECT ds.raw_payload
+                FROM data_source ds
+                WHERE ds.source_url = (SELECT minutes_url FROM meeting WHERE id = %s)
+                  AND ds.raw_payload IS NOT NULL
+                ORDER BY ds.ingested_at DESC NULLS LAST
+                LIMIT 1
+                """,
+                (mid,),
+            ).fetchone()
+        if row is None or row["raw_payload"] is None:
+            skipped += 1
+            continue
+        raw = row["raw_payload"]
+        try:
+            extraction = (
+                MeetingExtraction.model_validate_json(raw)
+                if isinstance(raw, str)
+                else MeetingExtraction.model_validate(raw)
+            )
+        except Exception as e:
+            # Payload predates source_page in the extractor model (or is partial)
+            # — not replayable. Leave it for a future genuine re-extract.
+            print(f"  ⊘ meeting {mid}: stored extraction not replayable "
+                  f"({type(e).__name__}) — skipping")
+            skipped += 1
+            continue
+        try:
+            MinutesExtract(mid, prebuilt_extraction=extraction, force=True).run()
+            filled += 1
+            print(f"  ✓ meeting {mid}: provenance backfilled from stored extraction")
+        except Exception as e:
+            failed += 1
+            print(f"  ✗ meeting {mid}: {type(e).__name__}: {e}")
+
+    print(f"\nDone. filled={filled} skipped={skipped} failed={failed}")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--meeting-id", type=int, help="Process this single meeting")
@@ -663,10 +740,21 @@ def main() -> int:
                              "motions all predate TIMESTAMP (ISO 8601). Pass the campaign START time "
                              "— meetings already redone this pass have fresh motions and are skipped, "
                              "so an interrupted run resumes without re-spending on completed work.")
+    parser.add_argument("--backfill-provenance", action="store_true",
+                        help="Backfill datum provenance (source_page / extraction_method / "
+                             "confidence + vote attribution) onto motions extracted before those "
+                             "columns existed. Targets ONLY meetings whose minutes doc is already in "
+                             "the extraction cache — so it replays for $0 (no model calls) — AND that "
+                             "still have a motion missing source_page. Idempotent and re-runnable: a "
+                             "meeting drops out of the set the moment its provenance is filled. "
+                             "Implies --force. Runs automatically eligible-only, so it never spends.")
     args = parser.parse_args()
 
-    if not args.meeting_id and not args.all:
-        parser.error("specify --meeting-id N or --all")
+    if not args.meeting_id and not args.all and not args.backfill_provenance:
+        parser.error("specify --meeting-id N, --all, or --backfill-provenance")
+
+    if args.backfill_provenance:
+        return _run_provenance_backfill(limit=args.limit)
 
     if args.meeting_id:
         result = MinutesExtract(args.meeting_id, force=args.force).run()
