@@ -40,33 +40,58 @@ def upsert_user(*, clerk_user_id: str, email: str | None = None,
         return row["id"]
 
 
+# A user may change their home jurisdiction at most once per this many days
+# (the first choice is free). Stops jurisdiction-hopping to comment everywhere.
+HOME_CHANGE_COOLDOWN_DAYS = 30
+
+
 def set_home_jurisdiction(*, clerk_user_id: str, jurisdiction_id: int) -> int:
-    """Set the user's self-declared home jurisdiction (the standing anchor).
-    Upserts the user first so onboarding works even if the webhook hasn't landed."""
+    """Set/change the user's self-declared home jurisdiction (standing anchor).
+    First choice is free; subsequent changes are rate-limited to once per
+    HOME_CHANGE_COOLDOWN_DAYS. Upserts the user so onboarding works even before
+    the Clerk webhook lands. Setting the SAME jurisdiction is a no-op (not a
+    change, so it never trips the cooldown)."""
     clerk_user_id = (clerk_user_id or "").strip()
     if not clerk_user_id:
         raise ValueError("clerk_user_id is required")
     if not isinstance(jurisdiction_id, int) or jurisdiction_id <= 0:
         raise ValueError("jurisdiction_id must be a positive integer")
     with connect() as conn:
-        # Validate the jurisdiction exists (and is a real place, not a directory stub).
+        # Validate the jurisdiction exists (a real place, not a directory stub).
         j = conn.execute(
             "SELECT 1 FROM jurisdiction WHERE id = %s", (jurisdiction_id,)
         ).fetchone()
         if j is None:
             raise ValueError("unknown jurisdiction")
-        # Ensure the user row exists, then set standing.
+        # Ensure the user row exists.
         conn.execute(
             "INSERT INTO app_user (clerk_user_id) VALUES (%s) "
             "ON CONFLICT (clerk_user_id) DO NOTHING",
             (clerk_user_id,),
         )
-        row = conn.execute(
-            "UPDATE app_user SET home_jurisdiction_id = %s, updated_at = now() "
-            "WHERE clerk_user_id = %s RETURNING id",
-            (jurisdiction_id, clerk_user_id),
+        cur = conn.execute(
+            "SELECT id, home_jurisdiction_id, "
+            "  (home_jurisdiction_set_at IS NULL "
+            f"   OR now() - home_jurisdiction_set_at >= interval '{HOME_CHANGE_COOLDOWN_DAYS} days') AS allowed, "
+            f"  to_char(home_jurisdiction_set_at + interval '{HOME_CHANGE_COOLDOWN_DAYS} days', 'FMMon FMDD, YYYY') AS next_change "
+            "FROM app_user WHERE clerk_user_id = %s",
+            (clerk_user_id,),
         ).fetchone()
-        return row["id"]
+        # No-op when re-declaring the same home — never trips the cooldown.
+        if cur["home_jurisdiction_id"] == jurisdiction_id:
+            return cur["id"]
+        # Changing to a DIFFERENT jurisdiction: enforce the cooldown.
+        if not cur["allowed"]:
+            raise ValueError(
+                f"You can change your home town again on {cur['next_change']}."
+            )
+        conn.execute(
+            "UPDATE app_user SET home_jurisdiction_id = %s, "
+            "home_jurisdiction_set_at = now(), updated_at = now() "
+            "WHERE id = %s",
+            (jurisdiction_id, cur["id"]),
+        )
+        return cur["id"]
 
 
 def get_user(conn, clerk_user_id: str) -> dict[str, Any] | None:
