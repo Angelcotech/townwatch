@@ -62,7 +62,9 @@ class CommentIn(BaseModel):
     clerk_user_id: str = Field(..., min_length=1, max_length=255)
     agenda_item_id: int = Field(..., gt=0)
     stance: str = Field(..., description="support|oppose|neutral")
-    body: str = Field(..., min_length=1, max_length=4000)
+    # Optional — a stance alone is a valid position of record. Capped to an
+    # essay, not a book.
+    body: str = Field(default="", max_length=2000)
 
 
 @app.get("/healthz")

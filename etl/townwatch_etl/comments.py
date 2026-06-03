@@ -40,7 +40,9 @@ from .llm_client import record_anthropic
 
 MODERATION_MODEL = "claude-haiku-4-5"
 _STANCES = {"support", "oppose", "neutral"}
-_MAX_BODY = 4000
+# Long enough for a substantial public comment (an essay), short enough to keep
+# it a comment and not a manifesto.
+_MAX_BODY = 2000
 
 
 # =====================================================================
@@ -75,7 +77,14 @@ def _item_context(conn, agenda_item_id: int) -> dict[str, Any] | None:
         SELECT ai.id AS agenda_item_id, ai.title, ai.description,
                m.id  AS meeting_id, m.meeting_date,
                gb.jurisdiction_id,
-               (m.meeting_date >= CURRENT_DATE) AS window_open
+               -- The forum is open from agenda-published until 12h before the
+               -- meeting (when the digest is compiled + submitted). Times are
+               -- stored as naive local wall-clock; treating them as UTC here is
+               -- imprecise by the local offset, which the 12h buffer absorbs.
+               (m.meeting_date >= CURRENT_DATE
+                AND m.comments_submitted_at IS NULL
+                AND now() < (m.meeting_date + COALESCE(m.meeting_time, time '18:00'))
+                            AT TIME ZONE 'UTC' - interval '12 hours') AS window_open
         FROM agenda_item ai
         JOIN meeting m        ON m.id = ai.meeting_id
         JOIN governing_body gb ON gb.id = m.governing_body_id
@@ -89,14 +98,14 @@ def submit(*, clerk_user_id: str, agenda_item_id: int, stance: str, body: str,
            ip: str | None = None) -> dict[str, Any]:
     """Record + moderate one public comment. Returns {id, status, deduped}."""
     stance = (stance or "").strip().lower()
-    body = (body or "").strip()
+    # The written comment is OPTIONAL — registering a Support/Oppose/Neutral
+    # position is itself a valid public comment of record. Cap the length so an
+    # essay is fine but a book isn't.
+    body = (body or "").strip()[:_MAX_BODY]
     if stance not in _STANCES:
         raise ValueError("stance must be support, oppose, or neutral")
-    if not body:
-        raise ValueError("comment body is required")
     if not isinstance(agenda_item_id, int) or agenda_item_id <= 0:
         raise ValueError("agenda_item_id must be a positive integer")
-    body = body[:_MAX_BODY]
 
     with connect() as conn:
         user = conn.execute(
@@ -144,8 +153,12 @@ def submit(*, clerk_user_id: str, agenda_item_id: int, stance: str, body: str,
         item_desc = ctx["description"]
 
     # Moderate AFTER the insert is committed, so a moderation hiccup never loses
-    # the comment (it just stays 'pending' for manual triage).
-    new_status, reason = _moderate(item_title, item_desc, body, jurisdiction_id, comment_id)
+    # the comment (it just stays 'pending' for manual triage). A stance-only
+    # submission has no text to moderate → publish it directly.
+    if not body:
+        new_status, reason = "published", "stance only"
+    else:
+        new_status, reason = _moderate(item_title, item_desc, body, jurisdiction_id, comment_id)
     _apply_moderation(comment_id, new_status, reason)
     return {"id": comment_id, "status": new_status, "deduped": False}
 
