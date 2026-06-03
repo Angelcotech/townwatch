@@ -9,7 +9,16 @@ from dotenv import load_dotenv
 # a no-op and the Railway-provided env vars are used as-is.
 load_dotenv(override=True)
 
-DATABASE_URL = os.environ["DATABASE_URL"]
+# Prefer DATABASE_URL; fall back to DATABASE_PUBLIC_URL (Railway exposes both —
+# the internal one and the public-proxy one). This lets a service wired with
+# either variable name boot, and turns the otherwise-cryptic KeyError into an
+# actionable message naming exactly what's missing.
+DATABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("DATABASE_PUBLIC_URL")
+if not DATABASE_URL:
+    raise RuntimeError(
+        "No database URL configured: set DATABASE_URL (preferred) or "
+        "DATABASE_PUBLIC_URL in the service environment."
+    )
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 # Mistral OCR — primary text extraction for scanned PDFs (validated ~50x
 # cheaper, ~25x faster, and MORE complete than frontier vision). When unset,
