@@ -78,16 +78,18 @@ def _item_context(conn, agenda_item_id: int) -> dict[str, Any] | None:
                m.id  AS meeting_id, m.meeting_date,
                gb.jurisdiction_id,
                -- The forum is open from agenda-published until 12h before the
-               -- meeting (when the digest is compiled + submitted). Times are
-               -- stored as naive local wall-clock; treating them as UTC here is
-               -- imprecise by the local offset, which the 12h buffer absorbs.
+               -- meeting (when the digest is compiled + submitted). Meeting
+               -- times are local wall-clock, interpreted in the jurisdiction's
+               -- own IANA zone (resolved at onboarding) for a correct cutoff.
                (m.meeting_date >= CURRENT_DATE
                 AND m.comments_submitted_at IS NULL
                 AND now() < (m.meeting_date + COALESCE(m.meeting_time, time '18:00'))
-                            AT TIME ZONE 'UTC' - interval '12 hours') AS window_open
+                            AT TIME ZONE COALESCE(j.timezone, 'America/New_York')
+                            - interval '12 hours') AS window_open
         FROM agenda_item ai
-        JOIN meeting m        ON m.id = ai.meeting_id
+        JOIN meeting m         ON m.id = ai.meeting_id
         JOIN governing_body gb ON gb.id = m.governing_body_id
+        JOIN jurisdiction j    ON j.id = gb.jurisdiction_id
         WHERE ai.id = %s
         """,
         (agenda_item_id,),

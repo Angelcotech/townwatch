@@ -54,10 +54,12 @@ def _candidates(conn) -> list[dict[str, Any]]:
         WHERE m.comments_submitted_at IS NULL
           AND EXISTS (SELECT 1 FROM public_comment pc
                       WHERE pc.meeting_id = m.id AND pc.status = 'published')
-          -- 12 hours before the (naive local) meeting start has passed. Times are
-          -- local wall-clock; the 12h buffer absorbs the tz imprecision.
+          -- 12 hours before the meeting start has passed. Meeting times are
+          -- local wall-clock, interpreted in the jurisdiction's own IANA zone
+          -- (resolved at onboarding) so the cutoff is correct in any time zone.
           AND now() >= (m.meeting_date + COALESCE(m.meeting_time, time '18:00'))
-                       AT TIME ZONE 'UTC' - interval '12 hours'
+                       AT TIME ZONE COALESCE(j.timezone, 'America/New_York')
+                       - interval '12 hours'
           -- Safety: don't dredge up long-past meetings if the job was down.
           AND m.meeting_date >= CURRENT_DATE - 2
         ORDER BY m.meeting_date

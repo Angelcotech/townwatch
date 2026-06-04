@@ -40,6 +40,8 @@ import json
 import sys
 from dataclasses import dataclass, field
 
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
 from ..db import connect
 from .scan_document_availability import classify_url
 
@@ -144,6 +146,64 @@ def _record_failure(conn, slug: str, res: BodyResult) -> None:
     )
 
 
+def _check_timezones(conn, jurisdiction_slug: str | None) -> list[str]:
+    """Report timezone confidence per jurisdiction — a NON-blocking troubleshoot
+    pass, never a gate. Forum cutoffs need the local zone, but onboarding must
+    not hard-fail right after someone funds a town. A 'verified' zone is fine; an
+    'assumed' one (multi-zone guess) or a NULL still onboards on the best-guess /
+    Eastern fallback and is recorded for review so troubleshoot_timezones can
+    surface it for a one-line override. Returns the slugs needing review."""
+    where = "TRUE"
+    params: list = []
+    if jurisdiction_slug:
+        where = "LOWER(REPLACE(j.name, ' ', '-') || '-' || LOWER(j.state_abbr)) = LOWER(%s)"
+        params.append(jurisdiction_slug)
+    rows = conn.execute(
+        f"""
+        SELECT j.id,
+               LOWER(REPLACE(j.name, ' ', '-') || '-' || LOWER(j.state_abbr)) AS slug,
+               j.timezone, j.timezone_status
+        FROM jurisdiction j
+        WHERE {where}
+        ORDER BY slug
+        """,
+        params,
+    ).fetchall()
+
+    review: list[str] = []
+    for r in rows:
+        tz = (r["timezone"] or "").strip()
+        valid = False
+        if tz:
+            try:
+                ZoneInfo(tz)
+                valid = True
+            except (ZoneInfoNotFoundError, ValueError):
+                valid = False
+        if valid and r["timezone_status"] == "verified":
+            print(f"  ✓ [TIMEZONE] {r['slug']} — {tz} (verified)")
+            continue
+
+        # Non-blocking: record a review item, keep onboarding moving.
+        if valid:
+            reason = f"timezone {tz} is assumed (best guess) — confirm or override"
+        else:
+            reason = (f"timezone not resolved (got {r['timezone']!r}) — using fallback; "
+                      f"run sync_jurisdictions / set jurisdiction.timezone")
+        print(f"  ⚠ [TIMEZONE_REVIEW] {r['slug']} — {reason}")
+        conn.execute(
+            """
+            INSERT INTO pipeline_failure (job_name, step, message, context)
+            VALUES ('onboarding_smoke_test', 'TIMEZONE_REVIEW', %s, %s::jsonb)
+            """,
+            (f"jurisdiction {r['slug']}: {reason}",
+             json.dumps({"jurisdiction": r["slug"], "timezone": r["timezone"],
+                         "timezone_status": r["timezone_status"]})),
+        )
+        review.append(r["slug"])
+    return review
+
+
 def _bodies_for(conn, jurisdiction_slug: str | None) -> list[dict]:
     where = "gb.dissolved_date IS NULL"
     params: list = []
@@ -174,6 +234,11 @@ def smoke_test(jurisdiction_slug: str | None) -> int:
         print(f"onboarding smoke test: {len(bodies)} bod(ies) "
               f"({jurisdiction_slug or 'all jurisdictions'})")
 
+        # Jurisdiction-level timezone confidence — NON-blocking troubleshoot.
+        # 'assumed'/unresolved zones are recorded for review but never block a
+        # funded town from going live.
+        tz_review = _check_timezones(conn, jurisdiction_slug)
+
         blocked: list[BodyResult] = []
         for b in bodies:
             res = _check_body(conn, b["id"], b["name"])
@@ -185,13 +250,19 @@ def smoke_test(jurisdiction_slug: str | None) -> int:
                 blocked.append(res)
 
     print("---")
+    if tz_review:
+        print(f"REVIEW (non-blocking): {len(tz_review)} jurisdiction(s) have an "
+              f"unconfirmed timezone — {', '.join(tz_review)}. Onboarding proceeds; "
+              f"run `python -m townwatch_etl.jobs.troubleshoot_timezones` to confirm.")
     if blocked:
         bad = ", ".join(f"{r.body_name}({r.verdict})" for r in blocked)
         print(f"BLOCKED: {len(blocked)}/{len(bodies)} bod(ies) did not verify — {bad}")
         print("Recorded to pipeline_failure. Do NOT mark these jurisdictions onboarded "
               "until a real document is fetchable for every body.")
         return 1
-    print(f"PASS: all {len(bodies)} bod(ies) served a fetchable document.")
+    print(f"PASS: all {len(bodies)} bod(ies) served a fetchable document"
+          + (f" ({len(tz_review)} timezone(s) flagged for review)" if tz_review else
+             "; all timezones verified"))
     return 0
 
 

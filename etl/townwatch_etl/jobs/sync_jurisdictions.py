@@ -28,10 +28,12 @@ Run:
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 
 from ..db import connect
 from ..jurisdiction import jurisdiction_fips, list_slugs, load_config
+from ..timezones import resolve_timezone
 
 
 # Maps DB columns -> config paths. Adding a writable field is a one-line
@@ -55,6 +57,11 @@ WRITABLE_FIELDS: list[tuple[str, tuple[str, ...]]] = [
     ("records_custodian_name",  ("records_custodian", "name")),
     ("records_custodian_title", ("records_custodian", "title")),
     ("records_custodian_email", ("records_custodian", "email")),
+    # IANA time zone + its confidence. Not authored in most configs — resolved
+    # at sync time (see _ensure_timezone) and written into the merged config
+    # before this mapping reads it, so the normal insert/update path persists it.
+    ("timezone",        ("jurisdiction", "timezone")),
+    ("timezone_status", ("jurisdiction", "timezone_status")),
 ]
 
 
@@ -67,9 +74,25 @@ def _get(config: dict, path: tuple[str, ...]):
     return cur
 
 
+def _ensure_timezone(config: dict, slug: str) -> None:
+    """Populate config['jurisdiction']['timezone'] + ['timezone_status'] in
+    place, so the normal WRITABLE_FIELDS path persists them. NEVER raises — the
+    resolver always returns a usable zone. An 'assumed' result still onboards;
+    it just prints a troubleshoot hint (and is later listed by
+    troubleshoot_timezones for a one-line override)."""
+    j = config.setdefault("jurisdiction", {})
+    res = resolve_timezone(config)
+    j["timezone"] = res.timezone
+    j["timezone_status"] = res.status
+    if res.status == "assumed":
+        print(f"  ⚠ {slug}: timezone {res.timezone} is a best guess "
+              f"— {res.note} (onboarding continues)")
+
+
 def sync_one(conn, slug: str, *, dry_run: bool = False) -> dict:
     """Sync a single jurisdiction. Returns a small action summary."""
     config = load_config(slug)
+    _ensure_timezone(config, slug)
     fips = jurisdiction_fips(config)
     # SELECT each writable column so the diff-check below sees current
     # state on the existing row. The column list is derived from
@@ -110,8 +133,8 @@ def sync_one(conn, slug: str, *, dry_run: bool = False) -> dict:
         if ds is None:
             ds = conn.execute(
                 """
-                INSERT INTO data_source (source_type, source_name, record_url, fetched_at)
-                VALUES ('manual', 'jurisdiction_config_sync', 'internal://config-sync', now())
+                INSERT INTO data_source (source_type, source_name, record_url)
+                VALUES ('manual', 'jurisdiction_config_sync', 'internal://config-sync')
                 RETURNING id
                 """,
             ).fetchone()
@@ -142,6 +165,22 @@ def sync_one(conn, slug: str, *, dry_run: bool = False) -> dict:
     return {"action": "updated", "slug": slug, "fips": fips, "diffs": diffs}
 
 
+def _record_sync_failure(conn, slug: str, exc: Exception) -> None:
+    """Record a per-jurisdiction sync failure so a bad config is visible to an
+    operator instead of silently vanishing. Its own transaction block, so the
+    record commits independently of the slug that failed."""
+    with conn.transaction():
+        conn.execute(
+            """
+            INSERT INTO pipeline_failure (job_name, step, exception_class, message, context)
+            VALUES ('sync_jurisdictions', 'SYNC_ERROR', %s, %s, %s::jsonb)
+            """,
+            (type(exc).__name__,
+             f"{slug}: {exc}"[:1000],
+             json.dumps({"jurisdiction": slug, "error": type(exc).__name__})),
+        )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--slug", help="Sync only this jurisdiction. Default: all configs.")
@@ -154,9 +193,26 @@ def main() -> int:
         return 0
 
     inserted = updated = unchanged = 0
+    failed: list[str] = []
     with connect() as conn:
         for slug in slugs:
-            result = sync_one(conn, slug, dry_run=args.dry_run)
+            # Each jurisdiction is its own transaction block: a single malformed
+            # config (e.g. an unmappable timezone, a schema-invalid field) is
+            # isolated, recorded, and skipped — it must NOT roll back every other
+            # town in an unattended batch run.
+            try:
+                with conn.transaction():
+                    result = sync_one(conn, slug, dry_run=args.dry_run)
+            except Exception as e:
+                print(f"  ✗ {slug}: {type(e).__name__}: {e}")
+                if not args.dry_run:
+                    try:
+                        _record_sync_failure(conn, slug, e)
+                    except Exception as rec_err:
+                        print(f"    (could not record failure: {rec_err})")
+                failed.append(slug)
+                continue
+
             action = result["action"]
             if action in ("inserted", "would_insert"):
                 inserted += 1
@@ -170,8 +226,13 @@ def main() -> int:
                 unchanged += 1
                 print(f"  · {slug}: no change")
 
-    print(f"\n{inserted} inserted, {updated} updated, {unchanged} unchanged"
-          + (" [DRY RUN]" if args.dry_run else ""))
+    print(f"\n{inserted} inserted, {updated} updated, {unchanged} unchanged, "
+          f"{len(failed)} failed" + (" [DRY RUN]" if args.dry_run else ""))
+    if failed:
+        print(f"FAILED: {', '.join(failed)} — recorded to pipeline_failure. Fix the "
+              f"config (e.g. set jurisdiction.timezone for a multi-zone state) and re-run; "
+              f"the other jurisdictions were synced normally.")
+        return 1
     return 0
 
 
