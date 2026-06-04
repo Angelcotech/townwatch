@@ -9,17 +9,20 @@ Sequence (per jurisdiction, then jurisdiction-agnostic):
                                    flag the dead ones (404, stub PDF)
                                    so the frontend renders "no document
                                    published" instead of a dead link
-  3. extract_agendas --all       — fetch + extract any meeting that has
+  3. estimate_onboarding         — turn the scanned inventory into a $
+                                   funding goal (cheap, no spend): real
+                                   doc counts x empirical per-doc rate
+  4. extract_agendas --all       — fetch + extract any meeting that has
                                    an agenda_url and no agenda_items
-  4. extract_minutes --all       — fetch + extract any meeting that has
+  5. extract_minutes --all       — fetch + extract any meeting that has
                                    a minutes_url and no motions
-  5. refresh_council_roster      — vision-extract elected bodies' web
+  6. refresh_council_roster      — vision-extract elected bodies' web
                                    pages to fill term-expires + email
                                    (no-op when source publishes nothing)
 
-  6. refresh_findings            — recompute every observer; new gaps
+  7. refresh_findings            — recompute every observer; new gaps
                                    auto-trigger prepare_records_request
-  7. backfill_summaries          — Haiku one-shot summaries for any new
+  8. backfill_summaries          — Haiku one-shot summaries for any new
                                    meeting whose AI summary is missing
 
 Each step is its own subprocess so a failure in one doesn't tear down
@@ -50,6 +53,7 @@ from ..run_lock import jurisdiction_lock, is_running
 PER_JURISDICTION_STEPS = [
     "meetings_inventory",
     "scan_document_availability",  # before extract, so dead-URL meetings get skipped by extractors
+    "estimate_onboarding",         # cheap: turn the scanned inventory into a $ funding goal
     "extract_agendas",
     "extract_minutes",
     "refresh_council_roster",
@@ -266,6 +270,8 @@ def _per_jurisdiction_args(module: str, slug: str) -> list[str]:
         return ["--jurisdiction", slug]
     if module == "scan_document_availability":
         return ["--jurisdiction", slug, "--only-changed"]
+    if module == "estimate_onboarding":
+        return ["--jurisdiction", slug]
     if module == "extract_agendas":
         return ["--all", "--jurisdiction", slug]
     if module == "extract_minutes":
