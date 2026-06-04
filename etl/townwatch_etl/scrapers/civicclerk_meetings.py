@@ -109,7 +109,7 @@ def fetch_categories(tenant: str) -> list[dict]:
     return [c for c in data.get("value", []) if c.get("isPublic")]
 
 
-def fetch_events(tenant: str, category_id: int) -> Iterator[dict]:
+def fetch_events(tenant: str, category_id: int, since: "date | None" = None) -> Iterator[dict]:
     """All Events for a given category.
 
     CivicClerk's OData server (a) caps @odata.nextLink chains
@@ -117,13 +117,22 @@ def fetch_events(tenant: str, category_id: int) -> Iterator[dict]:
     records regardless of $top. Manual $skip pagination works past
     both. We page until we get an empty response; the server's own
     page-size choice doesn't matter to us.
+
+    `since` (a date) restricts to events on/after that day via a server-side
+    eventDate filter — the incremental path, so daily runs don't re-page the
+    full history. None = full sweep.
     """
     base = _api_base(tenant)
     skip = 0
+    date_filter = ""
+    if since is not None:
+        # OData Edm.DateTimeOffset literal; '+' is the URL space the rest of
+        # this query already uses.
+        date_filter = f"+and+eventDate+ge+{since.isoformat()}T00:00:00Z"
     while True:
         url = (
             f"{base}/Events"
-            f"?$filter=categoryId+eq+{category_id}"
+            f"?$filter=categoryId+eq+{category_id}{date_filter}"
             f"&$orderby=eventDate+asc"
             f"&$top={PAGE_SIZE}"
             f"&$skip={skip}"
@@ -265,15 +274,17 @@ def inventory(
     *,
     tenant: str,
     categories: dict[int, str],
+    since: "date | None" = None,
 ) -> Iterator[MeetingRecord]:
     """Yield MeetingRecord for every Event in every requested category.
 
     `categories` is {category_id: body_name} drawn from the jurisdiction
-    config — same shape as the CivicEngage scraper takes.
+    config — same shape as the CivicEngage scraper takes. `since` restricts to
+    events on/after that day (incremental); None = full history.
     """
     for cat_id, cat_name in categories.items():
         try:
-            events = list(fetch_events(tenant, cat_id))
+            events = list(fetch_events(tenant, cat_id, since=since))
         except Exception as e:
             print(f"  ✗ fetch failed for categoryId={cat_id}: {e}", file=sys.stderr)
             continue
