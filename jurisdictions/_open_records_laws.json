@@ -46,7 +46,8 @@
       "all_elected": ["city_council", "county_commission", "board_of_education"],
       "all_appointed": ["planning_commission", "board_of_zoning_appeals", "other"],
       "all_levying_authorities": ["city_council", "county_commission", "board_of_education"],
-      "all_local_governments": ["city_council", "county_commission", "board_of_education"]
+      "all_local_governments": ["city_council", "county_commission", "board_of_education"],
+      "general_purpose_local_governments": ["city_council", "county_commission"]
     },
     "open_records_act": {
       "title": "Georgia Open Records Act",
@@ -55,9 +56,13 @@
       "response_deadline_business_days": 3,
       "response_deadline_citation": "OCGA § 50-18-71(b)(1)(A)",
       "no_records_statement_citation": "OCGA § 50-18-71(b)(1)(B)",
-      "fee_citation": "OCGA § 50-18-71(d)",
+      "fee_citation": "OCGA § 50-18-71(c)",
       "fee_estimate_threshold_dollars": 25,
-      "fee_per_page_cents": 10
+      "fee_per_page_cents": 10,
+      "fee_search_note": "Search/retrieval/redaction capped at the prorated hourly salary of the lowest-paid full-time employee with the necessary skill; first quarter-hour free (OCGA § 50-18-71(c)(1)).",
+      "records_officer_designation_citation": "OCGA § 50-18-71(b)(2)",
+      "records_officer_note": "Designating an open-records officer is optional; if the agency does, requests must be made in writing to that officer before the 3-business-day clock starts, and the designation must be posted on the agency's website and noticed to the legal organ.",
+      "verified_at": "2026-06-04"
     },
     "open_meetings_act": {
       "title": "Georgia Open Meetings Act",
@@ -133,6 +138,56 @@
         "statute_text": "A levying or recommending authority (including a school system) shall compute and advertise the rollback millage rate; if the proposed millage rate exceeds the rollback rate, it shall advertise the increase and hold advertised public hearings before adoption (Taxpayer Bill of Rights). Applies to county, municipal, and school district levies alike.",
         "applies_to_body_types": ["all_levying_authorities"],
         "disclosure_mode": "proactive_post",
+        "notes": "HB 581 (2024) does NOT repeal or amend this duty; it only reduces the rollback rate by the FLOST millage equivalent. Both the advertisement and three-hearing requirements remain fully in force (verified 2026-06-04 against the DOR April-2025 compliance guide).",
+        "verified_at": "2026-06-04",
+        "confidence": "high"
+      },
+      "tax_digest_advertisement_missing": {
+        "statute_label": "OCGA § 48-5-32",
+        "statute_url": "https://law.justia.com/codes/georgia/title-48/chapter-5/article-1/section-48-5-32/",
+        "statute_text": "Each levying authority shall publish a Current Tax Digest and Five-Year History of Levy in a newspaper of general circulation and post it on its website (if any) at least one week before establishing the annual millage rate. Always required each cycle, distinct from the § 48-5-32.1 increase advertisement. HB 581 (2024) does not amend this duty.",
+        "applies_to_body_types": ["all_levying_authorities"],
+        "disclosure_mode": "proactive_post",
+        "verified_at": "2026-06-04",
+        "confidence": "high"
+      },
+      "budget_process_missing": {
+        "statute_label": "OCGA § 36-81-5",
+        "statute_url": "https://law.justia.com/codes/georgia/title-36/chapter-81/article-1/section-36-81-5/",
+        "statute_text": "Each unit of general-purpose local government shall place its proposed budget in a public location for inspection, publish a notice of the budget's availability and a notice of the public hearing in a newspaper of general circulation, and hold a public hearing at least one week before adopting the budget by ordinance or resolution. Distinct from the school budget act (§ 20-2-167.1). Enables public voice before the spending decision.",
+        "applies_to_body_types": ["general_purpose_local_governments"],
+        "disclosure_mode": "proactive_post",
+        "verified_at": "2026-06-04",
+        "confidence": "high"
+      },
+      "service_delivery_strategy": {
+        "statute_label": "OCGA § 36-70-20 et seq.",
+        "statute_url": "https://dca.georgia.gov/community-assistance/coordinated-planning/intergovernmental-coordination/service-delivery",
+        "statute_text": "Each county and its municipalities must adopt a Service Delivery Strategy, filed with and verified by the Department of Community Affairs; a current verified SDS is a precondition for state funding, permits, grants, and loans. State-published: DCA hosts the verified document, so link to the DCA portal rather than flag a jurisdiction gap.",
+        "applies_to_body_types": ["general_purpose_local_governments"],
+        "disclosure_mode": "state_published",
+        "verified_at": "2026-06-04",
+        "confidence": "high"
+      },
+      "compensation_increase_advertisement_missing": {
+        "statute_label": "OCGA § 36-5-24",
+        "statute_url": "https://law.justia.com/codes/georgia/title-36/chapter-5/article-2/section-36-5-24/",
+        "statute_text": "A county governing authority shall publish notice of intent to increase its own salary, compensation, or expenses, and the fiscal impact, in the county legal organ once a week for three consecutive weeks immediately preceding the meeting at which the action is taken.",
+        "applies_to_body_types": ["county_commission"],
+        "disclosure_mode": "proactive_post",
+        "event_conditional": true,
+        "trigger": "county_self_compensation_change",
+        "verified_at": "2026-06-04",
+        "confidence": "high"
+      },
+      "public_works_advertisement_missing": {
+        "statute_label": "OCGA § 36-91-20(b)",
+        "statute_url": "https://law.justia.com/codes/georgia/title-36/chapter-91/article-2/section-36-91-20/",
+        "statute_text": "Before awarding a public-works construction contract (except those exempt under § 36-91-22 — e.g. under $100,000, emergencies, sole-source), a county or municipality shall post the opportunity conspicuously in the governing authority's office and advertise it in the county legal organ (at least twice, the first at least four weeks before bid opening) or continuously for at least four weeks on its website or the Georgia Procurement Registry.",
+        "applies_to_body_types": ["general_purpose_local_governments"],
+        "disclosure_mode": "proactive_post",
+        "event_conditional": true,
+        "trigger": "public_works_construction_contract",
         "verified_at": "2026-06-04",
         "confidence": "high"
       },
