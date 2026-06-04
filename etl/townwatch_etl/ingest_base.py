@@ -35,6 +35,7 @@ class IngestJob(ABC):
         self.run_id: str = str(uuid.uuid4())
         self.rows_written: int = 0
         self.rows_skipped: int = 0
+        self.rows_failed: int = 0
 
     # -- lifecycle -----------------------------------------------------------
 
@@ -195,4 +196,5 @@ class IngestJob(ABC):
                 "data_source_id": self.data_source_id,
                 "rows_written": self.rows_written,
                 "rows_skipped": self.rows_skipped,
+                "rows_failed": self.rows_failed,
             }

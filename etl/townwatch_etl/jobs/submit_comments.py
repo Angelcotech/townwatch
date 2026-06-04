@@ -36,6 +36,7 @@ from .. import funds
 from .. import email_client
 from ..config import ANTHROPIC_API_KEY
 from ..llm_client import record_anthropic
+from .pipeline_errors import record_process_error as _record_process_error
 
 REVIEW_MODEL = "claude-haiku-4-5"
 
@@ -242,7 +243,15 @@ def main() -> int:
     print(f"Comment digests due: {len(rows)}")
     tally: dict[str, int] = {}
     for m in rows:
-        outcome = _process(m, dry_run=args.dry_run)
+        # Isolate per meeting: runs unattended (forum_tick) over every town's
+        # due digests in one process — one failure must not block the others.
+        try:
+            outcome = _process(m, dry_run=args.dry_run)
+        except Exception as e:
+            outcome = "error"
+            print(f"  ✗ meeting {m.get('meeting_id')}: {type(e).__name__}: {e}")
+            if not args.dry_run:
+                _record_process_error("submit_comments", m.get("meeting_id"), e)
         tally[outcome] = tally.get(outcome, 0) + 1
     print(f"Done. {tally}")
     return 0

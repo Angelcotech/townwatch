@@ -172,8 +172,17 @@ class MeetingsInventory(IngestJob):
             )
             count = 0
             for m in self.binding.inventory_fn(**kwargs):
-                self._upsert_meeting(body_id, m)
-                count += 1
+                # Savepoint per meeting: a single malformed record must not roll
+                # back the rest of this town's inventory (run() wraps the whole
+                # town in one transaction). One bad meeting → skip it, keep going.
+                try:
+                    with self.conn.transaction():
+                        self._upsert_meeting(body_id, m)
+                    count += 1
+                except Exception as e:
+                    self.rows_failed += 1
+                    print(f"    ✗ {body_name} {getattr(m, 'meeting_date', '?')}: "
+                          f"{type(e).__name__}: {e} — skipped")
             print(f"  ✓ {body_name}: processed {count} meetings")
 
         # CivicEngage AgendaCenter only has meetings whose agenda is already
@@ -200,8 +209,14 @@ class MeetingsInventory(IngestJob):
             body_id = self._find_body(mt.body_name)
             if body_id is None:
                 continue
-            self._upsert_calendar_meeting(body_id, mt)
-            count += 1
+            try:
+                with self.conn.transaction():
+                    self._upsert_calendar_meeting(body_id, mt)
+                count += 1
+            except Exception as e:
+                self.rows_failed += 1
+                print(f"    ✗ calendar {mt.body_name} {getattr(mt, 'meeting_date', '?')}: "
+                      f"{type(e).__name__}: {e} — skipped")
         print(f"  ✓ calendar: {count} upcoming meeting(s)")
 
     def _upsert_calendar_meeting(self, body_id: int, mt) -> None:

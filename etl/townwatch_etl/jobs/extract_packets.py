@@ -25,6 +25,7 @@ from ..http_client import civic_get
 from ..db import connect
 from .. import funds
 from ..extractors.packets import segment_packet
+from .pipeline_errors import record_process_error as _record_process_error
 
 
 def _candidates(conn, *, upcoming: bool, meeting_id: int | None) -> list[dict[str, Any]]:
@@ -115,7 +116,14 @@ def main() -> int:
     print(f"Packets to segment: {len(rows)}")
     tally: dict[str, int] = {}
     for m in rows:
-        out = _process(m)
+        # Isolate per meeting: this runs unattended (forum_tick, --all across
+        # every town in one process), so one bad packet must not abort the rest.
+        try:
+            out = _process(m)
+        except Exception as e:
+            out = "error"
+            print(f"  ✗ meeting {m.get('meeting_id')}: {type(e).__name__}: {e}")
+            _record_process_error("extract_packets", m.get("meeting_id"), e)
         tally[out] = tally.get(out, 0) + 1
     print(f"Done. {tally}")
     return 0
