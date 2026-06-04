@@ -41,6 +41,19 @@ _LADDER = [
     ("budget", "Budget records"),
 ]
 
+# Clean, completed-milestone phrasing for the activity timeline (the ladder labels
+# read as column headers, which stutter as event titles — "Meetings indexed indexed").
+_MILESTONE_TITLE = {
+    "directory": "Government directory mapped",
+    "meetings": "Meetings indexed",
+    "minutes": "Minutes & votes extracted",
+    "roster": "Elected roster mapped",
+    "audit": "Compliance audit live",
+    "campaign_finance": "Campaign finance indexed",
+    "elections": "Elections calendar live",
+    "budget": "Budget records indexed",
+}
+
 
 def _counts(conn, jid: int) -> dict:
     return conn.execute(
@@ -139,7 +152,8 @@ def sync(conn, jid: int) -> int:
             newly += 1
             activity.record(
                 conn, jid, "phase_indexed",
-                title=f"{label} indexed", ref_kind="capability", ref_id=key, once=True,
+                title=_MILESTONE_TITLE.get(key, f"{label} indexed"),
+                ref_kind="capability", ref_id=key, once=True,
                 meta={"backfilled": backfilled, "detail": cap["detail"]},
             )
     return newly
