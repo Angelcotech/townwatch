@@ -71,6 +71,7 @@ SPENDING_STEPS = {"extract_agendas", "extract_minutes", "refresh_council_roster"
 
 JURISDICTION_AGNOSTIC_STEPS = [
     "refresh_findings",
+    "sync_capabilities",   # cheap: persist build-phase state + emit phase_indexed milestones
     "backfill_summaries",
 ]
 
