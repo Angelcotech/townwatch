@@ -1,0 +1,99 @@
+{
+  "schema_version": "0.1",
+  "config_meta": {
+    "generated_at": "2026-06-04",
+    "generated_by": "manual_recon",
+    "last_verified": "2026-06-04",
+    "review_frequency_days": 90,
+    "notes": "First school_district jurisdiction. Spike (2026-06-04) found: minutes posted as Google Docs on an Edlio page (export?format=pdf works via redirect; some links are 410-Gone dead docs); agendas page is EMPTY (no documents) -> expect an agenda_missing finding under OCGA 50-14-1(e)(1) and NO live forums for CCSD until agendas are posted."
+  },
+  "jurisdiction": {
+    "name": "Columbia County School District",
+    "display_name": "Columbia County School District",
+    "type": "school_district",
+    "state": "GA",
+    "state_fips": "13",
+    "county": "Columbia County",
+    "county_fips": "13073",
+    "school_district_fips": "1301410",
+    "nces_leaid": "1301410",
+    "official_website": "https://www.ccboe.net",
+    "city_hall_address": "4781 Hereford Farm Road, Evans, GA 30809",
+    "city_hall_phone": "(706) 541-2723",
+    "parent_id": "columbia-county-ga",
+    "parent_type": "county"
+  },
+  "records_custodian": {
+    "name": "Open Records Officer",
+    "title": "Columbia County School District",
+    "mailing_address": [
+      "Columbia County School District",
+      "Open Records Office",
+      "4781 Hereford Farm Road",
+      "Evans, GA 30809"
+    ],
+    "notes": "District open-records officer name/email not yet confirmed; needs an open-records lookup before comment digests can be emailed. Not blocking — CCSD has no agendas/forums yet."
+  },
+  "governing_bodies": [
+    {
+      "name": "Board of Education",
+      "body_type": "board_of_education",
+      "seat_count": null,
+      "meeting_frequency": "monthly",
+      "website_url": "https://www.ccboe.net/apps/pages/index.jsp?uREC_ID=1197232&type=d&pREC_ID=1438919",
+      "edlio": {
+        "category_id": 1,
+        "minutes_url": "https://www.ccboe.net/apps/pages/index.jsp?uREC_ID=1197295&type=d&pREC_ID=2598629",
+        "agendas_url": "https://www.ccboe.net/apps/pages/index.jsp?uREC_ID=1197294&type=d&pREC_ID=1630751",
+        "schedule_url": "https://www.ccboe.net/apps/pages/index.jsp?uREC_ID=4394898&type=d&pREC_ID=2615343"
+      }
+    }
+  ],
+  "platform_hints": {
+    "agenda_platform": "edlio",
+    "edlio_base_url": "https://www.ccboe.net"
+  },
+  "data_sources": {
+    "officials_roster": {
+      "status": "found",
+      "source": "district_website",
+      "url": "https://www.ccboe.net/apps/pages/index.jsp?uREC_ID=1197232&type=d&pREC_ID=1438919",
+      "ingest_method": "scrape_or_vision",
+      "format": "html",
+      "notes": "Board of Education member directory. Verify member count + posts/districts during first onboarding pass."
+    },
+    "meeting_agendas_minutes": {
+      "status": "partial",
+      "source": "edlio_cms_google_docs",
+      "url": "https://www.ccboe.net/apps/pages/index.jsp?uREC_ID=1197295&type=d&pREC_ID=2598629",
+      "ingest_method": "scrape",
+      "format": "html_index+google_docs_pdf",
+      "notes": "Minutes only. Each minutes link is a Google Doc; fetch via /export?format=pdf (civic_get follows the googleusercontent redirect). Agendas are NOT posted as documents (empty agendas page) -> agenda_missing finding."
+    },
+    "campaign_finance": {
+      "status": "not_available",
+      "source": "ethics_filings",
+      "url": null,
+      "ingest_method": "open_records_request",
+      "transition_date": "2027-01-01",
+      "future_source": "https://ethics.ga.gov",
+      "notes": "Elected Board of Education members file campaign disclosures; pre-2027 destination TBD."
+    }
+  },
+  "public_comment_policy": {
+    "mechanism": "agenda_placement_request",
+    "deadline": "one week prior to the regular meeting",
+    "request_to": "superintendent or a Board member",
+    "exclusions": "disciplinary/under-review matters; off-topic, irrelevant, repetitious, or derogatory comments ruled out of order",
+    "source_url": "https://www.ccboe.net/apps/pages/index.jsp?uREC_ID=4394898&type=d&pREC_ID=2615343",
+    "notes": "Policy-based, not statutory (OMA does not mandate public comment). Context for the forum config; not an audit finding."
+  },
+  "known_gaps": [
+    {
+      "category": "agenda_not_published",
+      "explanation": "CCSD does not post board meeting agendas as accessible documents (agendas page is empty). OCGA 50-14-1(e)(1) requires the agenda to be available. Verified by spike 2026-06-04.",
+      "user_facing_message": "Columbia County School District does not appear to publish its board meeting agendas online; only minutes are posted.",
+      "remediation": "Surfaced automatically as an agenda_missing finding."
+    }
+  ]
+}

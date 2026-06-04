@@ -52,7 +52,7 @@ from ..extractors.council_roster import (
     extract_from_html,
 )
 from ..ingest_base import IngestJob
-from ..jurisdiction import load_config, list_slugs
+from ..jurisdiction import load_config, list_slugs, jurisdiction_fips
 
 
 USER_AGENT = "TownWatch-ETL/0.1 (civic transparency research)"
@@ -99,15 +99,12 @@ class CouncilRosterRefresh(IngestJob):
                 self._refresh_body(body, jurisdiction_id)
 
     def _find_jurisdiction_id(self) -> int:
-        """Lookup by fips_code, which counties store as county_fips and
-        cities store as place_fips (the Census 7-digit place ID)."""
+        """Lookup by the canonical fips_code: school districts use
+        school_district_fips (NCES GEOID), cities place_fips, counties
+        county_fips. Using jurisdiction_fips() keeps a school district scoped to
+        its own GEOID instead of resolving to the county it shares county_fips with."""
         assert self.conn is not None
-        j = self.config["jurisdiction"]
-        fips = j.get("place_fips") or j.get("county_fips")
-        if not fips:
-            raise RuntimeError(
-                f"Jurisdiction {self.slug!r} has neither place_fips nor county_fips in config."
-            )
+        fips = jurisdiction_fips(self.config)
         row = self.conn.execute(
             "SELECT id FROM jurisdiction WHERE fips_code = %s LIMIT 1",
             (fips,),

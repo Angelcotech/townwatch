@@ -89,8 +89,54 @@ def _ensure_timezone(config: dict, slug: str) -> None:
               f"— {res.note} (onboarding continues)")
 
 
+def _get_or_create_data_source(conn) -> int:
+    """The bootstrap data_source row reused by all config-sourced writes."""
+    ds = conn.execute(
+        "SELECT id FROM data_source WHERE source_name = %s LIMIT 1",
+        ("jurisdiction_config_sync",),
+    ).fetchone()
+    if ds is None:
+        ds = conn.execute(
+            """
+            INSERT INTO data_source (source_type, source_name, record_url)
+            VALUES ('manual', 'jurisdiction_config_sync', 'internal://config-sync')
+            RETURNING id
+            """,
+        ).fetchone()
+    return ds["id"]
+
+
+def _sync_bodies(conn, jurisdiction_id: int, ds_id: int, config: dict) -> list[str]:
+    """Find-or-create the jurisdiction's governing bodies from config —
+    idempotent by (jurisdiction_id, name). Until now bodies were created only by
+    platform-specific officials jobs (e.g. civicengage_officials); making it
+    config-driven here means meetings_inventory finds the body for ANY platform
+    (incl. Edlio) on the first run. Returns the names of bodies created."""
+    created: list[str] = []
+    for b in config.get("governing_bodies", []):
+        name, btype = b.get("name"), b.get("body_type")
+        if not name or not btype:
+            continue
+        row = conn.execute(
+            "SELECT id FROM governing_body WHERE jurisdiction_id = %s AND name = %s",
+            (jurisdiction_id, name),
+        ).fetchone()
+        if row:
+            continue
+        conn.execute(
+            """
+            INSERT INTO governing_body
+                (jurisdiction_id, name, body_type, meeting_frequency, website_url, data_source_id)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """,
+            (jurisdiction_id, name, btype, b.get("meeting_frequency"), b.get("website_url"), ds_id),
+        )
+        created.append(name)
+    return created
+
+
 def sync_one(conn, slug: str, *, dry_run: bool = False) -> dict:
-    """Sync a single jurisdiction. Returns a small action summary."""
+    """Sync a single jurisdiction + its governing bodies. Returns a summary."""
     config = load_config(slug)
     _ensure_timezone(config, slug)
     fips = jurisdiction_fips(config)
@@ -124,45 +170,43 @@ def sync_one(conn, slug: str, *, dry_run: bool = False) -> dict:
         }
         if dry_run:
             return {"action": "would_insert", "slug": slug, "fips": fips, "values": cols}
-        # data_source_id is NOT NULL — re-use the bootstrap source row
-        # used by other config-sourced jobs.
-        ds = conn.execute(
-            "SELECT id FROM data_source WHERE source_name = %s LIMIT 1",
-            ("jurisdiction_config_sync",),
-        ).fetchone()
-        if ds is None:
-            ds = conn.execute(
-                """
-                INSERT INTO data_source (source_type, source_name, record_url)
-                VALUES ('manual', 'jurisdiction_config_sync', 'internal://config-sync')
-                RETURNING id
-                """,
-            ).fetchone()
+        ds_id = _get_or_create_data_source(conn)
         # Build the column list + placeholders dynamically from cols so
         # adding a writable field doesn't require editing the SQL here.
-        all_cols = {**cols, "data_source_id": ds["id"]}
+        all_cols = {**cols, "data_source_id": ds_id}
         col_names = ", ".join(all_cols.keys())
         placeholders = ", ".join(f"%({k})s" for k in all_cols.keys())
-        conn.execute(
-            f"INSERT INTO jurisdiction ({col_names}) VALUES ({placeholders})",
+        row = conn.execute(
+            f"INSERT INTO jurisdiction ({col_names}) VALUES ({placeholders}) RETURNING id",
             all_cols,
-        )
-        return {"action": "inserted", "slug": slug, "fips": fips}
+        ).fetchone()
+        jid = row["id"]
+        result = {"action": "inserted", "slug": slug, "fips": fips}
+    else:
+        jid = existing["id"]
+        # Update path — only write fields that actually changed, so updated_at
+        # doesn't get bumped on no-op runs.
+        diffs = {col: new_values[col] for col, _ in WRITABLE_FIELDS
+                 if new_values[col] is not None and existing[col] != new_values[col]}
+        if dry_run:
+            return ({"action": "would_update", "slug": slug, "fips": fips, "diffs": diffs}
+                    if diffs else {"action": "unchanged", "slug": slug, "fips": fips})
+        if diffs:
+            set_clauses = ", ".join(f"{col} = %({col})s" for col in diffs)
+            conn.execute(
+                f"UPDATE jurisdiction SET {set_clauses}, updated_at = now() WHERE id = %(id)s",
+                {**diffs, "id": jid},
+            )
+            result = {"action": "updated", "slug": slug, "fips": fips, "diffs": diffs}
+        else:
+            result = {"action": "unchanged", "slug": slug, "fips": fips}
+        ds_id = _get_or_create_data_source(conn)
 
-    # Update path — only write fields that actually changed, so updated_at
-    # doesn't get bumped on no-op runs.
-    diffs = {col: new_values[col] for col, _ in WRITABLE_FIELDS
-             if new_values[col] is not None and existing[col] != new_values[col]}
-    if not diffs:
-        return {"action": "unchanged", "slug": slug, "fips": fips}
-    if dry_run:
-        return {"action": "would_update", "slug": slug, "fips": fips, "diffs": diffs}
-    set_clauses = ", ".join(f"{col} = %({col})s" for col in diffs)
-    conn.execute(
-        f"UPDATE jurisdiction SET {set_clauses}, updated_at = now() WHERE id = %(id)s",
-        {**diffs, "id": existing["id"]},
-    )
-    return {"action": "updated", "slug": slug, "fips": fips, "diffs": diffs}
+    # Seed governing bodies from config (idempotent) on every real run.
+    created = _sync_bodies(conn, jid, ds_id, config)
+    if created:
+        result["bodies_created"] = created
+    return result
 
 
 def _record_sync_failure(conn, slug: str, exc: Exception) -> None:

@@ -41,7 +41,7 @@ RECENT_DAYS = 120
 MAX_LOOKBACK_DAYS = 400
 
 from ..ingest_base import IngestJob
-from ..jurisdiction import load_config
+from ..jurisdiction import load_config, jurisdiction_fips
 
 
 # Common shape across platforms. Each scraper module exposes its own
@@ -128,9 +128,48 @@ def _build_civicclerk_binding() -> _PlatformBinding:
     )
 
 
+def _build_edlio_binding() -> _PlatformBinding:
+    from ..scrapers.edlio_meetings import inventory as edlio_inventory
+
+    def kwargs(config: dict, categories: dict[int, str], since: "date | None") -> dict:
+        # Edlio is page-per-body, not category-based: each governing body's
+        # `edlio` block carries its own listing-page URLs. The shared ingest loop
+        # calls this once per body with categories = {category_id: body_name}.
+        cat_id, body_name = next(iter(categories.items()))
+        body = next(
+            (b for b in config.get("governing_bodies", [])
+             if b.get("edlio", {}).get("category_id") == cat_id),
+            None,
+        )
+        if body is None:
+            raise ValueError(f"edlio: no governing body with edlio.category_id={cat_id}")
+        e = body["edlio"]
+        return {
+            "category_id": cat_id, "category_name": body_name,
+            "minutes_url": e.get("minutes_url"), "agendas_url": e.get("agendas_url"),
+            "schedule_url": e.get("schedule_url"), "since": since,
+        }
+
+    def source_name(config: dict) -> str:
+        base = config["platform_hints"]["edlio_base_url"]
+        return f"{base.replace('https://', '').replace('http://', '')} (Edlio)"
+
+    def source_url(config: dict) -> str:
+        return config["platform_hints"]["edlio_base_url"]
+
+    return _PlatformBinding(
+        body_config_key="edlio",
+        inventory_fn=edlio_inventory,
+        inventory_kwargs_builder=kwargs,
+        source_name_builder=source_name,
+        source_url_builder=source_url,
+    )
+
+
 _PLATFORM_BINDINGS: dict[str, callable] = {
     "civicengage": _build_civicengage_binding,
     "civicclerk": _build_civicclerk_binding,
+    "edlio": _build_edlio_binding,
     # Add new platforms here (granicus, legistar, boarddocs, …).
 }
 
@@ -170,10 +209,10 @@ class MeetingsInventory(IngestJob):
         self.source_url = self.binding.source_url_builder(self.config)
         # FIPS code used to scope governing_body lookups to THIS jurisdiction.
         # Without this scope, "Planning Commission" in multiple cities would
-        # collide and inserts would attach to the wrong body.
-        self.jurisdiction_fips = self.config["jurisdiction"].get("county_fips") \
-            if self.config["jurisdiction"]["type"] == "county" \
-            else self.config["jurisdiction"].get("place_fips")
+        # collide and inserts would attach to the wrong body. Use the canonical
+        # resolver (handles school_district_fips too — a school district has a
+        # county_fips for standing but must scope on its own GEOID).
+        self.jurisdiction_fips = jurisdiction_fips(self.config)
 
         # Build {category_id: body_name} from the per-platform config block
         self.category_to_body = {

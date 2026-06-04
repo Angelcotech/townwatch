@@ -1,6 +1,6 @@
 {
   "_schema_notes": [
-    "Per-state source of truth for open-records / open-meetings law.",
+    "Per-state source of truth for open-records / open-meetings / finance-transparency law.",
     "Observers and records-request PDF generators read from this file instead",
     "of hardcoding state-specific statute citations. Add a new state by adding",
     "a top-level key with the same shape; the rest of the pipeline works without",
@@ -11,10 +11,43 @@
     "open_meetings_act = the law governing what must be public about meetings",
     "  themselves (minutes, agendas, attendance).",
     "campaign_finance_act = the law governing candidate disclosure filings.",
-    "finding_categories = the specific statute each TownWatch finding cites."
+    "finding_categories = the specific statute each TownWatch finding cites.",
+    "",
+    "SCALE MODEL (added 2026-06): the catalog is keyed per (state x requirement),",
+    "NOT per jurisdiction. One verified state block governs every jurisdiction of",
+    "every body type in that state, so the human-review unit is ~50 states, not",
+    "thousands of towns. Re-verify on legislative-session cadence and diff.",
+    "",
+    "Each finding_category carries two applicability dimensions so ONE statute",
+    "serves multiple body types (city council, county commission, board of",
+    "education, ...) without duplication:",
+    "  applies_to_body_types: list of concrete body_types OR class tokens",
+    "      resolved via body_type_classes below. A requirement attaches to a",
+    "      CLASS, so a newly-onboarded body type inherits it automatically.",
+    "  disclosure_mode: how the obligation is satisfied, which decides whether",
+    "      its absence is an auditable gap:",
+    "        proactive_post  -> the agency must publish it (website/posting). We",
+    "                           scrape for it; absence => a finding.",
+    "        on_request      -> public only on request. Absence from a website is",
+    "                           NOT a violation; we surface the records-request",
+    "                           path, not a gap finding.",
+    "        state_published -> published by the STATE (DOAA/GaDOE/GOSA). We link",
+    "                           to the state source; never a jurisdiction finding.",
+    "Only proactive_post categories drive gap findings; on_request / state_published",
+    "categories render as links/context. NOTE: public comment at meetings is set by",
+    "each board's own policy, not statute, so it is NOT a finding_category — it",
+    "feeds the live-forum config (sign-up window), not the audit."
   ],
+  "_body_type_classes_doc": "body_type_classes expands a class token in applies_to_body_types to concrete body_types. Per-state because government structure varies by state.",
   "GA": {
     "state_name": "Georgia",
+    "body_type_classes": {
+      "all_agencies": ["city_council", "county_commission", "board_of_education", "planning_commission", "board_of_zoning_appeals", "other"],
+      "all_elected": ["city_council", "county_commission", "board_of_education"],
+      "all_appointed": ["planning_commission", "board_of_zoning_appeals", "other"],
+      "all_levying_authorities": ["city_council", "county_commission", "board_of_education"],
+      "all_local_governments": ["city_council", "county_commission", "board_of_education"]
+    },
     "open_records_act": {
       "title": "Georgia Open Records Act",
       "citation": "OCGA § 50-18-70 et seq.",
@@ -43,27 +76,83 @@
       "minutes_missing": {
         "statute_label": "OCGA § 50-14-1(e)(2)",
         "statute_url": "https://law.justia.com/codes/georgia/title-50/chapter-14/section-50-14-1/",
-        "statute_text": "Minutes of all meetings of public agencies shall be promptly recorded and shall be open to public inspection once approved as official by the agency."
+        "statute_text": "Minutes of all meetings of public agencies shall be promptly recorded and shall be open to public inspection once approved as official by the agency.",
+        "applies_to_body_types": ["all_agencies"],
+        "disclosure_mode": "proactive_post",
+        "verified_at": "2026-06-04",
+        "confidence": "high"
       },
       "agenda_missing": {
-        "statute_label": "OCGA § 50-14-1(b)(1)",
+        "statute_label": "OCGA § 50-14-1(e)(1)",
         "statute_url": "https://law.justia.com/codes/georgia/title-50/chapter-14/section-50-14-1/",
-        "statute_text": "The agenda of all matters expected to come before a public agency shall be made available, upon request, to the public for inspection as far in advance of the meeting as is reasonably possible."
+        "statute_text": "The agenda of all matters expected to come before a public agency shall be available upon request and shall be posted at the meeting site as far in advance as reasonably possible, at a minimum during the two-week period immediately prior to the meeting.",
+        "applies_to_body_types": ["all_agencies"],
+        "disclosure_mode": "proactive_post",
+        "verified_at": "2026-06-04",
+        "confidence": "high"
       },
       "campaign_finance_missing": {
         "statute_label": "OCGA § 21-5-34",
         "statute_url": "https://law.justia.com/codes/georgia/title-21/chapter-5/article-2/section-21-5-34/",
-        "statute_text": "Candidates for municipal office shall file Campaign Contribution Disclosure Reports at the deadlines specified by the Act, including pre-election, post-election, and semi-annual reports."
+        "statute_text": "Candidates for elective office shall file Campaign Contribution Disclosure Reports at the deadlines specified by the Act, including pre-election, post-election, and semi-annual reports.",
+        "applies_to_body_types": ["all_elected"],
+        "disclosure_mode": "proactive_post",
+        "verified_at": "2026-06-04",
+        "confidence": "high"
       },
       "member_roster_missing": {
         "statute_label": "OCGA § 50-18-70 et seq.",
         "statute_url": "https://law.justia.com/codes/georgia/title-50/chapter-18/article-4/",
-        "statute_text": "All public records shall be open for personal inspection and copying by any person at a reasonable time and place. The membership of a public agency — including appointed boards and commissions — is a public record."
+        "statute_text": "All public records shall be open for personal inspection and copying by any person at a reasonable time and place. The membership of a public agency — including elected and appointed boards — is a public record.",
+        "applies_to_body_types": ["all_appointed"],
+        "disclosure_mode": "proactive_post",
+        "verified_at": "2026-06-04",
+        "confidence": "high"
       },
       "meeting_notice_too_short": {
         "statute_label": "OCGA § 50-14-1(d)",
         "statute_url": "https://law.justia.com/codes/georgia/title-50/chapter-14/section-50-14-1/",
-        "statute_text": "Every public agency shall give written notice of the time, place, and dates of regular meetings, and shall make the agenda available upon request, at least 24 hours in advance of the meeting. Special-called meetings require 24 hours' notice; emergency meetings require notice given as soon as possible. Notice substantially shorter than the prevailing transparency norm, even when lawful, undermines public participation."
+        "statute_text": "Every public agency shall post notice of the time, place, and dates of regular meetings at least one week in advance in a conspicuous place and on its website. Special-called meetings require 24 hours' notice to the legal organ; emergency meetings require notice as soon as reasonable. Notice substantially shorter than the prevailing transparency norm, even when lawful, undermines public participation.",
+        "applies_to_body_types": ["all_agencies"],
+        "disclosure_mode": "proactive_post",
+        "verified_at": "2026-06-04",
+        "confidence": "high"
+      },
+      "budget_summary_missing": {
+        "statute_label": "OCGA § 20-2-167.1",
+        "statute_url": "https://law.justia.com/codes/georgia/title-20/chapter-2/article-6/part-4/section-20-2-167-1/",
+        "statute_text": "Each local board of education shall advertise a summary of its proposed budget and hold at least two public meetings/hearings before final adoption, and shall publish the adopted (and any amended) budget. School-specific budget-transparency requirement, distinct from the general local-government budget act.",
+        "applies_to_body_types": ["board_of_education"],
+        "disclosure_mode": "proactive_post",
+        "verified_at": "2026-06-04",
+        "confidence": "high"
+      },
+      "millage_advertisement_missing": {
+        "statute_label": "OCGA § 48-5-32.1",
+        "statute_url": "https://law.justia.com/codes/georgia/title-48/chapter-5/article-1/section-48-5-32-1/",
+        "statute_text": "A levying or recommending authority (including a school system) shall compute and advertise the rollback millage rate; if the proposed millage rate exceeds the rollback rate, it shall advertise the increase and hold advertised public hearings before adoption (Taxpayer Bill of Rights). Applies to county, municipal, and school district levies alike.",
+        "applies_to_body_types": ["all_levying_authorities"],
+        "disclosure_mode": "proactive_post",
+        "verified_at": "2026-06-04",
+        "confidence": "high"
+      },
+      "annual_audit": {
+        "statute_label": "OCGA § 36-81-7",
+        "statute_url": "https://www.audits2.ga.gov/schoolsystemdashboard/",
+        "statute_text": "Local governments and school systems must obtain an annual independent audit. School-system audits are filed with and published by the Georgia Department of Audits & Accounts (DOAA School System Financial Dashboard). State-published: link to the state source rather than flag a jurisdiction gap.",
+        "applies_to_body_types": ["all_local_governments"],
+        "disclosure_mode": "state_published",
+        "verified_at": "2026-06-04",
+        "confidence": "high"
+      },
+      "state_financial_report": {
+        "statute_label": "OCGA § 20-14-49.11 / § 20-14-33",
+        "statute_url": "https://georgiainsights.gadoe.org/dashboards/district-financial-information/",
+        "statute_text": "GaDOE publishes per-district revenue and expenditure data (Georgia Insights) and GOSA publishes the Financial Efficiency Star Rating. State-published transparency artifacts for school systems; render as links. (CCRPI publisher attribution intentionally omitted — that specific claim did not survive verification.)",
+        "applies_to_body_types": ["board_of_education"],
+        "disclosure_mode": "state_published",
+        "verified_at": "2026-06-04",
+        "confidence": "high"
       }
     }
   }

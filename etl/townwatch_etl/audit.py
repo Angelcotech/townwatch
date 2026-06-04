@@ -48,6 +48,30 @@ def state_law(state_abbr: str) -> dict[str, Any]:
     return laws[key]
 
 
+def _resolve_body_types(state_abbr: str, applies_to: list[str]) -> set[str]:
+    """Expand class tokens (all_agencies, all_elected, all_appointed,
+    all_levying_authorities, …) into concrete body_types via the per-state
+    body_type_classes map. Unknown tokens are treated as literal body_types."""
+    classes = state_law(state_abbr).get("body_type_classes", {})
+    out: set[str] = set()
+    for tok in applies_to:
+        out |= set(classes.get(tok, [tok]))
+    return out
+
+
+def finding_applies(state_abbr: str, category: str, body_type: str | None) -> bool:
+    """Whether a finding category applies to a body of this type, per the
+    per-state catalog's applies_to_body_types (resolved through body_type_classes).
+    A category with no applies_to_body_types applies to every body (back-compat)."""
+    block = state_law(state_abbr).get("finding_categories", {}).get(category)
+    if not block:
+        return False
+    applies = block.get("applies_to_body_types")
+    if not applies:
+        return True
+    return body_type in _resolve_body_types(state_abbr, applies)
+
+
 def finding_statute(state_abbr: str, category: str) -> dict[str, str]:
     """Return the statute citation block for a (state, finding category).
     Shape: {statute_label, statute_url, statute_text}. Raises on misconfig."""

@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Callable
 
-from ..audit import finding_statute, record_failure
+from ..audit import finding_statute, finding_applies, record_failure
 from ..db import connect
 
 
@@ -49,7 +49,7 @@ class ObservedFinding:
 # =====================================================================
 
 
-def observe_minutes_missing(conn, body_id: int, state_abbr: str) -> ObservedFinding | None:
+def observe_minutes_missing(conn, body_id: int, state_abbr: str, body_type: str | None) -> ObservedFinding | None:
     """The 'trail went cold' finding: meetings AFTER the last meeting that
     had minutes published, with no minutes_url and no explicit unavailable
     flag in meta. This is the dramatic finding rather than an all-time
@@ -59,6 +59,8 @@ def observe_minutes_missing(conn, body_id: int, state_abbr: str) -> ObservedFind
     works for GA, TN, FL, etc. — the gap-detection SQL is state-agnostic,
     only the legal citation changes per jurisdiction.
     """
+    if not finding_applies(state_abbr, "minutes_missing", body_type):
+        return None
     row = conn.execute(
         """
         WITH last_with_minutes AS (
@@ -91,33 +93,65 @@ def observe_minutes_missing(conn, body_id: int, state_abbr: str) -> ObservedFind
     )
 
 
-def observe_member_roster_missing(conn, body_id: int, state_abbr: str) -> ObservedFinding | None:
-    """Member roster not indexed for this body.
-
-    Only fires for non-elected bodies (appointed boards/commissions) — for
-    Council we know seats are populated. The signal is zero current members
-    in the term table. Doesn't fire while members exist; goes away when the
-    roster lands in the DB.
-    """
+def observe_agenda_missing(conn, body_id: int, state_abbr: str, body_type: str | None) -> ObservedFinding | None:
+    """Body systematically not publishing agendas. Mirrors minutes_missing on
+    agenda_url: past meetings AFTER the last meeting that had an agenda, missing
+    agenda_url. A board that has never posted an agenda (e.g. CCSD posts minutes
+    but not agendas) has no 'last with agenda', so every past meeting counts —
+    a strong OCGA 50-14-1(e)(1) finding, which is precisely the absence the audit
+    is meant to surface."""
+    if not finding_applies(state_abbr, "agenda_missing", body_type):
+        return None
     row = conn.execute(
         """
-        SELECT
-            gb.body_type,
-            (SELECT COUNT(DISTINCT t.official_id)
-             FROM term t JOIN seat s ON s.id = t.seat_id
-             WHERE s.governing_body_id = gb.id AND t.is_current = true) AS current_members
-        FROM governing_body gb
-        WHERE gb.id = %s
+        WITH last_with_agenda AS (
+          SELECT MAX(meeting_date) AS d FROM meeting
+          WHERE governing_body_id = %s AND agenda_url IS NOT NULL
+        )
+        SELECT COUNT(*) AS count, MIN(m.meeting_date) AS since
+        FROM meeting m
+        WHERE m.governing_body_id = %s
+          AND m.meeting_date < CURRENT_DATE
+          AND m.agenda_url IS NULL
+          AND NOT (COALESCE(m.meta, '{}'::jsonb) ? 'agenda_unavailable')
+          AND m.meeting_date > COALESCE((SELECT d FROM last_with_agenda), DATE '1900-01-01')
+        """,
+        (body_id, body_id),
+    ).fetchone()
+    count = row["count"] or 0
+    if count < 2:
+        return None
+    statute = finding_statute(state_abbr, "agenda_missing")
+    return ObservedFinding(
+        category="agenda_missing",
+        severity="high" if count >= 10 else "medium",
+        statute_label=statute["statute_label"],
+        statute_url=statute["statute_url"],
+        statute_text=statute["statute_text"],
+        count=count,
+        since_date=row["since"],
+    )
+
+
+def observe_member_roster_missing(conn, body_id: int, state_abbr: str, body_type: str | None) -> ObservedFinding | None:
+    """Member roster not indexed for this body.
+
+    Only fires for APPOINTED bodies (boards/commissions) — elected bodies have a
+    dedicated roster scraper, so a missing roster there is an onboarding state,
+    not a transparency gap. Which body types this applies to is now catalog-driven
+    (member_roster_missing → all_appointed). Fires when zero current members.
+    """
+    if not finding_applies(state_abbr, "member_roster_missing", body_type):
+        return None
+    row = conn.execute(
+        """
+        SELECT (SELECT COUNT(DISTINCT t.official_id)
+                FROM term t JOIN seat s ON s.id = t.seat_id
+                WHERE s.governing_body_id = %s AND t.is_current = true) AS current_members
         """,
         (body_id,),
     ).fetchone()
-    body_type = row["body_type"]
-    current = row["current_members"] or 0
-    # Skip elected bodies — those have a separate scraper that should pull
-    # the council roster directly from the official directory page.
-    if body_type in ("city_council", "county_commission", "school_board"):
-        return None
-    if current > 0:
+    if (row["current_members"] or 0) > 0:
         return None
     statute = finding_statute(state_abbr, "member_roster_missing")
     return ObservedFinding(
@@ -131,7 +165,7 @@ def observe_member_roster_missing(conn, body_id: int, state_abbr: str) -> Observ
     )
 
 
-def observe_campaign_finance_missing(conn, body_id: int, state_abbr: str) -> ObservedFinding | None:
+def observe_campaign_finance_missing(conn, body_id: int, state_abbr: str, body_type: str | None) -> ObservedFinding | None:
     """No campaign finance filings on record for the body's elected officials.
 
     Fires on ELECTED bodies (city_council, county_commission, school_board,
@@ -145,36 +179,29 @@ def observe_campaign_finance_missing(conn, body_id: int, state_abbr: str) -> Obs
     BODY, not per official, because the records request covers all
     sitting members in one ask.
     """
+    # Only elected bodies have campaign-disclosure obligations (catalog-driven:
+    # campaign_finance_missing → all_elected, incl. board_of_education).
+    if not finding_applies(state_abbr, "campaign_finance_missing", body_type):
+        return None
     EIGHT_YEARS_AGO = "(CURRENT_DATE - INTERVAL '8 years')"
     row = conn.execute(
         f"""
         SELECT
-            gb.body_type,
             (SELECT COUNT(DISTINCT t.official_id)
              FROM term t JOIN seat s ON s.id = t.seat_id
-             WHERE s.governing_body_id = gb.id AND t.is_current = true) AS current_members,
+             WHERE s.governing_body_id = %s AND t.is_current = true) AS current_members,
             (SELECT COUNT(*)
              FROM campaign_contribution cc
              JOIN term t ON t.official_id = cc.official_id
              JOIN seat s ON s.id = t.seat_id
-             WHERE s.governing_body_id = gb.id
+             WHERE s.governing_body_id = %s
                AND t.is_current = true
                AND cc.contribution_date >= {EIGHT_YEARS_AGO}) AS contributions_count
-        FROM governing_body gb
-        WHERE gb.id = %s
         """,
-        (body_id,),
+        (body_id, body_id),
     ).fetchone()
-    body_type = row["body_type"]
     current_members = row["current_members"] or 0
     contributions_count = row["contributions_count"] or 0
-    # Only elected bodies have CCDR-equivalent obligations.
-    elected_types = (
-        "city_council", "county_commission", "school_board",
-        "board_of_education",  # GA convention varies
-    )
-    if body_type not in elected_types:
-        return None
     if current_members == 0:
         # No officials to require filings from — surface this via
         # member_roster_missing instead; don't double-flag.
@@ -193,7 +220,7 @@ def observe_campaign_finance_missing(conn, body_id: int, state_abbr: str) -> Obs
     )
 
 
-def observe_meeting_notice_too_short(conn, body_id: int, state_abbr: str) -> ObservedFinding | None:
+def observe_meeting_notice_too_short(conn, body_id: int, state_abbr: str, body_type: str | None) -> ObservedFinding | None:
     """Recurring pattern of short-notice REGULAR meetings.
 
     Counts regular meetings in the last 24 months whose agenda was
@@ -209,6 +236,8 @@ def observe_meeting_notice_too_short(conn, body_id: int, state_abbr: str) -> Obs
       - high if any meeting was posted same-day-or-later (notice < 1 day)
       - medium otherwise (legal but below transparency norms)
     """
+    if not finding_applies(state_abbr, "meeting_notice_too_short", body_type):
+        return None
     row = conn.execute(
         """
         SELECT
@@ -243,11 +272,12 @@ def observe_meeting_notice_too_short(conn, body_id: int, state_abbr: str) -> Obs
 
 OBSERVERS: list[Callable] = [
     observe_minutes_missing,
+    observe_agenda_missing,
     observe_member_roster_missing,
     observe_campaign_finance_missing,
     observe_meeting_notice_too_short,
-    # Add new finding categories here: observe_agenda_missing,
-    # observe_attendance_missing, ...
+    # Add new finding categories here. Budget/millage observers (§ 20-2-167.1,
+    # § 48-5-32.1) await budget-document ingestion (Phase 5 / finance).
 ]
 
 
@@ -338,9 +368,13 @@ def refresh_body(
     """
     observed_categories = set()
     summary = {"body": body_name, "actions": []}
+    bt_row = conn.execute(
+        "SELECT body_type FROM governing_body WHERE id = %s", (body_id,),
+    ).fetchone()
+    body_type = bt_row["body_type"] if bt_row else None
     for observer in OBSERVERS:
         try:
-            obs = observer(conn, body_id, state_abbr)
+            obs = observer(conn, body_id, state_abbr, body_type)
         except Exception as e:
             record_failure(
                 conn,
@@ -457,14 +491,12 @@ def main() -> int:
     """
     params: list = []
     if args.jurisdiction:
-        from ..jurisdiction import load_config
+        from ..jurisdiction import load_config, jurisdiction_fips
         cfg = load_config(args.jurisdiction)
-        # Counties don't have place_fips (that's a Census place ID, for
-        # incorporated places only). Use whichever is set; both end up
-        # stored as the jurisdiction.fips_code DB column.
-        j = cfg["jurisdiction"]
+        # Resolve the canonical fips_code (school_district_fips / place_fips /
+        # county_fips) so a school district scopes to its own GEOID, not its county.
         sql += " WHERE j.fips_code = %s"
-        params.append(j.get("place_fips") or j.get("county_fips"))
+        params.append(jurisdiction_fips(cfg))
     sql += " ORDER BY j.display_name, gb.name"
 
     with connect() as conn:

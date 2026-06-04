@@ -50,10 +50,12 @@ _MAX_BODY = 2000
 # =====================================================================
 
 def _allowed_jurisdictions(conn, home_jurisdiction_id: int) -> set[int]:
-    """The set a user with this home jurisdiction may comment on: the home
-    place itself + its parent county (county fips_code = state_fips||county_fips)."""
-    # county_fips is the full 5-digit county FIPS (state+county), which is exactly
-    # a county jurisdiction's fips_code — so the parent county is a direct match.
+    """The set a user with this home jurisdiction may comment on: the home place
+    itself + its parent county + the county-wide school district. county_fips is
+    the full 5-digit county FIPS (state+county) = a county's fips_code, so the
+    parent county is a direct match; a school district carries the same
+    county_fips, so any county/city resident also has standing in their district
+    (and a district resident has county standing via the county clause)."""
     rows = conn.execute(
         """
         WITH home AS (
@@ -65,6 +67,9 @@ def _allowed_jurisdictions(conn, home_jurisdiction_id: int) -> set[int]:
            OR (j.jurisdiction_type = 'county'
                AND h.county_fips IS NOT NULL
                AND j.fips_code = h.county_fips)
+           OR (j.jurisdiction_type = 'school_district'
+               AND h.county_fips IS NOT NULL
+               AND j.county_fips = h.county_fips)
         """,
         (home_jurisdiction_id,),
     ).fetchall()

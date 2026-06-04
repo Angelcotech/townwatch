@@ -143,18 +143,23 @@ def validate_config(config: dict[str, Any], *, slug: str | None = None) -> None:
 
 def jurisdiction_fips(config: dict[str, Any]) -> str:
     """Canonical FIPS code for the jurisdiction — matches `jurisdiction.fips_code`
-    in the DB. Cities use place_fips (Census 7-digit place ID); counties use
-    county_fips (5-digit). Loud failure when neither is present so a misconfigured
+    in the DB. School districts use school_district_fips (NCES/Census LEA GEOID,
+    e.g. CCSD 1301410); cities use place_fips (Census 7-digit place ID); counties
+    use county_fips (5-digit). Loud failure when none is present so a misconfigured
     jurisdiction can't silently match the wrong DB row.
+
+    School districts come FIRST because a district config also carries county_fips
+    (for geographic standing / parent nav), so we must key on its own GEOID, not
+    the county it sits in.
 
     Use this in every ETL job that filters by `j.fips_code = ?` rather than
     reaching into config["jurisdiction"]["place_fips"] directly.
     """
     j = config["jurisdiction"]
-    fips = j.get("place_fips") or j.get("county_fips")
+    fips = j.get("school_district_fips") or j.get("place_fips") or j.get("county_fips")
     if not fips:
         raise RuntimeError(
-            f"Jurisdiction config has neither place_fips nor county_fips: "
+            f"Jurisdiction config has no school_district_fips/place_fips/county_fips: "
             f"name={j.get('name')!r}, type={j.get('type')!r}"
         )
     return fips

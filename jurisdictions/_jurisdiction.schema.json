@@ -134,6 +134,14 @@
         "timezone": {
           "type": "string",
           "description": "IANA time zone (e.g. America/New_York). Usually resolved automatically from state_fips at sync time; set explicitly only for towns in a state that spans two zones."
+        },
+        "school_district_fips": {
+          "type": "string",
+          "description": "NCES/Census local-education-agency GEOID (e.g. CCSD = 1301410). The canonical fips_code for a school_district jurisdiction; distinct from the county_fips it also carries for geographic standing."
+        },
+        "nces_leaid": {
+          "type": "string",
+          "description": "NCES Local Education Agency ID for a school district (usually identical to school_district_fips)."
         }
       }
     },
@@ -397,6 +405,7 @@
             "granicus",
             "legistar",
             "boarddocs",
+            "edlio",
             "civicclerk",
             "iqm2",
             "municode",
