@@ -229,26 +229,38 @@ def reserve(conn, jurisdiction_id: int, expected_cost: Any, *, run_id=None,
     return row["id"]
 
 
+def record_spend(conn, jurisdiction_id: int, amount: Any, *, ref_kind: str | None = None,
+                 ref_id: str | None = None, description: str | None = None,
+                 meta: dict | None = None) -> None:
+    """Append a 'spend' ledger row (negative amount). The SINGLE place spend is
+    booked — used by settle() (the funded path) AND by the gate's unfunded path,
+    so every metered unit lands in the ledger regardless of funding state. The
+    ledger is the only persistent record of spend; if a run isn't booked here,
+    that cost vanishes from the books. A zero/negative cost is a no-op."""
+    amt = _dec(amount)
+    if amt <= 0:
+        return
+    conn.execute(
+        "INSERT INTO fund_ledger (jurisdiction_id, kind, amount_usd, ref_kind, ref_id, description, meta) "
+        "VALUES (%s, 'spend', %s, %s, %s, %s, %s)",
+        (jurisdiction_id, -amt, ref_kind, ref_id, description, Json(meta or {})),
+    )
+
+
 def settle(conn, reservation_id: int, actual_cost: Any, *, ref_kind: str | None = None,
            ref_id: str | None = None, description: str | None = None,
            meta: dict | None = None) -> None:
-    """Replace a hold with the real charge: append a 'spend' ledger row for the
-    actual cost (always charged, success or failure — honest accounting), then
-    delete the reservation. A zero actual_cost settles to no ledger row."""
+    """Replace a hold with the real charge: book the actual cost to the ledger
+    (always charged, success or failure — honest accounting), then delete the
+    reservation. A zero actual_cost settles to no ledger row."""
     res = conn.execute(
         "DELETE FROM fund_reservation WHERE id = %s RETURNING jurisdiction_id",
         (reservation_id,),
     ).fetchone()
     if res is None:
         return  # already settled/released — nothing to do
-    jid = res["jurisdiction_id"]
-    amt = _dec(actual_cost)
-    if amt > 0:
-        conn.execute(
-            "INSERT INTO fund_ledger (jurisdiction_id, kind, amount_usd, ref_kind, ref_id, description, meta) "
-            "VALUES (%s, 'spend', %s, %s, %s, %s, %s)",
-            (jid, -amt, ref_kind, ref_id, description, Json(meta or {})),
-        )
+    record_spend(conn, res["jurisdiction_id"], actual_cost, ref_kind=ref_kind,
+                 ref_id=ref_id, description=description, meta=meta)
 
 
 def release(conn, reservation_id: int) -> None:
@@ -347,3 +359,16 @@ def gate(jurisdiction_id: int, *, run_id=None, meeting_id: int | None = None,
                     print(f"     spend: ${g.cost:.4f}")
                 except Exception as se:  # settlement must never mask the unit's outcome
                     print(f"   ⚠ fund settle failed ({ref_kind} {ref_id}): {se}")
+            elif g.cost > 0:
+                # Unfunded / ungated town: no reservation to settle, but the spend
+                # is real. Book it anyway so the ledger stays complete — the town
+                # accrues a negative balance = its true, unfunded onboarding cost,
+                # which is exactly the "needs funding" signal the health metric reads.
+                try:
+                    with connect() as gc:
+                        record_spend(gc, jurisdiction_id, g.cost, ref_kind=ref_kind,
+                                     ref_id=ref_id, description=description,
+                                     meta=cost_breakdown(usage))
+                    print(f"     spend (unfunded, booked): ${g.cost:.4f}")
+                except Exception as se:
+                    print(f"   ⚠ fund spend record failed ({ref_kind} {ref_id}): {se}")
