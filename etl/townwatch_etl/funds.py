@@ -171,6 +171,17 @@ def deposit(conn, jurisdiction_id: int, amount: Any, *, kind: str = "deposit",
     # A top-up should lift an insufficient-funds auto-pause.
     if amt > 0:
         resume(conn, jurisdiction_id)
+        # Milestone: funding received (the first such row is the town's first
+        # adopter once contributor identity is attached). Best-effort — a logging
+        # failure must never void a real deposit.
+        try:
+            from . import activity
+            activity.record(conn, jurisdiction_id, "funding_received",
+                            title=f"Funding received: ${amt:.2f}",
+                            ref_kind="ledger", ref_id=str(row["id"]),
+                            meta={"amount_usd": float(amt), "kind": kind})
+        except Exception as e:  # pragma: no cover
+            print(f"   ⚠ activity log (funding_received) failed: {e}")
     return row["id"]
 
 

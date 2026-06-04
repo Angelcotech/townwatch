@@ -32,6 +32,7 @@ import sys
 from typing import Any
 
 from ..db import connect
+from .. import activity
 from .. import funds
 from .. import email_client
 from ..config import ANTHROPIC_API_KEY
@@ -228,6 +229,16 @@ def _process(m: dict[str, Any], *, dry_run: bool) -> str:
                 comment_count=comment_count, decision="cleared", note=note,
                 body=full, status="sent" if sent else "no_recipient",
                 sent_at=datetime.now(timezone.utc) if sent else None)
+        if sent:
+            # Milestone: residents' comments delivered to the clerk for the record.
+            activity.record(
+                conn, jid, "comments_submitted",
+                title=f"Public comment submitted to the {m['body_name']} clerk "
+                      f"— {m['meeting_date']:%b %d, %Y}",
+                ref_kind="meeting", ref_id=str(mid), once=True,
+                meta={"comment_count": comment_count, "item_count": item_count,
+                      "recipient": recipient},
+            )
     print(f"  {'✓ sent' if sent else '⊘ not sent (no email service)'} meeting {mid}: "
           f"{comment_count} comments across {item_count} item(s) → {recipient}")
     return "sent" if sent else "skipped_no_service"

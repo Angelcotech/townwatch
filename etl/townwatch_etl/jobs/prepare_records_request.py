@@ -26,6 +26,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
+from .. import activity
 from ..audit import record_failure, state_law
 from ..db import connect
 from ..jurisdiction import load_config
@@ -519,6 +520,12 @@ def prepare_for_finding(conn, finding_id: int, *, tone: int = 1) -> dict[str, An
             json.dumps({"category": f_row["category"], "letter_subject": letter["subject"]}),
         ),
     ).fetchone()
+    activity.record(
+        conn, f_row["jurisdiction_id"], "records_request_generated",
+        title=f"Records request generated — {f_row['body_name']} ({f_row['category']})",
+        ref_kind="records_request", ref_id=str(row["id"]), once=True,
+        meta={"finding_id": finding_id, "category": f_row["category"], "tone": tone},
+    )
     return {"records_request_id": row["id"], "pdf_path": pdf_rel, "created": True}
 
 
@@ -920,6 +927,12 @@ def ensure_consolidated_request(conn, jurisdiction_id: int, *, tone: int = 1) ->
             }),
         ),
     ).fetchone()
+    activity.record(
+        conn, jurisdiction_id, "records_request_generated",
+        title=f"Consolidated records request generated ({len(finding_ids)} findings)",
+        ref_kind="records_request", ref_id=str(row["id"]), once=True,
+        meta={"finding_ids": finding_ids, "consolidated": True, "tone": effective_tone},
+    )
     return {
         "records_request_id": row["id"],
         "created": True,
