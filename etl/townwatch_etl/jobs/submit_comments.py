@@ -157,6 +157,17 @@ def _record(conn, *, meeting_id, recipient_email, recipient_name, item_count,
     )
 
 
+def _set_contact_status(conn, jid: int, status: str) -> None:
+    """Record the clerk-email deliverability standing observed by a real send.
+    A successful send clears any prior bad state; a failure is the hardest signal
+    that the address is broken. Mirrors monitor_clerk_contact's status vocabulary."""
+    conn.execute(
+        "UPDATE jurisdiction SET records_custodian_email_status = %s, "
+        "records_custodian_email_checked_at = now() WHERE id = %s",
+        (status, jid),
+    )
+
+
 def _process(m: dict[str, Any], *, dry_run: bool) -> str:
     mid = m["meeting_id"]
     jid = m["jurisdiction_id"]
@@ -207,6 +218,8 @@ def _process(m: dict[str, Any], *, dry_run: bool) -> str:
                     recipient_name=m["records_custodian_name"], item_count=item_count,
                     comment_count=comment_count, decision="cleared", note=note,
                     body=full, status="no_recipient", sent_at=None)
+            # No clerk email on file -> nothing we send can reach them.
+            _set_contact_status(conn, jid, "unverified")
         print(f"  ⊘ meeting {mid}: no custodian email on file — digest recorded, not sent")
         return "no_recipient"
 
@@ -219,6 +232,16 @@ def _process(m: dict[str, Any], *, dry_run: bool) -> str:
                     recipient_name=m["records_custodian_name"], item_count=item_count,
                     comment_count=comment_count, decision="cleared", note=f"send error: {e}",
                     body=full, status="failed", sent_at=None)
+            # A real send failure is the hardest evidence the clerk email is broken —
+            # the digest (and any records request) silently won't arrive. Operator
+            # signal only (admin queue + status column); not a public milestone.
+            _set_contact_status(conn, jid, "undeliverable")
+            conn.execute(
+                "INSERT INTO pipeline_failure (job_name, step, meeting_id, message, context) "
+                "VALUES ('submit_comments', 'clerk_undeliverable', %s, %s, %s::jsonb)",
+                (mid, f"send to clerk {recipient} failed: {str(e)[:300]}",
+                 '{"jurisdiction_id": %d}' % jid),
+            )
         print(f"  ✗ meeting {mid}: send failed: {e}")
         return "failed"
 
@@ -230,6 +253,9 @@ def _process(m: dict[str, Any], *, dry_run: bool) -> str:
                 body=full, status="sent" if sent else "no_recipient",
                 sent_at=datetime.now(timezone.utc) if sent else None)
         if sent:
+            # A successful delivery proves the address works — clears any prior
+            # 'undeliverable'/'unverified' standing.
+            _set_contact_status(conn, jid, "verified")
             # Milestone: residents' comments delivered to the clerk for the record.
             activity.record(
                 conn, jid, "comments_submitted",
