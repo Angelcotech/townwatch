@@ -167,6 +167,34 @@ _CATEGORY_LETTER_CONFIG = {
         ],
         "record_type": "campaign finance disclosures",
     },
+    "budget_process_missing": {
+        "subject_template": (
+            "Georgia Open Records Act request &mdash; "
+            "{body_name} adopted budget and budget-adoption records"
+        ),
+        "items_template": [
+            (
+                "The adopted annual budget (by ordinance or resolution) of the {city_full} "
+                "{body_name} for the current fiscal year, including the adopting instrument and "
+                "the date of adoption."
+            ),
+            (
+                "The proposed budget as placed for public inspection under OCGA &sect; 36-81-5, "
+                "and the notice of its availability."
+            ),
+            (
+                "The notice(s) of the public hearing(s) held on the budget, and the minutes of "
+                "those hearings."
+            ),
+            (
+                "If no annual budget has yet been adopted for the current fiscal year, a written "
+                "statement to that effect, identifying the date adoption is scheduled."
+            ),
+        ],
+        "record_type": "adopted budget and budget-adoption records",
+        # A missing annual budget isn't a per-meeting count; render a since-only line.
+        "count_noun": None,
+    },
 }
 
 
@@ -608,10 +636,14 @@ def _concise_item(f: dict, tmpl: dict, today: date) -> str:
     head = rtype[:1].upper() + rtype[1:]
     count = f.get("count") or 0
     since = f.get("since_date")
-    if since and count > 1:
-        return f"{head} — {count} meetings, {_human_date(since)} to present."
+    # Most findings count meetings; categories where a per-meeting count is
+    # meaningless (e.g. a missing annual budget adoption) set count_noun=None to
+    # suppress the count clause and render a since-only line.
+    noun = tmpl.get("count_noun", "meetings")
+    if since and count > 1 and noun:
+        return f"{head} — {count} {noun}, {_human_date(since)} to present."
     if since:
-        return f"{head} — {_human_date(since)} to present."
+        return f"{head} — none on record since {_human_date(since)}."
     return f"{head}."
 
 

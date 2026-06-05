@@ -270,14 +270,112 @@ def observe_meeting_notice_too_short(conn, body_id: int, state_abbr: str, body_t
     )
 
 
+# ---------------------------------------------------------------------
+# Budget-adoption observer (Phase C) — the "adoption trail went cold" finding.
+#
+# DESIGN HISTORY (why this and not a notice-timing check): the first cut tried to
+# flag budget/millage PUBLIC HEARINGS posted on short (< 1 week) notice, reusing the
+# agenda_posted_at timing. On the one body we can fully test (Columbia County) it
+# produced a FALSE POSITIVE — it fired on the routine MAY budget-PRESENTATION
+# meeting, which is normal and compliant: Columbia presents the proposed budget in
+# May (motions outcome='no_action') and ADOPTS it by resolution in mid-June, every
+# year. agenda_posted_at is the platform PDF-posting time, NOT the statutory
+# newspaper hearing notice, and it cannot tell a presentation from an adoption
+# hearing. So that approach was scrapped — it asserted a gap we cannot actually see.
+#
+# This observer instead mirrors the proven observe_minutes_missing discipline:
+# a body that DEMONSTRABLY adopts an annual budget every year (>= 2 prior adoption
+# years in our own data) and then stops — with continued meetings AND published
+# minutes since — is a real, verifiable absence of a legally-required annual action.
+# It is built to UNDER-fire:
+#   * >= 2 prior adoption years  -> proves we can SEE this body's adoptions when
+#                                   they happen (no firing on bodies we've never
+#                                   observed adopt).
+#   * >= 3 meetings WITH minutes since the last adoption -> proves the records
+#                                   exist and were processed, so the absence is
+#                                   real and not our own extraction gap (this is
+#                                   what keeps Grovetown-style minutes-gap bodies
+#                                   from false-firing).
+#   * 14-month overdue floor     -> clearly beyond one annual cycle (one-month
+#                                   grace past a 13-month worst-case cadence).
+# We never assert the newspaper advertisement or hearing-notice timing — only the
+# observable fact that an annual budget adoption we'd expect to see is missing.
+# ---------------------------------------------------------------------
+
+
+def observe_budget_adoption_overdue(conn, body_id: int, state_abbr: str, body_type: str | None) -> ObservedFinding | None:
+    """§ 36-81-5 — a general-purpose local government's annual budget adoption is
+    overdue/unfound. Catalog-gated to general_purpose_local_governments (city/county);
+    schools (their own § 20-2-167.1) and appointed boards never trip it."""
+    if not finding_applies(state_abbr, "budget_process_missing", body_type):
+        return None
+    # Adoption = a PASSED motion whose title says it adopts a budget, excluding
+    # routine mid-year amendments/adjustments. Matched on TITLE (not motion_type),
+    # because the extractor sometimes types an adoption resolution as
+    # 'budget_amendment'. ~2 conditions ANDed since POSIX regex has no lookahead.
+    a = conn.execute(
+        """
+        SELECT MAX(m.meeting_date) AS last_adoption,
+               COUNT(DISTINCT EXTRACT(YEAR FROM m.meeting_date)) AS adoption_years
+        FROM motion mo
+        JOIN meeting m ON m.id = mo.meeting_id
+        WHERE m.governing_body_id = %s
+          AND mo.outcome = 'passed'
+          AND mo.title ~* 'adopt'
+          AND mo.title ~* 'budget'
+          AND mo.title !~* 'amendment|adjustment'
+        """,
+        (body_id,),
+    ).fetchone()
+    last_adoption = a["last_adoption"]
+    if last_adoption is None or (a["adoption_years"] or 0) < 2:
+        return None  # no proven annual-adoption pattern in our data → assert nothing
+
+    cov = conn.execute(
+        """
+        SELECT COUNT(*) FILTER (WHERE minutes_url IS NOT NULL) AS meetings_with_minutes,
+               (%s < CURRENT_DATE - INTERVAL '14 months') AS overdue
+        FROM meeting
+        WHERE governing_body_id = %s
+          AND meeting_date > %s
+          AND meeting_date < CURRENT_DATE
+        """,
+        (last_adoption, body_id, last_adoption),
+    ).fetchone()
+    if not cov["overdue"]:
+        return None  # still within one annual cycle — not overdue
+    if (cov["meetings_with_minutes"] or 0) < 3:
+        return None  # too little recent minutes coverage to be sure it's truly absent
+
+    statute = finding_statute(state_abbr, "budget_process_missing")
+    return ObservedFinding(
+        category="budget_process_missing",
+        severity="medium",
+        statute_label=statute["statute_label"],
+        statute_url=statute["statute_url"],
+        statute_text=statute["statute_text"],
+        count=cov["meetings_with_minutes"],  # meetings w/ minutes since last adopted budget
+        since_date=last_adoption,
+    )
+
+
 OBSERVERS: list[Callable] = [
     observe_minutes_missing,
     observe_agenda_missing,
     observe_member_roster_missing,
     observe_campaign_finance_missing,
     observe_meeting_notice_too_short,
-    # Add new finding categories here. Budget/millage observers (§ 20-2-167.1,
-    # § 48-5-32.1) await budget-document ingestion (Phase 5 / finance).
+    observe_budget_adoption_overdue,   # Phase C: "adoption trail went cold", under-fires by design
+    # Add new finding categories here. Deliberately NOT observed (catalog reference
+    # only), because their one verifiable signal — the NEWSPAPER ADVERTISEMENT — is
+    # not visible from our agenda-platform sources, so any finding would be a guess:
+    #   * millage advertisement (§ 48-5-32.1) and tax digest (§ 48-5-32)
+    #   * county self-compensation increase (§ 36-5-24)
+    #   * public-works contract advertisement (§ 36-91-20)
+    #   * school budget summary advertisement (§ 20-2-167.1)
+    # A millage/tax adoption-trail observer (parallel to budget) needs its own
+    # catalog category distinct from the advertisement duty; revisit with
+    # finance-document ingestion (Phase 5).
 ]
 
 

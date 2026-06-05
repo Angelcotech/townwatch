@@ -139,6 +139,7 @@
         "applies_to_body_types": ["all_levying_authorities"],
         "disclosure_mode": "proactive_post",
         "notes": "HB 581 (2024) does NOT repeal or amend this duty; it only reduces the rollback rate by the FLOST millage equivalent. Both the advertisement and three-hearing requirements remain fully in force (verified 2026-06-04 against the DOR April-2025 compliance guide).",
+        "observer_note": "CATALOG REFERENCE ONLY — no observer. The verifiable signal for this duty is the newspaper advertisement + rollback-rate computation, neither observable from our agenda-platform sources, so asserting a gap would be a guess. A millage adoption-trail observer (parallel to budget) needs its own category distinct from this advertisement duty; revisit with finance ingestion.",
         "verified_at": "2026-06-04",
         "confidence": "high"
       },
@@ -157,6 +158,7 @@
         "statute_text": "Each unit of general-purpose local government shall place its proposed budget in a public location for inspection, publish a notice of the budget's availability and a notice of the public hearing in a newspaper of general circulation, and hold a public hearing at least one week before adopting the budget by ordinance or resolution. Distinct from the school budget act (§ 20-2-167.1). Enables public voice before the spending decision.",
         "applies_to_body_types": ["general_purpose_local_governments"],
         "disclosure_mode": "proactive_post",
+        "observer_note": "observe_budget_adoption_overdue asserts ONLY the verifiable absence: a body that demonstrably adopted an annual budget every prior year (>=2 adoption years in our data) and has none in the current cycle despite continued meetings WITH published minutes. The newspaper-advertisement and hearing-notice-timing elements of this statute are NOT observable from our sources and are never asserted.",
         "verified_at": "2026-06-04",
         "confidence": "high"
       },
