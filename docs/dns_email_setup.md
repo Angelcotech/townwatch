@@ -75,17 +75,32 @@ HTTPS automatically.
 
 ---
 
-## Env vars to set after verification
+## Env vars
 
 | Var | Service | Value |
 |-----|---------|-------|
-| `RESEND_API_KEY` | ETL | `re_…` |
-| `RESEND_FROM` | ETL | `TownWatch <requests@mail.townwatch.us>` |
-| `RESEND_WEBHOOK_SECRET` | Web | `whsec_…` (from the Resend webhook you point at `/api/resend-webhook`) |
-| `CORRECTIONS_API_URL`, `INTAKE_TOKEN` | Web | already set (Clerk webhook / comments) — the Resend webhook reuses them |
+| `RESEND_API_KEY` | **TownWatch** (Railway worker — runs the jobs that send) | `re_…` (domain-scoped to `mail.townwatch.us`, sending only) |
+| `RESEND_FROM` | TownWatch | `"David Brown, TownWatch US" <requests@mail.townwatch.us>` |
+| `RESEND_REPLY_TO` | TownWatch | `requests@townwatch.us` (Proton inbox — where clerk replies land) |
+| `RESEND_WEBHOOK_SECRET` | Web front end (not yet deployed) | `whsec_…` (from the Resend webhook → `/api/resend-webhook`) |
+| `CORRECTIONS_API_URL`, `INTAKE_TOKEN` | Web front end | already set (Clerk webhook / comments) — the Resend webhook reuses them |
 
 Resend webhook: subscribe to `email.bounced`, `email.complained`, `email.delivered`
 → those flip clerk-contact health and surface on the dev dashboard automatically.
+
+## Deployment notes
+
+Both Railway services run the `townwatch` (Python) repo: **TownWatch** = the batch
+worker (runs the jobs, including `submit_comments` — the sender), **Intake** = the
+FastAPI intake (`api.py`). The Next.js front end is hosted **separately** (TBD) —
+that's where `RESEND_WEBHOOK_SECRET` and the webhook endpoint go, once it's live.
+
+## Status (2026-06-05)
+
+- ✅ Proton mailbox on `townwatch.us` — addresses active (`requests@`, `hello@`), DNS fully verified (MX/SPF/DKIM/verification all green).
+- ✅ Resend sending domain `mail.townwatch.us` — verified.
+- ✅ Sending vars set on the TownWatch worker; **send path verified end-to-end** — a real send through `email_client` returned a Resend id, and receiving was confirmed by a test to `requests@townwatch.us`.
+- ⏸ **Webhook deferred** — `RESEND_WEBHOOK_SECRET` + the Resend endpoint wait until the front end is deployed at a reachable URL. Safe no-op until then; the periodic clerk monitor covers deliverability in the meantime.
 
 ## Sequence (so nothing breaks)
 
