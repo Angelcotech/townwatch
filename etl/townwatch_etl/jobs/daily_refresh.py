@@ -73,6 +73,7 @@ JURISDICTION_AGNOSTIC_STEPS = [
     "refresh_findings",
     "sync_capabilities",   # cheap: persist build-phase state + emit phase_indexed milestones
     "monitor_clerk_contact",  # cheap: keep the clerk email (requests/digests target) deliverable
+    "monitor_roster_changes",  # cheap: surface who joined/left/vacated a seat (citizen-facing)
     "backfill_summaries",
 ]
 
