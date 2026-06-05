@@ -601,6 +601,20 @@ def _jurisdiction_slug(display_name: str, state_abbr: str) -> str:
 # section headings ("For the Planning Commission:") with global numeric
 # ordering so the clerk responds to one numbered list.
 
+def _concise_item(f: dict, tmpl: dict, today: date) -> str:
+    """One tight line naming exactly what's missing, for the friendly draft:
+    e.g. 'Meeting minutes — 3 meetings, March 12, 2026 to present.'"""
+    rtype = tmpl.get("record_type", f["category"].replace("_", " "))
+    head = rtype[:1].upper() + rtype[1:]
+    count = f.get("count") or 0
+    since = f.get("since_date")
+    if since and count > 1:
+        return f"{head} — {count} meetings, {_human_date(since)} to present."
+    if since:
+        return f"{head} — {_human_date(since)} to present."
+    return f"{head}."
+
+
 def _build_consolidated_letter(
     jurisdiction_cfg: dict,
     findings: list[dict],
@@ -641,16 +655,22 @@ def _build_consolidated_letter(
             tmpl = _CATEGORY_LETTER_CONFIG.get(f["category"])
             if not tmpl:
                 continue
-            since = f.get("since_date") or today
-            items.extend(
-                s.format(
-                    city_full=city_full,
-                    body_name=body_name,
-                    since_human=_human_date(since),
-                    today_human=_human_date(today),
+            if tone == 1:
+                # Friendly default: a tight one-line "what's missing" per item, so
+                # the clerk can scan the ask at a glance. The thorough, formally
+                # enumerated version is reserved for the escalated tones below.
+                items.append(_concise_item(f, tmpl, today))
+            else:
+                since = f.get("since_date") or today
+                items.extend(
+                    s.format(
+                        city_full=city_full,
+                        body_name=body_name,
+                        since_human=_human_date(since),
+                        today_human=_human_date(today),
+                    )
+                    for s in tmpl["items_template"]
                 )
-                for s in tmpl["items_template"]
-            )
         if items:
             sections.append({
                 "heading": f"For the {body_name}:",
@@ -810,6 +830,38 @@ def _consolidated_tone_block(*, tone, custodian, city_full, first_name, last_wit
     }
 
 
+def _drop_resolved(conn, findings: list[dict]) -> list[dict]:
+    """Re-run the audit observers right now and keep only findings still observed.
+    A finding can resolve between the periodic refresh and the moment a draft is
+    composed (the clerk posted the record, or it was a transient mis-read). Re-using
+    the same observers refresh_findings uses (SQL-only, no spend) keeps a draft from
+    ever asking for something that's already available."""
+    from .refresh_findings import OBSERVERS  # lazy: avoid import cycle at module load
+    # Re-observe once per body, collect the categories still flagged.
+    observed_by_body: dict[int, set] = {}
+    for f in findings:
+        body_id = f["body_id"]
+        if body_id in observed_by_body:
+            continue
+        cats: set = set()
+        for obs in OBSERVERS:
+            try:
+                r = obs(conn, body_id, f["state_abbr"], f["body_type"])
+            except Exception:
+                r = None  # an observer error must not silently drop a real gap
+            if r is not None:
+                cats.add(r.category)
+        observed_by_body[body_id] = cats
+    kept = []
+    for f in findings:
+        if f["category"] in observed_by_body.get(f["body_id"], set()):
+            kept.append(f)
+        else:
+            print(f"   pre-draft re-audit: dropped resolved finding {f['id']} "
+                  f"({f['category']} / body {f['body_id']})")
+    return kept
+
+
 def ensure_consolidated_request(conn, jurisdiction_id: int, *, tone: int = 1) -> dict[str, Any] | None:
     """Idempotent — ensure ONE consolidated records_request covers all
     currently-open findings for the jurisdiction. Returns None when no
@@ -823,7 +875,7 @@ def ensure_consolidated_request(conn, jurisdiction_id: int, *, tone: int = 1) ->
     """
     findings = conn.execute(
         """
-        SELECT cf.id, cf.category, cf.since_date, cf.statute_label,
+        SELECT cf.id, cf.category, cf.since_date, cf.statute_label, cf.count,
                gb.id AS body_id, gb.name AS body_name, gb.body_type,
                j.id AS jurisdiction_id, j.display_name AS jurisdiction_name,
                j.state_abbr
@@ -839,6 +891,12 @@ def ensure_consolidated_request(conn, jurisdiction_id: int, *, tone: int = 1) ->
         return None
 
     findings = [dict(f) for f in findings]
+    # Pre-draft re-audit: confirm each item is STILL missing right now before we
+    # ask the clerk for it — never request a record that's since been posted or
+    # that we mis-detected. If everything resolved, propose no draft at all.
+    findings = _drop_resolved(conn, findings)
+    if not findings:
+        return None
     finding_ids = [f["id"] for f in findings]
     j_row = findings[0]
 
