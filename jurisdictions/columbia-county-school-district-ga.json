@@ -32,7 +32,17 @@
       "4781 Hereford Farm Road",
       "Evans, GA 30809"
     ],
-    "notes": "District open-records officer name/email not yet confirmed; needs an open-records lookup before comment digests can be emailed. Not blocking — CCSD has no agendas/forums yet."
+    "intake_method": "web_portal",
+    "open_records_portal_url": "https://ccboe-ga.nextrequest.com/requests/new",
+    "notes": "NO emailable records custodian: CCSD accepts open-records requests ONLY through the NextRequest portal (https://ccboe-ga.nextrequest.com/requests/new), not a public email; staff emails on ccboe.net are obfuscated. So 'email' stays null and the contact monitor will read 'unverified' — that is ACCURATE, not a gap to paper over. When records-request auto-send is wired, CCSD needs portal-submission support rather than an email recipient. Verified 2026-06-04 against the district Open Records Requests page. Phone (706) 541-0650, fax (706) 447-2105."
+  },
+  "public_comment": {
+    "intake_method": "web_form",
+    "request_form_url": "https://www.ccboe.net/apps/pages/index.jsp?uREC_ID=4394898&type=d&pREC_ID=form.COLCS.sPdNlct.1nS",
+    "board_meetings_url": "https://www.ccboe.net/apps/pages/index.jsp?uREC_ID=4394898&type=d&pREC_ID=2615343",
+    "policy": "BCBI (Public Participation in Board Meetings)",
+    "contact_phone": "(706) 541-2723 ext. 5202",
+    "notes": "Public comment to the Board of Education is submitted via the district's 'Public Participation Request Form' (online), governed by Board Policy BCBI, NOT a free-text email. There is no public board-comment email address; the board office line is 706-541-2723 ext. 5202. Implication for TownWatch: the live-forum digest cannot be emailed to CCSD the way it is for the city/county clerk — delivering CCSD comment requires form submission (or directing citizens to the form). Verified 2026-06-04 against the Board Meetings page. Speaker registration window/rules live on the Rules of Conduct for Public Participation page."
   },
   "governing_bodies": [
     {
