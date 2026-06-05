@@ -167,6 +167,11 @@
           "type": "string",
           "format": "email"
         },
+        "source_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Page that publishes this custodian's contact email (staff directory / open-records page). monitor_clerk_contact re-reads it to catch the email silently changing: when the page drops our address and lists a different clerk/records address on the same domain, the contact is flagged 'changed' for operator review and never auto-overwritten. Optional; absence just means drift detection is bounce-anchored only."
+        },
         "mailing_address": {
           "type": "array",
           "items": {
