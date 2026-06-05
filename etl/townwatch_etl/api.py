@@ -67,6 +67,14 @@ class CommentIn(BaseModel):
     body: str = Field(default="", max_length=2000)
 
 
+class EmailDeliveryEventIn(BaseModel):
+    # The Next.js Resend webhook forwards verified delivery events here. `email`
+    # is the recipient (records-custodian) address; `event_type` is the Resend
+    # event (email.bounced | email.complained | email.delivered | …).
+    email: str = Field(..., max_length=320)
+    event_type: str = Field(..., max_length=64)
+
+
 @app.get("/healthz")
 def healthz() -> dict[str, str]:
     return {"status": "ok"}
@@ -158,6 +166,21 @@ def post_comment(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    return {"ok": True, **result}
+
+
+@app.post("/email/delivery-event")
+def post_email_delivery_event(
+    body: EmailDeliveryEventIn,
+    x_intake_token: str | None = Header(default=None),
+) -> dict[str, object]:
+    """Apply a Resend delivery outcome (bounce/complaint/delivered) to the matching
+    jurisdiction's clerk-contact health. Called by the web Resend-webhook forwarder
+    AFTER it has verified the Svix signature — this endpoint trusts the intake token,
+    not the public internet."""
+    _check_token(x_intake_token)
+    from . import email_events
+    result = email_events.record_delivery_event(body.email, body.event_type)
     return {"ok": True, **result}
 
 
