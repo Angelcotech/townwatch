@@ -135,9 +135,32 @@ def render(letter: dict, output_path: Path) -> Path:
         "title": "PDF document title",
       }
     """
+    _render_into(letter, str(output_path))
+    return output_path
+
+
+def render_bytes(letter: dict) -> bytes:
+    """Render the letter to PDF bytes in memory — no filesystem touched.
+
+    This is the delivery path: the ETL stores these bytes in the DB
+    (records_request.pdf_bytes) and the web app serves them. The ETL and web
+    run as separate services with separate disks, so a file on the ETL's local
+    disk would never reach the web app — bytes-in-DB is the only thing both
+    share."""
+    from io import BytesIO
+
+    buf = BytesIO()
+    _render_into(letter, buf)
+    return buf.getvalue()
+
+
+def _render_into(letter: dict, target) -> None:
+    """Build the PDF into `target`, which may be a filename string OR a
+    file-like object (e.g. BytesIO). reportlab's SimpleDocTemplate accepts
+    both, so render() and render_bytes() share one body."""
     s = _styles()
     doc = SimpleDocTemplate(
-        str(output_path), pagesize=LETTER,
+        target, pagesize=LETTER,
         leftMargin=1.0 * inch, rightMargin=1.0 * inch,
         topMargin=0.85 * inch, bottomMargin=1.0 * inch,
         title=letter.get("title", "Open Records Act Request"),
@@ -184,7 +207,6 @@ def render(letter: dict, output_path: Path) -> Path:
     story.append(Spacer(1, 0.5 * inch))
     story.append(Paragraph(letter["signature_name"], s["body"]))
     doc.build(story)
-    return output_path
 
 
 # =====================================================================

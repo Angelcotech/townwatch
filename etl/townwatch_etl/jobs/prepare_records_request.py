@@ -6,8 +6,11 @@ the job is a no-op (returns the existing row id). Otherwise it:
 
   1. Loads finding + body + jurisdiction config + state law config.
   2. Builds a letter dict from those.
-  3. Renders the PDF via docs/make_records_request_pdf.render().
-  4. Saves the PDF into ../townwatch-web/public/records-requests/.
+  3. Renders the PDF to bytes via docs/make_records_request_pdf.render_bytes().
+  4. Stores those bytes in records_request.pdf_bytes (the ETL worker and web
+     app are separate services with separate disks — the DB is the only
+     channel that reaches the web app, which serves the PDF from an
+     admin-gated route). Nothing is written to local disk.
   5. Inserts a records_request row with status='ready_for_review'.
 
 Designed to be called automatically from refresh_findings.upsert_finding
@@ -20,7 +23,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 from datetime import date
 from pathlib import Path
@@ -34,32 +36,23 @@ from ..jurisdiction import load_config
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]   # .../townwatch/
 
-# Where rendered records-request PDFs land. Locally this defaults to the
-# sibling townwatch-web repo's static dir (the web app serves them from
-# /records-requests/). In a container the ETL and web services DON'T share a
-# filesystem, so this default writes to an ephemeral, unreachable path — set
-# RECORDS_REQUEST_PDF_DIR to a real destination there.
-#
-# KNOWN GAP: even with a writable dir, cross-service *delivery* is unsolved —
-# the web app has no route serving these PDFs yet, and a Railway volume isn't
-# shared across services. The durable fix is to store the PDF bytes in the
-# DB (the one shared resource) or in object storage. Tracked as an open
-# design item; this env knob is the seam that fix will plug into.
-_PDF_OUT_DIR = Path(
-    os.environ.get(
-        "RECORDS_REQUEST_PDF_DIR",
-        str(_REPO_ROOT.parent / "townwatch-web" / "public" / "records-requests"),
-    )
-)
 
+def _render_letter_bytes(letter: dict) -> bytes:
+    """Render a letter dict to PDF bytes via docs/make_records_request_pdf.
 
-def _pdf_path(filename: str) -> Path:
-    """Resolve a PDF output path, creating the output dir lazily. Done here
-    rather than at import so merely importing this module has no filesystem
-    side effect — importing it used to mkdir at import time, which in a
-    root container silently created a junk /townwatch-web tree."""
-    _PDF_OUT_DIR.mkdir(parents=True, exist_ok=True)
-    return _PDF_OUT_DIR / filename
+    Bytes are stored in records_request.pdf_bytes and served by the web app
+    from an admin-gated route. The ETL worker and web app run as separate
+    Railway services with separate disks, so the DB is the only delivery
+    channel that crosses the service boundary — nothing is written to local
+    disk (which is why there's no PDF output dir / env knob anymore)."""
+    from sys import path as _sys_path
+
+    docs_dir = _REPO_ROOT / "docs"
+    if str(docs_dir) not in _sys_path:
+        _sys_path.insert(0, str(docs_dir))
+    from make_records_request_pdf import render_bytes  # type: ignore
+
+    return render_bytes(letter)
 
 
 # Per-finding-category letter content. Each entry defines the request-specific
@@ -519,32 +512,27 @@ def prepare_for_finding(conn, finding_id: int, *, tone: int = 1) -> dict[str, An
 
     letter = _build_letter(finding_dict, body_row, jurisdiction_cfg, state_cfg, tone=tone)
 
-    # Render PDF
-    from sys import path as _sys_path
-    docs_dir = _REPO_ROOT / "docs"
-    if str(docs_dir) not in _sys_path:
-        _sys_path.insert(0, str(docs_dir))
-    from make_records_request_pdf import render  # type: ignore
-
+    # Render PDF to bytes (stored in the DB; see module docstring).
+    pdf_bytes = _render_letter_bytes(letter)
     today_str = date.today().isoformat()
     pdf_filename = f"finding-{finding_id}-{today_str}.pdf"
-    pdf_full_path = _pdf_path(pdf_filename)
-    render(letter, pdf_full_path)
     pdf_rel = f"/records-requests/{pdf_filename}"
 
     # Insert records_request row
     row = conn.execute(
         """
         INSERT INTO records_request (
-            finding_id, status, tone, pdf_path, pdf_generated_at, meta
+            finding_id, status, tone, pdf_path, pdf_filename, pdf_bytes, pdf_generated_at, meta
         )
-        VALUES (%s, 'ready_for_review', %s, %s, now(), %s::jsonb)
+        VALUES (%s, 'ready_for_review', %s, %s, %s, %s, now(), %s::jsonb)
         RETURNING id
         """,
         (
             finding_id,
             tone,
             pdf_rel,
+            pdf_filename,
+            pdf_bytes,
             json.dumps({"category": f_row["category"], "letter_subject": letter["subject"]}),
         ),
     ).fetchone()
@@ -592,25 +580,19 @@ def regenerate_request(conn, request_id: int, *, tone: int) -> dict[str, Any]:
 
     letter = _build_letter(finding_dict, body_row, jurisdiction_cfg, state_cfg, tone=tone)
 
-    from sys import path as _sys_path
-    docs_dir = _REPO_ROOT / "docs"
-    if str(docs_dir) not in _sys_path:
-        _sys_path.insert(0, str(docs_dir))
-    from make_records_request_pdf import render  # type: ignore
-
+    pdf_bytes = _render_letter_bytes(letter)
     today_str = date.today().isoformat()
     pdf_filename = f"finding-{rr['finding_id']}-tone{tone}-{today_str}.pdf"
-    pdf_full_path = _pdf_path(pdf_filename)
-    render(letter, pdf_full_path)
     pdf_rel = f"/records-requests/{pdf_filename}"
 
     conn.execute(
         """
         UPDATE records_request
-        SET tone = %s, pdf_path = %s, pdf_generated_at = now(), updated_at = now()
+        SET tone = %s, pdf_path = %s, pdf_filename = %s, pdf_bytes = %s,
+            pdf_generated_at = now(), updated_at = now()
         WHERE id = %s
         """,
-        (tone, pdf_rel, request_id),
+        (tone, pdf_rel, pdf_filename, pdf_bytes, request_id),
     )
     return {"records_request_id": request_id, "pdf_path": pdf_rel, "tone": tone}
 
@@ -965,16 +947,9 @@ def ensure_consolidated_request(conn, jurisdiction_id: int, *, tone: int = 1) ->
     effective_tone = existing["tone"] if existing else tone
     letter = _build_consolidated_letter(jurisdiction_cfg, findings, state_cfg, tone=effective_tone)
 
-    from sys import path as _sys_path
-    docs_dir = _REPO_ROOT / "docs"
-    if str(docs_dir) not in _sys_path:
-        _sys_path.insert(0, str(docs_dir))
-    from make_records_request_pdf import render  # type: ignore
-
+    pdf_bytes = _render_letter_bytes(letter)
     today_str = date.today().isoformat()
     pdf_filename = f"jurisdiction-{jurisdiction_id}-tone{effective_tone}-{today_str}.pdf"
-    pdf_full_path = _pdf_path(pdf_filename)
-    render(letter, pdf_full_path)
     pdf_rel = f"/records-requests/{pdf_filename}"
 
     if existing:
@@ -984,11 +959,13 @@ def ensure_consolidated_request(conn, jurisdiction_id: int, *, tone: int = 1) ->
             SET finding_id      = %s,
                 finding_ids     = %s,
                 pdf_path        = %s,
+                pdf_filename    = %s,
+                pdf_bytes       = %s,
                 pdf_generated_at = now(),
                 updated_at      = now()
             WHERE id = %s
             """,
-            (finding_ids[0], finding_ids, pdf_rel, existing["id"]),
+            (finding_ids[0], finding_ids, pdf_rel, pdf_filename, pdf_bytes, existing["id"]),
         )
         return {
             "records_request_id": existing["id"],
@@ -1000,9 +977,9 @@ def ensure_consolidated_request(conn, jurisdiction_id: int, *, tone: int = 1) ->
     row = conn.execute(
         """
         INSERT INTO records_request (
-            finding_id, finding_ids, status, tone, pdf_path, pdf_generated_at, meta
+            finding_id, finding_ids, status, tone, pdf_path, pdf_filename, pdf_bytes, pdf_generated_at, meta
         )
-        VALUES (%s, %s, 'ready_for_review', %s, %s, now(), %s::jsonb)
+        VALUES (%s, %s, 'ready_for_review', %s, %s, %s, %s, now(), %s::jsonb)
         RETURNING id
         """,
         (
@@ -1010,6 +987,8 @@ def ensure_consolidated_request(conn, jurisdiction_id: int, *, tone: int = 1) ->
             finding_ids,
             effective_tone,
             pdf_rel,
+            pdf_filename,
+            pdf_bytes,
             json.dumps({
                 "consolidated": True,
                 "letter_subject": letter["subject"],
