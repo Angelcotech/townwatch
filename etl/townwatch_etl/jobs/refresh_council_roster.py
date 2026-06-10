@@ -150,6 +150,17 @@ class CouncilRosterRefresh(IngestJob):
             return
 
         print(f"\n  → {body_name}  ({url})")
+        # Self-heal: supersede this body's prior unresolved failures before re-processing.
+        # A successful run then leaves no open failure for the body, so the rolled-up
+        # pipeline issue auto-closes (mirrors extract_agendas/minutes). A re-failure
+        # records a fresh row below, keeping the issue open while it's genuinely broken.
+        self.conn.execute(
+            "UPDATE pipeline_failure SET resolved_at = now(), "
+            "resolution_notes = 'superseded by later refresh_council_roster run' "
+            "WHERE job_name = 'refresh_council_roster' AND governing_body_id = %s "
+            "AND resolved_at IS NULL",
+            (body_id,),
+        )
         try:
             resp = civic_get(url, timeout=30.0)
             resp.raise_for_status()

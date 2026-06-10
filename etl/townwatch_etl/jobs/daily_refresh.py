@@ -61,7 +61,16 @@ PER_JURISDICTION_STEPS = [
                                    # didn't store (cache-hit replays, batch-vision path). Bounded;
                                    # ~free once a jurisdiction's corpus is stored.
     "refresh_council_roster",
+    "extract_budgets",             # WEEKLY (see WEEKLY_STEPS) — budgets are annual, so a daily
+                                   # run would needlessly HEAD-probe the TED repository at scale.
 ]
+
+# Steps that run on a WEEKLY cadence, not every day — their data changes slowly, so a
+# daily run is wasted work / needless probing. On the full cron they run only on
+# _WEEKLY_WEEKDAY; a scoped/manual run (e.g. a deposit-triggered onboarding) always runs
+# them so a newly-funded town catches up immediately. A missed week self-corrects next week.
+WEEKLY_STEPS = {"extract_budgets"}
+_WEEKLY_WEEKDAY = 0   # Monday (UTC)
 
 # Steps that spend money (model / OCR). Skipped for a jurisdiction whose fund is
 # paused (out of money) or suspended (manual hold) — but the cheap mapping steps
@@ -71,7 +80,7 @@ PER_JURISDICTION_STEPS = [
 # global backfill_summaries, which is gated when a run is scoped to one
 # jurisdiction (so a deposit for town A never buys summaries for town B).
 SPENDING_STEPS = {"extract_agendas", "extract_minutes", "refresh_council_roster",
-                  "backfill_document_text", "backfill_summaries"}
+                  "backfill_document_text", "extract_budgets", "backfill_summaries"}
 
 JURISDICTION_AGNOSTIC_STEPS = [
     "refresh_findings",
@@ -162,6 +171,13 @@ def _run_jurisdiction(slug: str, jid: int | None, trigger: str,
             summary["steps"].append(
                 {"module": module, "slug": slug, "ok": True, "skipped": "funds"})
             slug_steps.append({"module": module, "ok": True, "skipped": "funds"})
+            continue
+        # Weekly-cadence steps: on the full cron, run only on their weekday; a
+        # scoped/manual run (deposit/onboarding) always runs them to catch up.
+        if (module in WEEKLY_STEPS and trigger == "cron"
+                and started_at.weekday() != _WEEKLY_WEEKDAY):
+            print(f"  ⤓ {module} (skipped — weekly step, not its day)")
+            slug_steps.append({"module": module, "ok": True, "skipped": "cadence"})
             continue
         step_args = _per_jurisdiction_args(module, slug)
         ok, output = _run_step(module, step_args)
@@ -433,6 +449,8 @@ def _per_jurisdiction_args(module: str, slug: str) -> list[str]:
         return ["--jurisdiction", slug, "--limit", "100"]
     if module == "refresh_council_roster":
         return ["--slug", slug]
+    if module == "extract_budgets":
+        return ["--jurisdiction", slug]
     raise ValueError(f"Unknown per-jurisdiction module: {module}")
 
 
