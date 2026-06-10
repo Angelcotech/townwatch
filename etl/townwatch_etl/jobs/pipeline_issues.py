@@ -1,0 +1,142 @@
+"""
+pipeline_issues — triage the automation's operational issues.
+
+The interface for resolving pipeline_issue rows (see pipeline_health.py / migration 050).
+Built for an agent in the terminal (Claude Code) as much as a human: `list` is the
+worklist, `show` gives everything needed to DIAGNOSE (the issue + its context + the linked
+pipeline_failure tracebacks + the jurisdiction's recent run heartbeats), and `resolve`
+is the "mark fixed" once the underlying cause is corrected.
+
+    python -m townwatch_etl.jobs.pipeline_issues list [--jurisdiction grovetown-ga] [--status open]
+    python -m townwatch_etl.jobs.pipeline_issues show 42
+    python -m townwatch_etl.jobs.pipeline_issues resolve 42 --notes "fixed the parser" [--diagnosis "..."]
+    python -m townwatch_etl.jobs.pipeline_issues resolve 42 --wont-fix --notes "external site dead"
+
+Note: the observer (refresh_pipeline_health) auto-resolves an issue once its condition
+clears, so resolving here is for problems you fixed in CODE/CONFIG that won't self-clear.
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+
+from ..db import connect
+from .. import pipeline_health
+
+
+def _jid(slug: str) -> int | None:
+    from ..jurisdiction import load_config, jurisdiction_fips
+    with connect() as conn:
+        row = conn.execute(
+            "SELECT id FROM jurisdiction WHERE fips_code = %s",
+            (jurisdiction_fips(load_config(slug)),),
+        ).fetchone()
+        return row["id"] if row else None
+
+
+def _cmd_list(args) -> int:
+    jid = _jid(args.jurisdiction) if args.jurisdiction else None
+    status = None if args.status == "all" else args.status
+    with connect() as conn:
+        issues = pipeline_health.list_issues(conn, jurisdiction_id=jid, status=status, limit=args.limit)
+    if not issues:
+        print("No issues.")
+        return 0
+    print(f"{'ID':>5}  {'SEV':<6} {'STATUS':<8} {'JURISDICTION':<28} TITLE")
+    for i in issues:
+        print(f"{i['id']:>5}  {i['severity']:<6} {i['status']:<8} "
+              f"{(i['jurisdiction'] or '')[:27]:<28} {i['title']}")
+    print(f"\n{len(issues)} issue(s). `show <id>` for detail.")
+    return 0
+
+
+def _cmd_show(args) -> int:
+    with connect() as conn:
+        i = pipeline_health.get_issue(conn, args.id)
+        if i is None:
+            print(f"No issue {args.id}.")
+            return 1
+        print(f"#{i['id']}  [{i['severity']}] {i['status']}  — {i['jurisdiction']} ({i['state_abbr']})")
+        print(f"  type:   {i['issue_type']}  (dedupe_key={i['dedupe_key']})")
+        print(f"  title:  {i['title']}")
+        print(f"  seen:   {i['first_observed_at']} → {i['last_observed_at']}")
+        if i["resolved_at"]:
+            print(f"  resolved: {i['resolved_at']} by {i['resolved_by']}")
+            if i["diagnosis"]:
+                print(f"  diagnosis: {i['diagnosis']}")
+            if i["fix_notes"]:
+                print(f"  fix:    {i['fix_notes']}")
+        print(f"\n  {i['detail'] or ''}")
+        ctx = i["context"] or {}
+        if ctx:
+            print(f"\n  context: {ctx}")
+
+        # Linked failure tracebacks — the diagnostic payload.
+        fids = (ctx or {}).get("failure_ids") or []
+        if fids:
+            print("\n  --- linked pipeline_failure rows ---")
+            for f in conn.execute(
+                "SELECT id, step, exception_class, message, traceback, created_at "
+                "FROM pipeline_failure WHERE id = ANY(%s) ORDER BY created_at DESC",
+                (list(fids),),
+            ).fetchall():
+                print(f"\n  [{f['id']}] {f['created_at']:%Y-%m-%d %H:%M}  "
+                      f"{f['exception_class'] or ''} {f['step'] or ''}")
+                print(f"      {f['message']}")
+                if f["traceback"]:
+                    tb = "\n      ".join(f["traceback"].strip().splitlines()[-8:])
+                    print(f"      {tb}")
+
+        # Recent run heartbeats for the jurisdiction — is the pipeline running at all?
+        runs = pipeline_health.recent_runs(conn, i["jurisdiction_id"], limit=5)
+        if runs:
+            print("\n  --- recent runs ---")
+            for r in runs:
+                print(f"  {r['started_at']:%Y-%m-%d %H:%M}  {r['outcome']:<8} "
+                      f"surfaced={r['surfaced']}  errors={r['error_count']}")
+    return 0
+
+
+def _cmd_resolve(args) -> int:
+    status = "wont_fix" if args.wont_fix else "resolved"
+    with connect() as conn:
+        ok = pipeline_health.resolve_issue(
+            conn, args.id, resolved_by="claude-code", status=status,
+            notes=args.notes, diagnosis=args.diagnosis,
+        )
+    if ok:
+        print(f"Issue {args.id} marked {status}.")
+        return 0
+    print(f"Issue {args.id} not open (already resolved, or no such id).")
+    return 1
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description="Triage pipeline-health issues.")
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    p_list = sub.add_parser("list", help="list issues (default: open)")
+    p_list.add_argument("--jurisdiction", help="restrict to one slug")
+    p_list.add_argument("--status", default="open",
+                        choices=["open", "resolved", "wont_fix", "all"])
+    p_list.add_argument("--limit", type=int, default=200)
+    p_list.set_defaults(fn=_cmd_list)
+
+    p_show = sub.add_parser("show", help="full detail + tracebacks + recent runs")
+    p_show.add_argument("id", type=int)
+    p_show.set_defaults(fn=_cmd_show)
+
+    p_res = sub.add_parser("resolve", help="mark an issue fixed (or wont-fix)")
+    p_res.add_argument("id", type=int)
+    p_res.add_argument("--notes", help="what was changed")
+    p_res.add_argument("--diagnosis", help="root cause")
+    p_res.add_argument("--wont-fix", action="store_true", help="suppress instead of fix")
+    p_res.set_defaults(fn=_cmd_resolve)
+
+    args = ap.parse_args()
+    return args.fn(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

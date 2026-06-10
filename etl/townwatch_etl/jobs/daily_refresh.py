@@ -48,6 +48,7 @@ from datetime import datetime, timezone
 from ..db import connect
 from ..jurisdiction import list_slugs
 from ..run_lock import jurisdiction_lock, is_running
+from .. import pipeline_health
 
 
 PER_JURISDICTION_STEPS = [
@@ -77,6 +78,7 @@ JURISDICTION_AGNOSTIC_STEPS = [
     "sync_capabilities",   # cheap: persist build-phase state + emit phase_indexed milestones
     "monitor_clerk_contact",  # cheap: keep the clerk email (requests/digests target) deliverable
     "monitor_roster_changes",  # cheap: surface who joined/left/vacated a seat (citizen-facing)
+    "refresh_pipeline_health",  # cheap, read-only: derive stale/job-failure ops issues from run state
     "backfill_summaries",
 ]
 
@@ -137,11 +139,18 @@ def _fund_state(slug: str) -> tuple[bool, str]:
         return True, "lookup-error"
 
 
-def _run_jurisdiction(slug: str, skip: set[str], ignore_funds: bool, summary: dict) -> None:
+def _run_jurisdiction(slug: str, jid: int | None, trigger: str,
+                      skip: set[str], ignore_funds: bool, summary: dict) -> None:
     """Run one jurisdiction's pipeline steps in order. Cheap mapping steps always
-    run; spending steps are skipped when the fund is paused/suspended."""
+    run; spending steps are skipped when the fund is paused/suspended.
+
+    Records a pipeline_run heartbeat (so the admin can see the automation ran +
+    what surfaced) and opens/closes step_failed issues. Health recording never
+    raises — a broken heartbeat must not break the run."""
+    started_at = datetime.now(timezone.utc)
     can_spend, fund_status = (True, "ignored") if ignore_funds else _fund_state(slug)
     print(f"\n--- {slug} ---  [fund: {fund_status}]")
+    slug_steps: list[dict] = []   # per-step status for this jurisdiction's heartbeat
     for module in PER_JURISDICTION_STEPS:
         if module in skip:
             print(f"  ⊘ {module} (skipped)")
@@ -152,10 +161,79 @@ def _run_jurisdiction(slug: str, skip: set[str], ignore_funds: bool, summary: di
             print(f"  ⏸ {module} (skipped — fund {fund_status}; deposit to resume)")
             summary["steps"].append(
                 {"module": module, "slug": slug, "ok": True, "skipped": "funds"})
+            slug_steps.append({"module": module, "ok": True, "skipped": "funds"})
             continue
         step_args = _per_jurisdiction_args(module, slug)
         ok, output = _run_step(module, step_args)
         summary["steps"].append({"module": module, "slug": slug, "ok": ok})
+        slug_steps.append({"module": module, "ok": ok})
+
+    if jid is not None:
+        try:
+            _record_health(jid, trigger, started_at, slug_steps)
+        except Exception as e:  # heartbeat must never break the pipeline
+            print(f"  ⚠ pipeline-health record failed for {slug}: {type(e).__name__}: {e}")
+
+
+# Per-jurisdiction "what surfaced since the run began" — counts of rows the steps
+# created, joined back to the jurisdiction. Each table carries created_at.
+_SURFACED_SQL = {
+    "meetings": "SELECT count(*) AS n FROM meeting m "
+                "JOIN governing_body gb ON gb.id = m.governing_body_id "
+                "WHERE gb.jurisdiction_id = %s AND m.created_at >= %s",
+    "agendas":  "SELECT count(*) AS n FROM agenda_item ai "
+                "JOIN meeting m ON m.id = ai.meeting_id "
+                "JOIN governing_body gb ON gb.id = m.governing_body_id "
+                "WHERE gb.jurisdiction_id = %s AND ai.created_at >= %s",
+    "motions":  "SELECT count(*) AS n FROM motion mo "
+                "JOIN meeting m ON m.id = mo.meeting_id "
+                "JOIN governing_body gb ON gb.id = m.governing_body_id "
+                "WHERE gb.jurisdiction_id = %s AND mo.created_at >= %s",
+    "roster":   "SELECT count(*) AS n FROM term t "
+                "JOIN seat s ON s.id = t.seat_id "
+                "JOIN governing_body gb ON gb.id = s.governing_body_id "
+                "WHERE gb.jurisdiction_id = %s AND t.created_at >= %s",
+}
+
+
+def _record_health(jid: int, trigger: str, started_at, slug_steps: list[dict]) -> None:
+    """Write the run heartbeat and reconcile step_failed issues for this jurisdiction."""
+    failed = [s["module"] for s in slug_steps if not s["ok"]]
+    ran = [s for s in slug_steps if "skipped" not in s]
+    paused = [s for s in slug_steps if s.get("skipped") == "funds"]
+    if failed:
+        outcome = "failed" if len(failed) == len(ran) and ran else "partial"
+    elif paused and not ran:
+        outcome = "paused"
+    else:
+        outcome = "ok"
+
+    with connect() as conn:
+        surfaced = {
+            key: conn.execute(sql, (jid, started_at)).fetchone()["n"]
+            for key, sql in _SURFACED_SQL.items()
+        }
+        pipeline_health.record_run(
+            conn, jid, outcome=outcome, started_at=started_at,
+            finished_at=datetime.now(timezone.utc), trigger=trigger,
+            steps=slug_steps, surfaced=surfaced, error_count=len(failed),
+        )
+        # A step that broke opens an issue; a step that now succeeds clears its issue.
+        for s in slug_steps:
+            if "skipped" in s:
+                continue
+            key = f"step_failed:{s['module']}"
+            if s["ok"]:
+                pipeline_health.close_issue(conn, jid, key)
+            else:
+                pipeline_health.observe_issue(
+                    conn, jid, issue_type="step_failed", dedupe_key=key,
+                    severity="high", title=f"Pipeline step failed: {s['module']}",
+                    detail=(f"daily_refresh step `{s['module']}` exited non-zero for this "
+                            f"jurisdiction. Inspect: `python -m townwatch_etl.jobs.{s['module']} "
+                            f"--jurisdiction <slug>` and the pipeline_failure rows for details."),
+                    context={"module": s["module"]},
+                )
 
 
 def trigger(slug: str) -> bool:
@@ -222,6 +300,7 @@ def main() -> int:
         print(f"Skipping: {sorted(skip)}")
 
     summary: dict = {"started_at": started_at, "jurisdictions": slugs, "steps": []}
+    trigger = "manual" if args.jurisdiction else "cron"
 
     # Per-jurisdiction steps. One advisory lock per jurisdiction so a
     # deposit-triggered run never doubles up with the cron (or another trigger):
@@ -235,7 +314,7 @@ def main() -> int:
                 summary["steps"].append(
                     {"module": "(lock)", "slug": slug, "ok": True, "skipped": "already-running"})
                 continue
-            _run_jurisdiction(slug, skip, args.ignore_funds, summary)
+            _run_jurisdiction(slug, jid, trigger, skip, args.ignore_funds, summary)
 
     # Jurisdiction-agnostic steps. On a SCOPED run (--jurisdiction, e.g. a
     # deposit-triggered one) these are scoped to that jurisdiction and the
