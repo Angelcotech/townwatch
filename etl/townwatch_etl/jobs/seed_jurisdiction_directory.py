@@ -56,6 +56,14 @@ DODEA_UNSD_GEOIDS = {
     "1300003",  # Fort Stewart School District, GA (DoDEA Americas)
 }
 
+# Consolidated city-county place rows whose name carries no "X County" marker,
+# mapped to their county FIPS. Most consolidations self-identify by name
+# ("Macon-Bibb County", "Echols County consolidated government") and derive
+# automatically; only marker-less ones need an entry here.
+CONSOLIDATED_PLACE_TO_COUNTY = {
+    "1319000": "13215",  # Columbus city, GA = Columbus-Muscogee consolidated government
+}
+
 # Trailing municipal-type words to strip from a place NAME for display.
 _BALANCE_RE = re.compile(r"\s*\(balance\)\s*$", re.I)
 _SUFFIX_RE = re.compile(
@@ -92,6 +100,47 @@ def _clean_place_name(raw: str) -> str:
     n = _BALANCE_RE.sub("", raw).strip()      # "...County consolidated government (balance)"
     n = _SUFFIX_RE.sub("", n).strip()         # → "Augusta-Richmond County"
     return n
+
+
+def _derive_bundles(rows: list[tuple[str, str, str, str]]) -> dict[tuple[str, str], str]:
+    """Map (jurisdiction_type, fips) → bundle_fips for rows that onboard as part
+    of another government's bundle.
+
+    Rules (from Census naming conventions, verified against the GA universe):
+    - "X County School District" → its county. ("Dougherty School District"-style
+      names fall back to trying "<base> County".)
+    - "Y City School District" → the city named Y (independent city systems).
+    - A *city*-typed row named "X County" or "...-X County" is a consolidated
+      city-county government → its county (one government, one onboarding).
+      Marker-less consolidations (Columbus) come from CONSOLIDATED_PLACE_TO_COUNTY.
+    Unmatched school districts print a warning so a naming surprise in a new
+    state is loud, not silently unbundled.
+    """
+    county_by_name = {name: fips for fips, name, t, _ in rows if t == "county"}
+    city_by_name = {name: fips for fips, name, t, _ in rows if t == "city"}
+    bundles: dict[tuple[str, str], str] = {}
+    for fips, name, t, _state in rows:
+        if t == "school_district":
+            base = name.removesuffix(" School District").strip()
+            if base in county_by_name:
+                bundles[(t, fips)] = county_by_name[base]
+            elif base.endswith(" City") and base.removesuffix(" City") in city_by_name:
+                bundles[(t, fips)] = city_by_name[base.removesuffix(" City")]
+            elif f"{base} County" in county_by_name:
+                bundles[(t, fips)] = county_by_name[f"{base} County"]
+            else:
+                print(f"  ⚠ no bundle target for school district: {name}", file=sys.stderr)
+        elif t == "city":
+            if fips in CONSOLIDATED_PLACE_TO_COUNTY:
+                bundles[(t, fips)] = CONSOLIDATED_PLACE_TO_COUNTY[fips]
+            elif name in county_by_name:                       # "Echols County", "Webster County"
+                bundles[(t, fips)] = county_by_name[name]
+            else:                                              # "Athens-Clarke County", "Macon-Bibb County"
+                for cname, cfips in county_by_name.items():
+                    if name.endswith(f"-{cname}"):
+                        bundles[(t, fips)] = cfips
+                        break
+    return bundles
 
 
 def seed_state(state: str) -> dict:
@@ -134,15 +183,18 @@ def seed_state(state: str) -> dict:
         print(f"  ⚠ no gazetteer rows for state {state}", file=sys.stderr)
         return {"state": state, "cities": 0, "counties": 0, "school_districts": 0, "linked": 0}
 
+    bundles = _derive_bundles(rows)
+    rows_b = [(f, n, t, s, bundles.get((t, f))) for f, n, t, s in rows]
+
     with connect() as conn:
         # Idempotent upsert.
         with conn.cursor() as cur:
             cur.executemany(
-                "INSERT INTO jurisdiction_directory (fips, name, jurisdiction_type, state_abbr) "
-                "VALUES (%s, %s, %s, %s) "
+                "INSERT INTO jurisdiction_directory (fips, name, jurisdiction_type, state_abbr, bundle_fips) "
+                "VALUES (%s, %s, %s, %s, %s) "
                 "ON CONFLICT (state_abbr, jurisdiction_type, fips) "
-                "DO UPDATE SET name = EXCLUDED.name, updated_at = now()",
-                rows,
+                "DO UPDATE SET name = EXCLUDED.name, bundle_fips = EXCLUDED.bundle_fips, updated_at = now()",
+                rows_b,
             )
         # Link covered entries to their onboarded jurisdiction by FIPS.
         linked = conn.execute(
@@ -182,7 +234,8 @@ def seed_state(state: str) -> dict:
     cities = sum(1 for r in rows if r[2] == "city")
     cos = sum(1 for r in rows if r[2] == "county")
     sds = sum(1 for r in rows if r[2] == "school_district")
-    return {"state": state, "cities": cities, "counties": cos, "school_districts": sds, "linked": linked}
+    return {"state": state, "cities": cities, "counties": cos, "school_districts": sds,
+            "bundled": len(bundles), "linked": linked}
 
 
 def main() -> int:
@@ -192,7 +245,7 @@ def main() -> int:
     result = seed_state(args.state)
     print(f"seeded {args.state}: {result['cities']} cities + {result['counties']} counties "
           f"+ {result['school_districts']} school districts "
-          f"({result['linked']} linked to onboarded jurisdictions)")
+          f"({result['bundled']} bundled, {result['linked']} linked to onboarded jurisdictions)")
     return 0
 
 

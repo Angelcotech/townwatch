@@ -1264,7 +1264,7 @@
       },
       "verified": "verified",
       "confidence": "high",
-      "notes": "Finalsite-powered site, checked live this session: BOE page (/about-us/board-of-education) has 2026 meeting dates (all ~7:00 PM, mix of 3rd/4th Thursdays), budget/SPLOST PDFs, and board roster, but no agenda or minutes archive. GSBA/Simbli membership material mentions Glascock but no public Simbli site (S=) is linked from the district site. High onboarding cost: agendas would require ORR or in-person collection. 'Verified' applies to the absence findings; name on site appears as both 'Glascock County Consolidated School' and 'Glascock County School System'. Verification 2026-06-10: agenda/minutes absence and 404 participation link re-confirmed live; staff emails found on department pages (custodian still undesignated)."
+      "notes": "ONBOARDED 2026-06-10 as a documented-absence placeholder (source of truth = jurisdictions/glascock-county-consolidated-schools-ga.json; ORR draft research/ga_recon/orr_drafts/glascock-county-consolidated-schools-ga.md). Finalsite-powered site, checked live this session: BOE page (/about-us/board-of-education) has 2026 meeting dates (all ~7:00 PM, mix of 3rd/4th Thursdays), budget/SPLOST PDFs, and board roster, but no agenda or minutes archive. GSBA/Simbli membership material mentions Glascock but no public Simbli site (S=) is linked from the district site. High onboarding cost: agendas would require ORR or in-person collection. 'Verified' applies to the absence findings; name on site appears as both 'Glascock County Consolidated School' and 'Glascock County School System'. Verification 2026-06-10: agenda/minutes absence and 404 participation link re-confirmed live; staff emails found on department pages (custodian still undesignated)."
     },
     "taliaferro-county-school-district-ga": {
       "name": "Taliaferro County School District",
@@ -1303,7 +1303,7 @@
       },
       "verified": "verified",
       "confidence": "medium",
-      "notes": "SchoolInsites-powered site, checked live this session. /schoolboard publishes board roster with plaintext emails, 2025 meeting schedule, and an 'Open Board Meetings' legal-notice PDF hosted on content.myconnectsuite.com; /governance promises web posting of agendas/minutes that does not exist. Custodian fields are the superintendent as the de facto records contact (named on the official site with plaintext email) - she is not formally designated custodian, hence overall confidence medium. High onboarding cost: agendas likely obtainable only via ORR email to superintendent."
+      "notes": "ONBOARDED 2026-06-10 as a documented-absence placeholder (source of truth = jurisdictions/taliaferro-county-school-district-ga.json; ORR draft research/ga_recon/orr_drafts/taliaferro-county-school-district-ga.md). SchoolInsites-powered site, checked live this session. /schoolboard publishes board roster with plaintext emails, 2025 meeting schedule, and an 'Open Board Meetings' legal-notice PDF hosted on content.myconnectsuite.com; /governance promises web posting of agendas/minutes that does not exist. Custodian fields are the superintendent as the de facto records contact (named on the official site with plaintext email) - she is not formally designated custodian, hence overall confidence medium. High onboarding cost: agendas likely obtainable only via ORR email to superintendent."
     },
     "fulton-county-schools-ga": {
       "name": "Fulton County Schools",

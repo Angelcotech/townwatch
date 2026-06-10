@@ -1,0 +1,78 @@
+{
+  "schema_version": "0.1",
+  "config_meta": {
+    "generated_at": "2026-06-10",
+    "generated_by": "manual_recon",
+    "last_verified": "2026-06-10",
+    "review_frequency_days": 60,
+    "notes": "PLACEHOLDER ONBOARDING — documented-absence pilot. Round-2 BoE recon (2026-06-10, re-verified same day by adversarial pass; see research/ga_recon/registry.json + UNIVERSE_SOURCES.md) found the district publishes NO board agendas or minutes anywhere online, and its BOE page's 'Public Participation in Board Meetings' link returns HTTP 404. The absence IS the record: this config exists so the public page exposes the gap and tracks the open-records remediation (draft: research/ga_recon/orr_drafts/glascock-county-consolidated-schools-ga.md). 2026 meeting-dates schedule IS posted (12 dates, ~7:00 PM, mix of 3rd/4th Thursdays, approved 2025-11-02)."
+  },
+  "jurisdiction": {
+    "name": "Glascock County Consolidated Schools",
+    "display_name": "Glascock County Consolidated Schools",
+    "type": "school_district",
+    "state": "GA",
+    "state_fips": "13",
+    "county": "Glascock County",
+    "county_fips": "13125",
+    "school_district_fips": "1302370",
+    "nces_leaid": "1302370",
+    "official_website": "https://www.glascock.k12.ga.us",
+    "city_hall_address": "1230 Panther Way, Gibson, GA 30810",
+    "city_hall_phone": "(706) 598-2121",
+    "parent_id": "glascock-county-ga",
+    "parent_type": "county"
+  },
+  "governing_bodies": [
+    {
+      "name": "Board of Education",
+      "body_type": "board_of_education",
+      "seat_count": 5,
+      "meeting_frequency": "monthly",
+      "website_url": "https://www.glascock.k12.ga.us/about-us/board-of-education"
+    }
+  ],
+  "data_sources": {
+    "officials_roster": {
+      "status": "found",
+      "source": "district_website",
+      "url": "https://www.glascock.k12.ga.us/about-us/board-of-education",
+      "ingest_method": "scrape_or_vision",
+      "format": "html",
+      "notes": "BOE page posts the board roster and the 2026 meeting-dates table. Confirm seat count/posts on first roster pass."
+    },
+    "meeting_agendas_minutes": {
+      "status": "not_available",
+      "source": "none_published",
+      "url": null,
+      "ingest_method": "open_records_request",
+      "notes": "No agendas or minutes published anywhere on the official site (verified live 2026-06-10, twice: recon + adversarial re-check; site search and Google site: search both empty). No Simbli/BoardDocs/eBoard portal linked. Records must be obtained via O.C.G.A. 50-18-70 request — draft prepared at research/ga_recon/orr_drafts/glascock-county-consolidated-schools-ga.md. Intake is phone/mail only: (706) 598-2121, no custodian email published."
+    }
+  },
+  "known_gaps": [
+    {
+      "category": "agenda_not_published",
+      "explanation": "The district publishes no board meeting agendas online. O.C.G.A. 50-14-1(e)(1) requires an agenda of matters expected to come before the body to be made available. Verified 2026-06-10 (recon + adversarial re-verification); the BOE page posts only a meeting-dates schedule.",
+      "user_facing_message": "Glascock County Consolidated Schools does not appear to publish its board meeting agendas online.",
+      "remediation": "Open-records request drafted 2026-06-10 (research/ga_recon/orr_drafts/glascock-county-consolidated-schools-ga.md); agendas will be indexed from the response. Surfaced as an agenda_missing finding meanwhile."
+    },
+    {
+      "category": "minutes_not_published",
+      "explanation": "The district publishes no board meeting minutes online. O.C.G.A. 50-14-1(e)(2)(B) makes minutes open public records once approved. Verified 2026-06-10.",
+      "user_facing_message": "Glascock County Consolidated Schools does not appear to publish its board meeting minutes online.",
+      "remediation": "Included in the same open-records request; minutes will be indexed from the response."
+    },
+    {
+      "category": "public_participation_link_broken",
+      "explanation": "The BOE page links a 'Public Participation in Board Meetings' document that returns HTTP 404 (verified 2026-06-10 in both passes), so the public-comment procedure is unknowable from the website.",
+      "user_facing_message": "The district's published public-participation procedure link is broken, so how to address the board is not discoverable online.",
+      "remediation": "Procedure requested alongside the records request; district contact (706) 598-2121."
+    },
+    {
+      "category": "no_records_custodian_published",
+      "explanation": "No open-records page, designated custodian, or custodian email is published. Department staff emails exist on staff pages (e.g. HR, Finance), but no one is identified for O.C.G.A. 50-18-70 requests; intake is effectively phone/mail.",
+      "user_facing_message": "The district does not publish who handles open-records requests or how to submit one.",
+      "remediation": "Request will be mailed/phoned to the district office (1230 Panther Way, Gibson, GA 30810, (706) 598-2121) pending identification of a custodian email."
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "schema_version": "0.1",
+  "config_meta": {
+    "generated_at": "2026-06-10",
+    "generated_by": "manual_recon",
+    "last_verified": "2026-06-10",
+    "review_frequency_days": 60,
+    "notes": "PLACEHOLDER ONBOARDING — documented-absence pilot (smallest GA district, ~184 students; least-populous county east of the Mississippi). Round-2 BoE recon (2026-06-10, re-verified same day by adversarial pass) found NO agendas or minutes online even though the district's own charter Governance page states 'All meeting agendas and minutes will be posted on the school website.' School-board page content is stale (still 2025 meeting dates as of June 2026). ORR draft: research/ga_recon/orr_drafts/taliaferro-county-school-district-ga.md. Meetings: 3rd Monday 6:30 PM, school cafeteria (per /schoolboard)."
+  },
+  "jurisdiction": {
+    "name": "Taliaferro County School District",
+    "display_name": "Taliaferro County Schools",
+    "type": "school_district",
+    "state": "GA",
+    "state_fips": "13",
+    "county": "Taliaferro County",
+    "county_fips": "13265",
+    "school_district_fips": "1304680",
+    "nces_leaid": "1304680",
+    "official_website": "https://www.taliaferro.k12.ga.us",
+    "city_hall_address": "557 Broad Street NW, Crawfordville, GA 30631",
+    "parent_id": "taliaferro-county-ga",
+    "parent_type": "county"
+  },
+  "records_custodian": {
+    "name": "Dr. Andreana Jones",
+    "title": "Superintendent",
+    "email": "ajones@taliaferro.k12.ga.us",
+    "source_url": "https://www.taliaferro.k12.ga.us/schoolboard",
+    "mailing_address": [
+      "Taliaferro County School District",
+      "Office of the Superintendent",
+      "557 Broad Street NW",
+      "Crawfordville, GA 30631"
+    ],
+    "notes": "No custodian is formally designated; the superintendent is the de facto records contact (named on the official site with plaintext email, verified 2026-06-10). Note the Governance page still names former superintendent Allen Fort — stale content; the school-board page names Dr. Jones."
+  },
+  "governing_bodies": [
+    {
+      "name": "Board of Education",
+      "body_type": "board_of_education",
+      "seat_count": null,
+      "meeting_frequency": "monthly",
+      "website_url": "https://www.taliaferro.k12.ga.us/schoolboard"
+    }
+  ],
+  "data_sources": {
+    "officials_roster": {
+      "status": "found",
+      "source": "district_website",
+      "url": "https://www.taliaferro.k12.ga.us/schoolboard",
+      "ingest_method": "scrape_or_vision",
+      "format": "html",
+      "notes": "Board roster with plaintext member emails (incl. chair Rrandolph@taliaferro.k12.ga.us). Page shows 2025 meeting dates — verify current schedule when ingesting."
+    },
+    "meeting_agendas_minutes": {
+      "status": "not_available",
+      "source": "none_published",
+      "url": null,
+      "ingest_method": "open_records_request",
+      "notes": "No agendas or minutes published online (verified live 2026-06-10, recon + adversarial re-check) despite the district's own charter Governance page promising web posting. The only meeting-adjacent documents are 2019-2021 staff leadership-team notes, which are not BOE records. ORR draft: research/ga_recon/orr_drafts/taliaferro-county-school-district-ga.md; superintendent email is a working plaintext recipient."
+    }
+  },
+  "known_gaps": [
+    {
+      "category": "agenda_not_published",
+      "explanation": "The district publishes no board meeting agendas online. O.C.G.A. 50-14-1(e)(1) requires an agenda of matters expected to come before the body to be made available. Verified 2026-06-10 (recon + adversarial re-verification).",
+      "user_facing_message": "Taliaferro County Schools does not appear to publish its board meeting agendas online.",
+      "remediation": "Open-records request drafted 2026-06-10 (research/ga_recon/orr_drafts/taliaferro-county-school-district-ga.md); agendas will be indexed from the response. Surfaced as an agenda_missing finding meanwhile."
+    },
+    {
+      "category": "minutes_not_published",
+      "explanation": "The district publishes no board meeting minutes online, contradicting its own charter Governance page ('All meeting agendas and minutes will be posted on the school website'). O.C.G.A. 50-14-1(e)(2)(B) makes approved minutes open public records. Verified 2026-06-10.",
+      "user_facing_message": "Taliaferro County Schools' website promises that agendas and minutes will be posted online, but none are.",
+      "remediation": "Included in the same open-records request; minutes will be indexed from the response."
+    },
+    {
+      "category": "stale_public_information",
+      "explanation": "School-board page still shows 2025 meeting dates and a July 2025 board-vacancy notice as of June 2026; the Governance page names a former superintendent. Citizens cannot determine the current meeting schedule from the website.",
+      "user_facing_message": "The district's posted board-meeting schedule appears out of date.",
+      "remediation": "Current schedule requested alongside the records request."
+    }
+  ]
+}
