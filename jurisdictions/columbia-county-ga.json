@@ -62,7 +62,8 @@
     "civicclerk_tenant": "columbiacoga",
     "agenda_base_url": "https://columbiacoga.portal.civicclerk.com",
     "property_platform": "qpublic_schneider",
-    "qpublic_app": "ColumbiaCountyGA"
+    "qpublic_app": "ColumbiaCountyGA",
+    "budget_source": { "provider": "ted", "ted_type": "county", "ted_slug": "columbia" }
   },
   "data_sources": {
     "officials_roster": {
