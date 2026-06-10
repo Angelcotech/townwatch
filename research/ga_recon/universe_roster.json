@@ -4,31 +4,34 @@
     "name": "Georgia Jurisdiction Universe Roster",
     "purpose": "Complete enumeration of GA local-government jurisdictions (counties, incorporated municipalities, public school systems) diffed against research/ga_recon/registry.json recon coverage. The to-do side of the recon registry: registry = what we know; roster = what exists.",
     "generated_at": "2026-06-10",
-    "generated_by": "Census/NCES primary data pull + registry diff (deep-research source verification report: see UNIVERSE_SOURCES.md)",
+    "generated_by": "Census/NCES primary data pull + registry diff, reconciled against deep-research source-verification run of 2026-06-10 (24/25 claims confirmed; see UNIVERSE_SOURCES.md)",
     "sources": {
       "counties": "U.S. Census Bureau Vintage 2024 county population estimates (co-est2024-alldata.csv, SUMLEV 050, STNAME Georgia)",
       "municipalities": "U.S. Census Bureau Vintage 2024 subcounty population estimates (sub-est2024.csv, SUMLEV 162, FUNCSTAT A); county mapping via SUMLEV 157 place parts",
-      "school_systems": "NCES Common Core of Data LEA directory SY2023-24 via Urban Institute Education Data API (fips=13, agency_type=1 regular districts)"
+      "school_systems": "NCES Common Core of Data LEA directory SY2023-24 via Urban Institute Education Data API (fips=13, agency_type=1 regular districts)",
+      "municipalities_reconciliation": "Census TIGERweb ACS25 incorporated-places table (boundaries Jan 1 2025; 536 FUNCSTAT=A) and GMA member-cities directory (536) — used to detect post-vintage incorporations (Mulberry)"
     },
     "counts": {
       "counties": 159,
-      "municipalities": 535,
+      "municipalities": 536,
       "school_systems": 180,
-      "total": 874
+      "total": 875
     },
     "coverage": {
       "counties_covered": 21,
       "municipalities_covered": 11,
       "school_systems_covered": 34,
       "total_covered": 66,
-      "total_remaining": 808
+      "total_remaining": 809
     },
     "notes": [
-      "Consolidated governments: Census carries Athens-Clarke and Augusta-Richmond only as FUNCSTAT=F '(balance)' records (excluded from the municipalities list; represented on their county entries via consolidated_government). Cusseta-Chattahoochee, Echols County, Georgetown-Quitman, and Webster County unified governments ARE active municipal records (FUNCSTAT=A) and appear in the municipalities list — note these four small consolidations were NOT previously tracked in the registry's consolidated list.",
-      "Macon-Bibb and Columbus appear as regular place records; their county entries carry consolidated_government labels.",
-      "school_systems excludes charter-LEA, state, and regional agencies (agency_type != 1): 73 such GA LEAs exist in CCD.",
-      "Independent city school systems: 21 (matches GaDOE's commonly cited count).",
-      "Municipality populations are Vintage 2024 estimates; for multi-county places `counties` lists every county the place intersects."
+      "MUNICIPALITY COUNT = 536 as of June 2026: 535 from Census sub-est2024 (FUNCSTAT=A) + Mulberry (Gwinnett, incorporated 2024, no PEP estimate yet). Verified against GMA directory (536 member cities) and TIGERweb ACS25 (536 active places); 2022 Census of Governments shows 537 municipal units because it types 7 consolidated governments as municipal.",
+      "CONSOLIDATED GOVERNMENTS = 8 per GA DCA 'All Active Georgia Governments by Type': Athens-Clarke, Augusta-Richmond, Columbus-Muscogee, Macon-Bibb, Cusseta-Chattahoochee, Georgetown-Quitman, Echols, Webster. Census carries Athens-Clarke and Augusta-Richmond only as FUNCSTAT=F '(balance)' records (excluded here; represented via consolidated_government labels on their county entries); Columbus, Macon-Bibb, Cusseta-Chattahoochee, Georgetown-Quitman, Echols, and Webster appear as active municipal place records in the municipalities list. Echols is typed COUNTY (not municipal) in the 2022 Census of Governments — source conventions differ.",
+      "COUNTY DECOMPOSITION: 159 county FIPS areas (13001-13321, skipping unassigned 13041/13203). DCA convention: 151 county govts + 8 consolidated; Census of Governments 2022: 152 county-typed + 7 municipal-typed consolidations. This roster lists all 159 county areas; consolidated ones carry consolidated_government labels.",
+      "SCHOOL SYSTEMS = exactly 180 regular LEAs (NCES CCD, agency_type=1): 159 county systems + 21 independent city systems (Atlanta Public Schools, Bremen, Buford, Calhoun, Carrollton, Cartersville, Chickamauga, City Schools of Decatur, Commerce, Dalton Public Schools, Dublin, Gainesville, Jefferson, Marietta, Pelham, Rome, Social Circle, Thomasville, Trion, Valdosta, Vidalia). The raw CCD GA list (253) additionally holds 52 state-chartered specialty LEAs, 16 RESAs, 4 state-agency LEAs, 1 State Schools LEA — excluded. Historical city/county mergers are baked into county-system names (Savannah-Chatham, Griffin-Spalding, Thomaston-Upson).",
+      "CANONICAL SOURCES per layer (see UNIVERSE_SOURCES.md for the full verified source review): counties = Census FIPS set, cross-checked DCA; municipalities = GMA directory (live membership; full 536-city dataset embedded in one unauthenticated GET) cross-checked TIGERweb current vintage; school systems = NCES CCD LEA universe (machine-readable flat files; lags 1-2 years — GaDOE directory is fresher but its machine-readability is unverified). DCA PDFs are authoritative for FIPS crosswalks but stale (Feb 2022: include dissolved Bibb City, omit Mableton/Mulberry); DCA contact database is credential-gated.",
+      "Municipality populations are Vintage 2024 PEP estimates; multi-county places list every intersecting county. Mulberry has no PEP estimate yet (pop_rank null).",
+      "Watch item: verify no further incorporations/dissolutions take effect after the Jan 1 2025 TIGERweb vintage when refreshing this roster."
     ]
   },
   "counties": {
@@ -8324,6 +8327,21 @@
       "covered": false,
       "registry_slug": null,
       "pop_rank": 535
+    },
+    "mulberry-ga": {
+      "name": "Mulberry city",
+      "short_name": "Mulberry",
+      "place_fips": "53706",
+      "geoid": "1353706",
+      "counties": [
+        "Gwinnett County"
+      ],
+      "pop_2024": null,
+      "pop_rank": null,
+      "consolidated_government": false,
+      "covered": false,
+      "registry_slug": null,
+      "note": "Incorporated 2024 (referendum May 2024, government effective 2025) — absent from Census sub-est2024 (boundaries as of Jan 1 2024), present in TIGERweb ACS25 (Jan 1 2025) as FUNCSTAT=A, GEOID 1353706, and in the GMA 536-city directory. Population estimate not yet published in Census PEP; pull from Vintage 2025 PEP when released."
     }
   },
   "school_systems": {

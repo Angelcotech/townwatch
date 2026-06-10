@@ -8,9 +8,10 @@
     "methodology_doc": "research/ga_recon/METHODOLOGY.md",
     "universe": {
       "counties": 159,
-      "municipalities_approx": 535,
-      "school_systems_approx": 180,
-      "source": "U.S. Census Bureau Census of Governments; ACCG; GMA/GA DCA; Carl Vinson Institute of Government (UGA); GA DOE"
+      "source": "Verified 2026-06-10: GMA directory + Census TIGERweb ACS25 (municipalities), NCES CCD 2024-25 agency_type=1 (school systems), Census FIPS set (counties), GA DCA (8 consolidated govts). Full enumeration + recon-coverage diff: research/ga_recon/universe_roster.json; source review: research/ga_recon/UNIVERSE_SOURCES.md",
+      "municipalities": 536,
+      "school_systems": 180,
+      "consolidated_governments": 8
     },
     "field_vocabularies": {
       "agenda_platform": [
