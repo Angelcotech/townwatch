@@ -138,7 +138,7 @@ def resolve_issue(conn, issue_id: int, *, resolved_by: str, status: str = "resol
     row = conn.execute(
         "UPDATE pipeline_issue SET status = %s, resolved_at = now(), resolved_by = %s, "
         "fix_notes = COALESCE(%s, fix_notes), diagnosis = COALESCE(%s, diagnosis) "
-        "WHERE id = %s AND status = 'open' RETURNING jurisdiction_id, dedupe_key",
+        "WHERE id = %s AND status = 'open' RETURNING jurisdiction_id, dedupe_key, context",
         (status, resolved_by, notes, diagnosis, issue_id),
     ).fetchone()
     if row is None:
@@ -146,6 +146,17 @@ def resolve_issue(conn, issue_id: int, *, resolved_by: str, status: str = "resol
     record_fix(conn, issue_id=issue_id, jurisdiction_id=row["jurisdiction_id"],
                dedupe_key=row["dedupe_key"], resolution=status,
                diagnosis=diagnosis, fix_notes=notes, resolved_by=resolved_by)
+    # Resolve the underlying pipeline_failure rows this issue was rolled up from —
+    # otherwise the observer (refresh_pipeline_health) re-derives the issue from
+    # those still-open rows and reopens it on its next run. Only on a real
+    # resolution (a wont_fix suppresses the issue but the failures may still recur).
+    failure_ids = (row["context"] or {}).get("failure_ids") if status == "resolved" else None
+    if failure_ids:
+        conn.execute(
+            "UPDATE pipeline_failure SET resolved_at = now(), "
+            "resolution_notes = %s WHERE id = ANY(%s) AND resolved_at IS NULL",
+            (f"resolved via pipeline_issue #{issue_id}: {notes or 'fixed'}", list(failure_ids)),
+        )
     return True
 
 

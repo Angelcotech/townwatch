@@ -38,19 +38,18 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]   # .../townwatch/
 
 
 def _render_letter_bytes(letter: dict) -> bytes:
-    """Render a letter dict to PDF bytes via docs/make_records_request_pdf.
+    """Render a letter dict to PDF bytes via the in-package renderer.
 
     Bytes are stored in records_request.pdf_bytes and served by the web app
     from an admin-gated route. The ETL worker and web app run as separate
     Railway services with separate disks, so the DB is the only delivery
     channel that crosses the service boundary — nothing is written to local
-    disk (which is why there's no PDF output dir / env knob anymore)."""
-    from sys import path as _sys_path
+    disk (which is why there's no PDF output dir / env knob anymore).
 
-    docs_dir = _REPO_ROOT / "docs"
-    if str(docs_dir) not in _sys_path:
-        _sys_path.insert(0, str(docs_dir))
-    from make_records_request_pdf import render_bytes  # type: ignore
+    The renderer lives in the package (townwatch_etl.records_request_pdf), not
+    docs/ — docs/ isn't copied into the deploy container, so the old
+    sys.path-into-docs import raised ModuleNotFoundError in prod."""
+    from ..records_request_pdf import render_bytes
 
     return render_bytes(letter)
 
