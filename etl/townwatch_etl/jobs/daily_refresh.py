@@ -256,6 +256,57 @@ def trigger(slug: str) -> bool:
     return True
 
 
+def _reconcile_data_source_jurisdictions() -> None:
+    """Fill data_source.jurisdiction_id for any NULL rows by tracing the content
+    they produced (migration 053 keeps provenance jurisdiction-aware). NULL-only +
+    idempotent, so it's cheap to run every cron. A run is per-jurisdiction, so any
+    referencing content row's jurisdiction is THE jurisdiction. Best-effort —
+    never breaks the pipeline."""
+    try:
+        with connect() as conn:
+            conn.execute(
+                """
+                WITH ds_juris AS (
+                    SELECT DISTINCT ON (data_source_id) data_source_id, jurisdiction_id
+                    FROM (
+                        SELECT m.data_source_id, gb.jurisdiction_id
+                          FROM meeting m JOIN governing_body gb ON gb.id = m.governing_body_id
+                         WHERE m.data_source_id IS NOT NULL
+                        UNION ALL
+                        SELECT ai.data_source_id, gb.jurisdiction_id
+                          FROM agenda_item ai JOIN meeting m ON m.id = ai.meeting_id
+                          JOIN governing_body gb ON gb.id = m.governing_body_id
+                         WHERE ai.data_source_id IS NOT NULL
+                        UNION ALL
+                        SELECT mo.data_source_id, gb.jurisdiction_id
+                          FROM motion mo JOIN meeting m ON m.id = mo.meeting_id
+                          JOIN governing_body gb ON gb.id = m.governing_body_id
+                         WHERE mo.data_source_id IS NOT NULL
+                        UNION ALL
+                        SELECT s.data_source_id, gb.jurisdiction_id
+                          FROM seat s JOIN governing_body gb ON gb.id = s.governing_body_id
+                         WHERE s.data_source_id IS NOT NULL
+                        UNION ALL
+                        SELECT t.data_source_id, gb.jurisdiction_id
+                          FROM term t JOIN seat s ON s.id = t.seat_id
+                          JOIN governing_body gb ON gb.id = s.governing_body_id
+                         WHERE t.data_source_id IS NOT NULL
+                        UNION ALL
+                        SELECT gb.data_source_id, gb.jurisdiction_id
+                          FROM governing_body gb WHERE gb.data_source_id IS NOT NULL
+                    ) refs
+                    WHERE jurisdiction_id IS NOT NULL
+                    ORDER BY data_source_id
+                )
+                UPDATE data_source ds SET jurisdiction_id = dj.jurisdiction_id
+                FROM ds_juris dj
+                WHERE ds.id = dj.data_source_id AND ds.jurisdiction_id IS NULL
+                """
+            )
+    except Exception as e:
+        print(f"  ⚠ data_source jurisdiction reconcile failed: {type(e).__name__}: {e}")
+
+
 def _record_run_summary(summary: dict) -> None:
     """Record the daily run summary to pipeline_failure if anything broke,
     so the admin queue surfaces problems even without paging through logs."""
@@ -338,6 +389,10 @@ def main() -> int:
         gargs = ["--jurisdiction", scoped] if scoped else []
         ok, output = _run_step(module, gargs)
         summary["steps"].append({"module": module, "slug": scoped, "ok": ok})
+
+    # Keep provenance jurisdiction-aware: fill data_source.jurisdiction_id for any
+    # rows whose ingest jobs didn't set it (NULL-only, cheap, all jobs at once).
+    _reconcile_data_source_jurisdictions()
 
     finished_at = datetime.now(timezone.utc).isoformat()
     summary["finished_at"] = finished_at
