@@ -16,7 +16,6 @@ not ungrounded "reflect again".
 
 from __future__ import annotations
 
-import io
 import json
 
 from pydantic import BaseModel, Field, ValidationError
@@ -61,18 +60,10 @@ class BudgetExtraction(BaseModel):
     extraction_confidence: str = Field(default="medium", description="high | medium | low")
 
 
-def _page_texts(pdf_bytes: bytes) -> list[str]:
-    from pypdf import PdfReader
-    rd = PdfReader(io.BytesIO(pdf_bytes))
-    out = []
-    for p in rd.pages:
-        out.append(((p.extract_text() or "").strip())[:_MAX_PAGE_CHARS])
-    return out
-
-
 def _select_summary_pages(pages: list[str]) -> list[tuple[int, str]]:
     """Return (absolute_page_index, text) for the intro + highest-scoring
-    summary pages, in page order, capped to _MAX_SUMMARY_PAGES."""
+    summary pages, in page order, capped to _MAX_SUMMARY_PAGES. Page text is
+    truncated to _MAX_PAGE_CHARS for the model block."""
     scored = []
     for i, t in enumerate(pages):
         low = t.lower()
@@ -85,7 +76,7 @@ def _select_summary_pages(pages: list[str]) -> list[tuple[int, str]]:
     keep = {i for i in range(min(_INTRO_PAGES, len(pages)))}
     for i, _ in scored[: _MAX_SUMMARY_PAGES]:
         keep.add(i)
-    return [(i, pages[i]) for i in sorted(keep)]
+    return [(i, pages[i][:_MAX_PAGE_CHARS]) for i in sorted(keep)]
 
 
 _PROMPT = """You are translating a local-government ADOPTED BUDGET into the top-line facts a
@@ -126,12 +117,12 @@ def _call(prompt: str) -> dict:
     return json.loads(text[s:e + 1]) if s >= 0 and e > s else {}
 
 
-def extract_budget(pdf_bytes: bytes) -> tuple[BudgetExtraction, str]:
-    """Returns (extraction, method). method notes how many pages were used.
-    Raises ValueError if the document yields no usable text."""
-    pages = _page_texts(pdf_bytes)
+def extract_budget(pages: list[str]) -> tuple[BudgetExtraction, str]:
+    """Extract the top line from a budget document's pre-recovered per-page text
+    (see document_text.get_or_recover — text-layer or OCR, never re-scanned).
+    Returns (extraction, method). Raises ValueError if there's no usable text."""
     if not any(pages):
-        raise ValueError("budget PDF has no extractable text layer")
+        raise ValueError("budget document yielded no text")
     selected = _select_summary_pages(pages)
     block = "\n\n".join(f"[page {i + 1}]\n{t}" for i, t in selected if t)
 

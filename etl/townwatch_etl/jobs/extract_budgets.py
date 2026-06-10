@@ -40,6 +40,7 @@ from typing import Any
 
 from ..db import connect
 from .. import funds
+from .. import document_text
 from ..http_client import civic_get, civic_request
 from ..jurisdiction import load_config, jurisdiction_fips, list_slugs
 from ..extractors.budgets import extract_budget
@@ -85,11 +86,12 @@ def _should_write(conn, jid: int, fy: int, provider: str, meeting_date) -> bool:
     ).fetchone()
     if row is None:
         return True
-    if row["provider"] != provider:
-        return False  # don't cross-clobber the other provider's entry
-    if provider == "local_minutes":
+    if provider == "local_minutes" and row["provider"] == "local_minutes":
+        # same provider: the newer adoption meeting (final reading) wins
         return meeting_date is not None and (row["src_date"] is None or meeting_date >= row["src_date"])
-    return True  # ted may refresh its own entry
+    # gap-fill: a fiscal year already populated (by either provider, incl. an
+    # earlier TED run) is left alone — fill empty years, don't re-extract.
+    return False
 
 
 def _upsert(conn, *, jid, bid, fy, provider, source_url, source_meeting_id, ext, method):
@@ -195,8 +197,17 @@ def _process_local(slug: str, *, force: bool) -> str:
             if g.paused:
                 print(f"  ⏸ {slug}: funds paused — deferring")
                 return "paused"
+            with connect() as conn:
+                pages, tmethod = document_text.get_or_recover(conn, pdf, source_url=doc_url)
+            if not any(pages):
+                print(f"  · {slug} mtg {mid} ({mdate}): no recoverable text ({tmethod}) — skipping")
+                with connect() as conn:
+                    conn.execute("UPDATE meeting SET budget_extracted_at = now() WHERE id = %s", (mid,))
+                outcome = "no_text"
+                continue
             try:
-                ext, method = extract_budget(pdf)
+                ext, method = extract_budget(pages)
+                method = f"{method};text={tmethod}"
             except Exception as e:
                 print(f"  ✗ {slug} mtg {mid}: extraction failed: {type(e).__name__}: {e}")
                 outcome = "extract_failed"
@@ -269,8 +280,14 @@ def _process_ted(slug: str, *, force: bool) -> str:
                     ref_id=str(jid), description="budget extraction (ted)", essential=False) as g:
         if g.paused:
             return "paused"
+        with connect() as conn:
+            pages, tmethod = document_text.get_or_recover(conn, pdf, source_url=url)
+        if not any(pages):
+            print(f"  · {slug}: TED doc has no recoverable text ({tmethod})")
+            return "no_text"
         try:
-            ext, method = extract_budget(pdf)
+            ext, method = extract_budget(pages)
+            method = f"{method};text={tmethod}"
         except Exception as e:
             print(f"  ✗ {slug}: TED extraction failed: {type(e).__name__}: {e}")
             return "extract_failed"
