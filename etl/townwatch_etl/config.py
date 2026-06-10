@@ -1,13 +1,20 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
+# Anchor the .env to the repo (etl/.env, one level above this package) rather than
+# searching from the current working directory — so a job run from ANY cwd (the
+# repo root, a sibling repo, a slash command) resolves the same DATABASE_URL
+# instead of failing with "No database URL configured". Falls back to the default
+# cwd-upward search when the anchored file is absent (e.g. the container, where no
+# .env is shipped and the Railway-provided env vars are used as-is).
+#
 # override=True so the local .env is the source of truth: an EMPTY or stale
 # variable already exported in the ambient shell (e.g. ANTHROPIC_API_KEY="")
-# would otherwise shadow the real value in .env under the default
-# override=False and cause confusing "could not resolve authentication"
-# errors. Safe in the container: no .env is shipped there, so load_dotenv is
-# a no-op and the Railway-provided env vars are used as-is.
-load_dotenv(override=True)
+# would otherwise shadow the real value in .env under the default override=False
+# and cause confusing "could not resolve authentication" errors.
+_ENV_PATH = Path(__file__).resolve().parents[1] / ".env"
+load_dotenv(_ENV_PATH if _ENV_PATH.exists() else None, override=True)
 
 # Prefer DATABASE_URL; fall back to DATABASE_PUBLIC_URL (Railway exposes both —
 # the internal one and the public-proxy one). This lets a service wired with
