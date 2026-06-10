@@ -30,8 +30,9 @@
       "COUNTY DECOMPOSITION: 159 county FIPS areas (13001-13321, skipping unassigned 13041/13203). DCA convention: 151 county govts + 8 consolidated; Census of Governments 2022: 152 county-typed + 7 municipal-typed consolidations. This roster lists all 159 county areas; consolidated ones carry consolidated_government labels.",
       "SCHOOL SYSTEMS = exactly 180 regular LEAs (NCES CCD, agency_type=1): 159 county systems + 21 independent city systems (Atlanta Public Schools, Bremen, Buford, Calhoun, Carrollton, Cartersville, Chickamauga, City Schools of Decatur, Commerce, Dalton Public Schools, Dublin, Gainesville, Jefferson, Marietta, Pelham, Rome, Social Circle, Thomasville, Trion, Valdosta, Vidalia). The raw CCD GA list (253) additionally holds 52 state-chartered specialty LEAs, 16 RESAs, 4 state-agency LEAs, 1 State Schools LEA — excluded. Historical city/county mergers are baked into county-system names (Savannah-Chatham, Griffin-Spalding, Thomaston-Upson).",
       "CANONICAL SOURCES per layer (see UNIVERSE_SOURCES.md for the full verified source review): counties = Census FIPS set, cross-checked DCA; municipalities = GMA directory (live membership; full 536-city dataset embedded in one unauthenticated GET) cross-checked TIGERweb current vintage; school systems = NCES CCD LEA universe (machine-readable flat files; lags 1-2 years — GaDOE directory is fresher but its machine-readability is unverified). DCA PDFs are authoritative for FIPS crosswalks but stale (Feb 2022: include dissolved Bibb City, omit Mableton/Mulberry); DCA contact database is credential-gated.",
-      "Municipality populations are Vintage 2024 PEP estimates; multi-county places list every intersecting county. Mulberry has no PEP estimate yet (pop_rank null).",
-      "Watch item: verify no further incorporations/dissolutions take effect after the Jan 1 2025 TIGERweb vintage when refreshing this roster."
+      "Watch item: verify no further incorporations/dissolutions take effect after the Jan 1 2025 TIGERweb vintage when refreshing this roster.",
+      "Municipal dissolutions: Ranger (Gordon Co., HB 773, dissolved May 2023) and Sunny Side (Spalding Co., HB 542, effective 2024-01-01) were repealed by statute — present in 2023-vintage sources, correctly absent from this roster; cited in verification pass 2026-06-10.",
+      "Census PEP Vintage 2025 sub-county estimates are published (sub-est2025_13.csv) and include Mulberry; municipality pop_2024 figures remain Vintage-2024 except Mulberry (V2025 back-cast). Full V2025 refresh is a future roster pass."
     ]
   },
   "counties": {
@@ -1602,6 +1603,22 @@
       "registry_slug": null,
       "pop_rank": 22
     },
+    "mulberry-ga": {
+      "name": "Mulberry city",
+      "short_name": "Mulberry",
+      "place_fips": "53706",
+      "geoid": "1353706",
+      "counties": [
+        "Gwinnett County"
+      ],
+      "pop_2024": 41170,
+      "pop_rank": 23,
+      "consolidated_government": false,
+      "covered": false,
+      "registry_slug": null,
+      "note": "Incorporated 2024 (referendum May 2024); absent from sub-est2024 (Jan 1 2024 boundaries). Census Vintage 2025 sub-county estimates (sub-est2025_13.csv, verified 2026-06-10) include Mulberry: POPESTIMATE2025=41,445 with 2024 back-cast 41,170 (used for pop_2024/rank). Present in TIGERweb ACS25 (GEOID 1353706) and the GMA 536-city directory.",
+      "pop_2025": 41445
+    },
     "peachtree-city-ga": {
       "name": "Peachtree City city",
       "short_name": "Peachtree City",
@@ -1613,7 +1630,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 23
+      "pop_rank": 24
     },
     "douglasville-ga": {
       "name": "Douglasville city",
@@ -1626,7 +1643,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 24
+      "pop_rank": 25
     },
     "woodstock-ga": {
       "name": "Woodstock city",
@@ -1639,7 +1656,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 25
+      "pop_rank": 26
     },
     "rome-ga": {
       "name": "Rome city",
@@ -1652,7 +1669,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 26
+      "pop_rank": 27
     },
     "east-point-ga": {
       "name": "East Point city",
@@ -1665,7 +1682,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 27
+      "pop_rank": 28
     },
     "canton-ga": {
       "name": "Canton city",
@@ -1678,7 +1695,7 @@
       "consolidated_government": false,
       "covered": true,
       "registry_slug": "canton-ga",
-      "pop_rank": 28
+      "pop_rank": 29
     },
     "kennesaw-ga": {
       "name": "Kennesaw city",
@@ -1691,7 +1708,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 29
+      "pop_rank": 30
     },
     "tucker-ga": {
       "name": "Tucker city",
@@ -1704,7 +1721,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 30
+      "pop_rank": 31
     },
     "hinesville-ga": {
       "name": "Hinesville city",
@@ -1717,7 +1734,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 31
+      "pop_rank": 32
     },
     "stockbridge-ga": {
       "name": "Stockbridge city",
@@ -1730,7 +1747,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 32
+      "pop_rank": 33
     },
     "statesboro-ga": {
       "name": "Statesboro city",
@@ -1743,7 +1760,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 33
+      "pop_rank": 34
     },
     "dalton-ga": {
       "name": "Dalton city",
@@ -1756,7 +1773,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 34
+      "pop_rank": 35
     },
     "lagrange-ga": {
       "name": "LaGrange city",
@@ -1769,7 +1786,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 35
+      "pop_rank": 36
     },
     "duluth-ga": {
       "name": "Duluth city",
@@ -1782,7 +1799,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 36
+      "pop_rank": 37
     },
     "mcdonough-ga": {
       "name": "McDonough city",
@@ -1795,7 +1812,7 @@
       "consolidated_government": false,
       "covered": true,
       "registry_slug": "mcdonough-ga",
-      "pop_rank": 37
+      "pop_rank": 38
     },
     "chamblee-ga": {
       "name": "Chamblee city",
@@ -1808,7 +1825,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 38
+      "pop_rank": 39
     },
     "lawrenceville-ga": {
       "name": "Lawrenceville city",
@@ -1821,7 +1838,7 @@
       "consolidated_government": false,
       "covered": true,
       "registry_slug": "lawrenceville-ga",
-      "pop_rank": 39
+      "pop_rank": 40
     },
     "pooler-ga": {
       "name": "Pooler city",
@@ -1834,7 +1851,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 40
+      "pop_rank": 41
     },
     "sugar-hill-ga": {
       "name": "Sugar Hill city",
@@ -1847,7 +1864,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 41
+      "pop_rank": 42
     },
     "carrollton-ga": {
       "name": "Carrollton city",
@@ -1860,7 +1877,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 42
+      "pop_rank": 43
     },
     "union-city-ga": {
       "name": "Union City city",
@@ -1873,7 +1890,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 43
+      "pop_rank": 44
     },
     "cartersville-ga": {
       "name": "Cartersville city",
@@ -1886,7 +1903,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 44
+      "pop_rank": 45
     },
     "perry-ga": {
       "name": "Perry city",
@@ -1900,7 +1917,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 45
+      "pop_rank": 46
     },
     "decatur-ga": {
       "name": "Decatur city",
@@ -1913,7 +1930,7 @@
       "consolidated_government": false,
       "covered": true,
       "registry_slug": "decatur-ga",
-      "pop_rank": 46
+      "pop_rank": 47
     },
     "griffin-ga": {
       "name": "Griffin city",
@@ -1926,7 +1943,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 47
+      "pop_rank": 48
     },
     "suwanee-ga": {
       "name": "Suwanee city",
@@ -1939,7 +1956,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 48
+      "pop_rank": 49
     },
     "acworth-ga": {
       "name": "Acworth city",
@@ -1952,7 +1969,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 49
+      "pop_rank": 50
     },
     "snellville-ga": {
       "name": "Snellville city",
@@ -1965,7 +1982,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 50
+      "pop_rank": 51
     },
     "kingsland-ga": {
       "name": "Kingsland city",
@@ -1978,7 +1995,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 51
+      "pop_rank": 52
     },
     "winder-ga": {
       "name": "Winder city",
@@ -1991,7 +2008,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 52
+      "pop_rank": 53
     },
     "fayetteville-ga": {
       "name": "Fayetteville city",
@@ -2004,7 +2021,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 53
+      "pop_rank": 54
     },
     "holly-springs-ga": {
       "name": "Holly Springs city",
@@ -2017,7 +2034,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 54
+      "pop_rank": 55
     },
     "st-marys-ga": {
       "name": "St. Marys city",
@@ -2030,7 +2047,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 55
+      "pop_rank": 56
     },
     "conyers-ga": {
       "name": "Conyers city",
@@ -2043,7 +2060,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 56
+      "pop_rank": 57
     },
     "villa-rica-ga": {
       "name": "Villa Rica city",
@@ -2057,7 +2074,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 57
+      "pop_rank": 58
     },
     "richmond-hill-ga": {
       "name": "Richmond Hill city",
@@ -2070,7 +2087,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 58
+      "pop_rank": 59
     },
     "powder-springs-ga": {
       "name": "Powder Springs city",
@@ -2083,7 +2100,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 59
+      "pop_rank": 60
     },
     "calhoun-ga": {
       "name": "Calhoun city",
@@ -2096,7 +2113,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 60
+      "pop_rank": 61
     },
     "forest-park-ga": {
       "name": "Forest Park city",
@@ -2109,7 +2126,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 61
+      "pop_rank": 62
     },
     "norcross-ga": {
       "name": "Norcross city",
@@ -2122,7 +2139,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 62
+      "pop_rank": 63
     },
     "buford-ga": {
       "name": "Buford city",
@@ -2136,7 +2153,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 63
+      "pop_rank": 64
     },
     "thomasville-ga": {
       "name": "Thomasville city",
@@ -2149,7 +2166,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 64
+      "pop_rank": 65
     },
     "grovetown-ga": {
       "name": "Grovetown city",
@@ -2162,7 +2179,7 @@
       "consolidated_government": false,
       "covered": true,
       "registry_slug": "grovetown-ga",
-      "pop_rank": 65
+      "pop_rank": 66
     },
     "braselton-ga": {
       "name": "Braselton town",
@@ -2178,7 +2195,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 66
+      "pop_rank": 67
     },
     "tifton-ga": {
       "name": "Tifton city",
@@ -2191,7 +2208,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 67
+      "pop_rank": 68
     },
     "fairburn-ga": {
       "name": "Fairburn city",
@@ -2204,7 +2221,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 68
+      "pop_rank": 69
     },
     "loganville-ga": {
       "name": "Loganville city",
@@ -2218,7 +2235,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 69
+      "pop_rank": 70
     },
     "milledgeville-ga": {
       "name": "Milledgeville city",
@@ -2231,7 +2248,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 70
+      "pop_rank": 71
     },
     "jefferson-ga": {
       "name": "Jefferson city",
@@ -2244,7 +2261,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 71
+      "pop_rank": 72
     },
     "monroe-ga": {
       "name": "Monroe city",
@@ -2257,7 +2274,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 72
+      "pop_rank": 73
     },
     "dublin-ga": {
       "name": "Dublin city",
@@ -2270,7 +2287,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 73
+      "pop_rank": 74
     },
     "lilburn-ga": {
       "name": "Lilburn city",
@@ -2283,7 +2300,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 74
+      "pop_rank": 75
     },
     "americus-ga": {
       "name": "Americus city",
@@ -2296,7 +2313,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 75
+      "pop_rank": 76
     },
     "brunswick-ga": {
       "name": "Brunswick city",
@@ -2309,7 +2326,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 76
+      "pop_rank": 77
     },
     "covington-ga": {
       "name": "Covington city",
@@ -2322,7 +2339,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 77
+      "pop_rank": 78
     },
     "dallas-ga": {
       "name": "Dallas city",
@@ -2335,7 +2352,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 78
+      "pop_rank": 79
     },
     "port-wentworth-ga": {
       "name": "Port Wentworth city",
@@ -2348,7 +2365,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 79
+      "pop_rank": 80
     },
     "moultrie-ga": {
       "name": "Moultrie city",
@@ -2361,7 +2378,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 80
+      "pop_rank": 81
     },
     "bainbridge-ga": {
       "name": "Bainbridge city",
@@ -2374,7 +2391,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 81
+      "pop_rank": 82
     },
     "riverdale-ga": {
       "name": "Riverdale city",
@@ -2387,7 +2404,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 82
+      "pop_rank": 83
     },
     "clarkston-ga": {
       "name": "Clarkston city",
@@ -2400,7 +2417,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 83
+      "pop_rank": 84
     },
     "college-park-ga": {
       "name": "College Park city",
@@ -2414,7 +2431,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 84
+      "pop_rank": 85
     },
     "waycross-ga": {
       "name": "Waycross city",
@@ -2428,7 +2445,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 85
+      "pop_rank": 86
     },
     "lovejoy-ga": {
       "name": "Lovejoy city",
@@ -2441,7 +2458,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 86
+      "pop_rank": 87
     },
     "doraville-ga": {
       "name": "Doraville city",
@@ -2455,7 +2472,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 87
+      "pop_rank": 88
     },
     "flowery-branch-ga": {
       "name": "Flowery Branch city",
@@ -2468,7 +2485,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 88
+      "pop_rank": 89
     },
     "douglas-ga": {
       "name": "Douglas city",
@@ -2481,7 +2498,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 89
+      "pop_rank": 90
     },
     "locust-grove-ga": {
       "name": "Locust Grove city",
@@ -2494,7 +2511,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 90
+      "pop_rank": 91
     },
     "rincon-ga": {
       "name": "Rincon city",
@@ -2507,7 +2524,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 91
+      "pop_rank": 92
     },
     "vidalia-ga": {
       "name": "Vidalia city",
@@ -2521,7 +2538,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 92
+      "pop_rank": 93
     },
     "fort-oglethorpe-ga": {
       "name": "Fort Oglethorpe city",
@@ -2535,7 +2552,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 93
+      "pop_rank": 94
     },
     "garden-city-ga": {
       "name": "Garden City city",
@@ -2548,7 +2565,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 94
+      "pop_rank": 95
     },
     "cedartown-ga": {
       "name": "Cedartown city",
@@ -2561,7 +2578,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 95
+      "pop_rank": 96
     },
     "jesup-ga": {
       "name": "Jesup city",
@@ -2574,7 +2591,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 96
+      "pop_rank": 97
     },
     "cumming-ga": {
       "name": "Cumming city",
@@ -2587,7 +2604,7 @@
       "consolidated_government": false,
       "covered": true,
       "registry_slug": "cumming-ga",
-      "pop_rank": 97
+      "pop_rank": 98
     },
     "auburn-ga": {
       "name": "Auburn city",
@@ -2601,7 +2618,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 98
+      "pop_rank": 99
     },
     "cairo-ga": {
       "name": "Cairo city",
@@ -2614,7 +2631,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 99
+      "pop_rank": 100
     },
     "thomaston-ga": {
       "name": "Thomaston city",
@@ -2627,7 +2644,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 100
+      "pop_rank": 101
     },
     "cordele-ga": {
       "name": "Cordele city",
@@ -2640,7 +2657,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 101
+      "pop_rank": 102
     },
     "toccoa-ga": {
       "name": "Toccoa city",
@@ -2653,7 +2670,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 102
+      "pop_rank": 103
     },
     "hampton-ga": {
       "name": "Hampton city",
@@ -2666,7 +2683,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 103
+      "pop_rank": 104
     },
     "fort-valley-ga": {
       "name": "Fort Valley city",
@@ -2679,7 +2696,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 104
+      "pop_rank": 105
     },
     "centerville-ga": {
       "name": "Centerville city",
@@ -2692,7 +2709,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 105
+      "pop_rank": 106
     },
     "fitzgerald-ga": {
       "name": "Fitzgerald city",
@@ -2706,7 +2723,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 106
+      "pop_rank": 107
     },
     "commerce-ga": {
       "name": "Commerce city",
@@ -2719,7 +2736,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 107
+      "pop_rank": 108
     },
     "cusseta-chattahoochee-county-unified-government-ga": {
       "name": "Cusseta-Chattahoochee County unified government",
@@ -2732,7 +2749,7 @@
       "consolidated_government": true,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 108
+      "pop_rank": 109
     },
     "austell-ga": {
       "name": "Austell city",
@@ -2746,7 +2763,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 109
+      "pop_rank": 110
     },
     "tyrone-ga": {
       "name": "Tyrone town",
@@ -2759,7 +2776,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 110
+      "pop_rank": 111
     },
     "dacula-ga": {
       "name": "Dacula city",
@@ -2772,7 +2789,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 111
+      "pop_rank": 112
     },
     "dahlonega-ga": {
       "name": "Dahlonega city",
@@ -2785,7 +2802,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 112
+      "pop_rank": 113
     },
     "bremen-ga": {
       "name": "Bremen city",
@@ -2799,7 +2816,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 113
+      "pop_rank": 114
     },
     "swainsboro-ga": {
       "name": "Swainsboro city",
@@ -2812,7 +2829,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 114
+      "pop_rank": 115
     },
     "lafayette-ga": {
       "name": "LaFayette city",
@@ -2825,7 +2842,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 115
+      "pop_rank": 116
     },
     "thomson-ga": {
       "name": "Thomson city",
@@ -2838,7 +2855,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 116
+      "pop_rank": 117
     },
     "oakwood-ga": {
       "name": "Oakwood city",
@@ -2851,7 +2868,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 117
+      "pop_rank": 118
     },
     "hoschton-ga": {
       "name": "Hoschton city",
@@ -2864,7 +2881,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 118
+      "pop_rank": 119
     },
     "hapeville-ga": {
       "name": "Hapeville city",
@@ -2877,7 +2894,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 119
+      "pop_rank": 120
     },
     "eatonton-ga": {
       "name": "Eatonton city",
@@ -2890,7 +2907,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 120
+      "pop_rank": 121
     },
     "stone-mountain-ga": {
       "name": "Stone Mountain city",
@@ -2903,7 +2920,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 121
+      "pop_rank": 122
     },
     "temple-ga": {
       "name": "Temple city",
@@ -2917,7 +2934,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 122
+      "pop_rank": 123
     },
     "barnesville-ga": {
       "name": "Barnesville city",
@@ -2930,7 +2947,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 123
+      "pop_rank": 124
     },
     "byron-ga": {
       "name": "Byron city",
@@ -2943,7 +2960,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 124
+      "pop_rank": 125
     },
     "morrow-ga": {
       "name": "Morrow city",
@@ -2956,7 +2973,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 125
+      "pop_rank": 126
     },
     "senoia-ga": {
       "name": "Senoia city",
@@ -2969,7 +2986,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 126
+      "pop_rank": 127
     },
     "jonesboro-ga": {
       "name": "Jonesboro city",
@@ -2982,7 +2999,7 @@
       "consolidated_government": false,
       "covered": true,
       "registry_slug": "jonesboro-ga",
-      "pop_rank": 127
+      "pop_rank": 128
     },
     "jackson-ga": {
       "name": "Jackson city",
@@ -2995,7 +3012,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 128
+      "pop_rank": 129
     },
     "adel-ga": {
       "name": "Adel city",
@@ -3008,7 +3025,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 129
+      "pop_rank": 130
     },
     "waynesboro-ga": {
       "name": "Waynesboro city",
@@ -3021,7 +3038,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 130
+      "pop_rank": 131
     },
     "hiram-ga": {
       "name": "Hiram city",
@@ -3034,7 +3051,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 131
+      "pop_rank": 132
     },
     "eastman-ga": {
       "name": "Eastman city",
@@ -3047,7 +3064,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 132
+      "pop_rank": 133
     },
     "sandersville-ga": {
       "name": "Sandersville city",
@@ -3060,7 +3077,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 133
+      "pop_rank": 134
     },
     "social-circle-ga": {
       "name": "Social Circle city",
@@ -3074,7 +3091,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 134
+      "pop_rank": 135
     },
     "sylvester-ga": {
       "name": "Sylvester city",
@@ -3087,7 +3104,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 135
+      "pop_rank": 136
     },
     "cornelia-ga": {
       "name": "Cornelia city",
@@ -3100,7 +3117,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 136
+      "pop_rank": 137
     },
     "jasper-ga": {
       "name": "Jasper city",
@@ -3113,7 +3130,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 137
+      "pop_rank": 138
     },
     "rockmart-ga": {
       "name": "Rockmart city",
@@ -3126,7 +3143,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 138
+      "pop_rank": 139
     },
     "grayson-ga": {
       "name": "Grayson city",
@@ -3139,7 +3156,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 139
+      "pop_rank": 140
     },
     "palmetto-ga": {
       "name": "Palmetto city",
@@ -3153,7 +3170,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 140
+      "pop_rank": 141
     },
     "mcrae-helena-ga": {
       "name": "McRae-Helena city",
@@ -3167,7 +3184,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 141
+      "pop_rank": 142
     },
     "blakely-ga": {
       "name": "Blakely city",
@@ -3180,7 +3197,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 142
+      "pop_rank": 143
     },
     "madison-ga": {
       "name": "Madison city",
@@ -3193,7 +3210,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 143
+      "pop_rank": 144
     },
     "glennville-ga": {
       "name": "Glennville city",
@@ -3206,7 +3223,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 144
+      "pop_rank": 145
     },
     "adairsville-ga": {
       "name": "Adairsville city",
@@ -3219,7 +3236,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 145
+      "pop_rank": 146
     },
     "camilla-ga": {
       "name": "Camilla city",
@@ -3232,7 +3249,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 146
+      "pop_rank": 147
     },
     "nashville-ga": {
       "name": "Nashville city",
@@ -3245,7 +3262,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 147
+      "pop_rank": 148
     },
     "baxley-ga": {
       "name": "Baxley city",
@@ -3258,7 +3275,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 148
+      "pop_rank": 149
     },
     "chatsworth-ga": {
       "name": "Chatsworth city",
@@ -3271,7 +3288,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 149
+      "pop_rank": 150
     },
     "forsyth-ga": {
       "name": "Forsyth city",
@@ -3284,7 +3301,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 150
+      "pop_rank": 151
     },
     "dawsonville-ga": {
       "name": "Dawsonville city",
@@ -3297,7 +3314,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 151
+      "pop_rank": 152
     },
     "hawkinsville-ga": {
       "name": "Hawkinsville city",
@@ -3310,7 +3327,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 152
+      "pop_rank": 153
     },
     "cochran-ga": {
       "name": "Cochran city",
@@ -3323,7 +3340,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 153
+      "pop_rank": 154
     },
     "elberton-ga": {
       "name": "Elberton city",
@@ -3336,7 +3353,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 154
+      "pop_rank": 155
     },
     "folkston-ga": {
       "name": "Folkston city",
@@ -3349,7 +3366,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 155
+      "pop_rank": 156
     },
     "hartwell-ga": {
       "name": "Hartwell city",
@@ -3362,7 +3379,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 156
+      "pop_rank": 157
     },
     "summerville-ga": {
       "name": "Summerville city",
@@ -3375,7 +3392,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 157
+      "pop_rank": 158
     },
     "lyons-ga": {
       "name": "Lyons city",
@@ -3388,7 +3405,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 158
+      "pop_rank": 159
     },
     "ashburn-ga": {
       "name": "Ashburn city",
@@ -3401,7 +3418,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 159
+      "pop_rank": 160
     },
     "baldwin-ga": {
       "name": "Baldwin city",
@@ -3415,7 +3432,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 160
+      "pop_rank": 161
     },
     "dawson-ga": {
       "name": "Dawson city",
@@ -3428,7 +3445,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 161
+      "pop_rank": 162
     },
     "euharlee-ga": {
       "name": "Euharlee city",
@@ -3441,7 +3458,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 162
+      "pop_rank": 163
     },
     "hazlehurst-ga": {
       "name": "Hazlehurst city",
@@ -3454,7 +3471,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 163
+      "pop_rank": 164
     },
     "harlem-ga": {
       "name": "Harlem city",
@@ -3467,7 +3484,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 164
+      "pop_rank": 165
     },
     "quitman-ga": {
       "name": "Quitman city",
@@ -3480,7 +3497,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 165
+      "pop_rank": 166
     },
     "metter-ga": {
       "name": "Metter city",
@@ -3493,7 +3510,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 166
+      "pop_rank": 167
     },
     "walthourville-ga": {
       "name": "Walthourville city",
@@ -3506,7 +3523,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 167
+      "pop_rank": 168
     },
     "rossville-ga": {
       "name": "Rossville city",
@@ -3519,7 +3536,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 168
+      "pop_rank": 169
     },
     "watkinsville-ga": {
       "name": "Watkinsville city",
@@ -3532,7 +3549,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 169
+      "pop_rank": 170
     },
     "hephzibah-ga": {
       "name": "Hephzibah city",
@@ -3545,7 +3562,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 170
+      "pop_rank": 171
     },
     "echols-county-consolidated-government-ga": {
       "name": "Echols County consolidated government",
@@ -3558,7 +3575,7 @@
       "consolidated_government": true,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 171
+      "pop_rank": 172
     },
     "blackshear-ga": {
       "name": "Blackshear city",
@@ -3571,7 +3588,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 172
+      "pop_rank": 173
     },
     "manchester-ga": {
       "name": "Manchester city",
@@ -3585,7 +3602,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 173
+      "pop_rank": 174
     },
     "washington-ga": {
       "name": "Washington city",
@@ -3598,7 +3615,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 174
+      "pop_rank": 175
     },
     "west-point-ga": {
       "name": "West Point city",
@@ -3612,7 +3629,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 175
+      "pop_rank": 176
     },
     "cleveland-ga": {
       "name": "Cleveland city",
@@ -3625,7 +3642,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 176
+      "pop_rank": 177
     },
     "leesburg-ga": {
       "name": "Leesburg city",
@@ -3638,7 +3655,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 177
+      "pop_rank": 178
     },
     "greensboro-ga": {
       "name": "Greensboro city",
@@ -3651,7 +3668,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 178
+      "pop_rank": 179
     },
     "hahira-ga": {
       "name": "Hahira city",
@@ -3664,7 +3681,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 179
+      "pop_rank": 180
     },
     "wrightsville-ga": {
       "name": "Wrightsville city",
@@ -3677,7 +3694,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 180
+      "pop_rank": 181
     },
     "gray-ga": {
       "name": "Gray city",
@@ -3690,7 +3707,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 181
+      "pop_rank": 182
     },
     "avondale-estates-ga": {
       "name": "Avondale Estates city",
@@ -3703,7 +3720,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 182
+      "pop_rank": 183
     },
     "chattahoochee-hills-ga": {
       "name": "Chattahoochee Hills city",
@@ -3717,7 +3734,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 183
+      "pop_rank": 184
     },
     "ringgold-ga": {
       "name": "Ringgold city",
@@ -3730,7 +3747,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 184
+      "pop_rank": 185
     },
     "pelham-ga": {
       "name": "Pelham city",
@@ -3743,7 +3760,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 185
+      "pop_rank": 186
     },
     "alma-ga": {
       "name": "Alma city",
@@ -3756,7 +3773,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 186
+      "pop_rank": 187
     },
     "ball-ground-ga": {
       "name": "Ball Ground city",
@@ -3769,7 +3786,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 187
+      "pop_rank": 188
     },
     "grantville-ga": {
       "name": "Grantville city",
@@ -3782,7 +3799,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 188
+      "pop_rank": 189
     },
     "statham-ga": {
       "name": "Statham city",
@@ -3795,7 +3812,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 189
+      "pop_rank": 190
     },
     "springfield-ga": {
       "name": "Springfield city",
@@ -3808,7 +3825,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 190
+      "pop_rank": 191
     },
     "hogansville-ga": {
       "name": "Hogansville city",
@@ -3821,7 +3838,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 191
+      "pop_rank": 192
     },
     "unadilla-ga": {
       "name": "Unadilla city",
@@ -3834,7 +3851,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 192
+      "pop_rank": 193
     },
     "tallapoosa-ga": {
       "name": "Tallapoosa city",
@@ -3847,7 +3864,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 193
+      "pop_rank": 194
     },
     "tybee-island-ga": {
       "name": "Tybee Island city",
@@ -3860,7 +3877,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 194
+      "pop_rank": 195
     },
     "bloomingdale-ga": {
       "name": "Bloomingdale city",
@@ -3873,7 +3890,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 195
+      "pop_rank": 196
     },
     "guyton-ga": {
       "name": "Guyton city",
@@ -3886,7 +3903,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 196
+      "pop_rank": 197
     },
     "lula-ga": {
       "name": "Lula city",
@@ -3900,7 +3917,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 197
+      "pop_rank": 198
     },
     "lakeland-ga": {
       "name": "Lakeland city",
@@ -3913,7 +3930,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 198
+      "pop_rank": 199
     },
     "chickamauga-ga": {
       "name": "Chickamauga city",
@@ -3926,7 +3943,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 199
+      "pop_rank": 200
     },
     "millen-ga": {
       "name": "Millen city",
@@ -3939,7 +3956,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 200
+      "pop_rank": 201
     },
     "monticello-ga": {
       "name": "Monticello city",
@@ -3952,7 +3969,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 201
+      "pop_rank": 202
     },
     "soperton-ga": {
       "name": "Soperton city",
@@ -3965,7 +3982,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 202
+      "pop_rank": 203
     },
     "ocilla-ga": {
       "name": "Ocilla city",
@@ -3978,7 +3995,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 203
+      "pop_rank": 204
     },
     "vienna-ga": {
       "name": "Vienna city",
@@ -3991,7 +4008,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 204
+      "pop_rank": 205
     },
     "cuthbert-ga": {
       "name": "Cuthbert city",
@@ -4004,7 +4021,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 205
+      "pop_rank": 206
     },
     "nicholls-ga": {
       "name": "Nicholls city",
@@ -4017,7 +4034,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 206
+      "pop_rank": 207
     },
     "montezuma-ga": {
       "name": "Montezuma city",
@@ -4030,7 +4047,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 207
+      "pop_rank": 208
     },
     "lake-city-ga": {
       "name": "Lake City city",
@@ -4043,7 +4060,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 208
+      "pop_rank": 209
     },
     "donalsonville-ga": {
       "name": "Donalsonville city",
@@ -4056,7 +4073,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 209
+      "pop_rank": 210
     },
     "abbeville-ga": {
       "name": "Abbeville city",
@@ -4069,7 +4086,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 210
+      "pop_rank": 211
     },
     "alamo-ga": {
       "name": "Alamo town",
@@ -4082,7 +4099,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 211
+      "pop_rank": 212
     },
     "pembroke-ga": {
       "name": "Pembroke city",
@@ -4095,7 +4112,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 212
+      "pop_rank": 213
     },
     "royston-ga": {
       "name": "Royston city",
@@ -4110,7 +4127,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 213
+      "pop_rank": 214
     },
     "sylvania-ga": {
       "name": "Sylvania city",
@@ -4123,7 +4140,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 214
+      "pop_rank": 215
     },
     "lithonia-ga": {
       "name": "Lithonia city",
@@ -4136,7 +4153,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 215
+      "pop_rank": 216
     },
     "reidsville-ga": {
       "name": "Reidsville city",
@@ -4149,7 +4166,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 216
+      "pop_rank": 217
     },
     "claxton-ga": {
       "name": "Claxton city",
@@ -4162,7 +4179,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 217
+      "pop_rank": 218
     },
     "thunderbolt-ga": {
       "name": "Thunderbolt town",
@@ -4175,7 +4192,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 218
+      "pop_rank": 219
     },
     "east-dublin-ga": {
       "name": "East Dublin city",
@@ -4188,7 +4205,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 219
+      "pop_rank": 220
     },
     "midway-ga": {
       "name": "Midway city",
@@ -4201,7 +4218,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 220
+      "pop_rank": 221
     },
     "homerville-ga": {
       "name": "Homerville city",
@@ -4214,7 +4231,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 221
+      "pop_rank": 222
     },
     "georgetown-quitman-county-unified-government-ga": {
       "name": "Georgetown-Quitman County unified government",
@@ -4227,7 +4244,7 @@
       "consolidated_government": true,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 222
+      "pop_rank": 223
     },
     "webster-county-unified-government-ga": {
       "name": "Webster County unified government",
@@ -4240,7 +4257,7 @@
       "consolidated_government": true,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 223
+      "pop_rank": 224
     },
     "oxford-ga": {
       "name": "Oxford city",
@@ -4253,7 +4270,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 224
+      "pop_rank": 225
     },
     "varnell-ga": {
       "name": "Varnell city",
@@ -4266,7 +4283,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 225
+      "pop_rank": 226
     },
     "maysville-ga": {
       "name": "Maysville town",
@@ -4280,7 +4297,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 226
+      "pop_rank": 227
     },
     "bowdon-ga": {
       "name": "Bowdon city",
@@ -4293,7 +4310,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 227
+      "pop_rank": 228
     },
     "louisville-ga": {
       "name": "Louisville city",
@@ -4306,7 +4323,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 228
+      "pop_rank": 229
     },
     "trenton-ga": {
       "name": "Trenton city",
@@ -4319,7 +4336,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 229
+      "pop_rank": 230
     },
     "emerson-ga": {
       "name": "Emerson city",
@@ -4332,7 +4349,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 230
+      "pop_rank": 231
     },
     "demorest-ga": {
       "name": "Demorest city",
@@ -4345,7 +4362,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 231
+      "pop_rank": 232
     },
     "lavonia-ga": {
       "name": "Lavonia city",
@@ -4359,7 +4376,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 232
+      "pop_rank": 233
     },
     "clarkesville-ga": {
       "name": "Clarkesville city",
@@ -4372,7 +4389,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 233
+      "pop_rank": 234
     },
     "wrens-ga": {
       "name": "Wrens city",
@@ -4385,7 +4402,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 234
+      "pop_rank": 235
     },
     "clayton-ga": {
       "name": "Clayton city",
@@ -4398,7 +4415,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 235
+      "pop_rank": 236
     },
     "sparks-ga": {
       "name": "Sparks town",
@@ -4411,7 +4428,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 236
+      "pop_rank": 237
     },
     "brooklet-ga": {
       "name": "Brooklet city",
@@ -4424,7 +4441,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 237
+      "pop_rank": 238
     },
     "mount-zion-ga": {
       "name": "Mount Zion city",
@@ -4437,7 +4454,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 238
+      "pop_rank": 239
     },
     "berkeley-lake-ga": {
       "name": "Berkeley Lake city",
@@ -4450,7 +4467,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 239
+      "pop_rank": 240
     },
     "arcade-ga": {
       "name": "Arcade city",
@@ -4463,7 +4480,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 240
+      "pop_rank": 241
     },
     "trion-ga": {
       "name": "Trion town",
@@ -4476,7 +4493,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 241
+      "pop_rank": 242
     },
     "davisboro-ga": {
       "name": "Davisboro city",
@@ -4489,7 +4506,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 242
+      "pop_rank": 243
     },
     "porterdale-ga": {
       "name": "Porterdale city",
@@ -4502,7 +4519,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 243
+      "pop_rank": 244
     },
     "colquitt-ga": {
       "name": "Colquitt city",
@@ -4515,7 +4532,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 244
+      "pop_rank": 245
     },
     "ellijay-ga": {
       "name": "Ellijay city",
@@ -4528,7 +4545,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 245
+      "pop_rank": 246
     },
     "nicholson-ga": {
       "name": "Nicholson city",
@@ -4541,7 +4558,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 246
+      "pop_rank": 247
     },
     "pearson-ga": {
       "name": "Pearson city",
@@ -4554,7 +4571,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 247
+      "pop_rank": 248
     },
     "warrenton-ga": {
       "name": "Warrenton city",
@@ -4567,7 +4584,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 248
+      "pop_rank": 249
     },
     "pendergrass-ga": {
       "name": "Pendergrass town",
@@ -4580,7 +4597,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 249
+      "pop_rank": 250
     },
     "tennille-ga": {
       "name": "Tennille city",
@@ -4593,7 +4610,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 250
+      "pop_rank": 251
     },
     "mount-vernon-ga": {
       "name": "Mount Vernon city",
@@ -4606,7 +4623,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 251
+      "pop_rank": 252
     },
     "union-point-ga": {
       "name": "Union Point city",
@@ -4619,7 +4636,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 252
+      "pop_rank": 253
     },
     "butler-ga": {
       "name": "Butler city",
@@ -4632,7 +4649,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 253
+      "pop_rank": 254
     },
     "morgan-ga": {
       "name": "Morgan city",
@@ -4645,7 +4662,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 254
+      "pop_rank": 255
     },
     "homer-ga": {
       "name": "Homer town",
@@ -4658,7 +4675,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 255
+      "pop_rank": 256
     },
     "ludowici-ga": {
       "name": "Ludowici city",
@@ -4671,7 +4688,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 256
+      "pop_rank": 257
     },
     "hamilton-ga": {
       "name": "Hamilton city",
@@ -4684,7 +4701,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 257
+      "pop_rank": 258
     },
     "twin-city-ga": {
       "name": "Twin City city",
@@ -4697,7 +4714,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 258
+      "pop_rank": 259
     },
     "darien-ga": {
       "name": "Darien city",
@@ -4710,7 +4727,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 259
+      "pop_rank": 260
     },
     "gordon-ga": {
       "name": "Gordon city",
@@ -4723,7 +4740,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 260
+      "pop_rank": 261
     },
     "lookout-mountain-ga": {
       "name": "Lookout Mountain city",
@@ -4736,7 +4753,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 261
+      "pop_rank": 262
     },
     "walnut-grove-ga": {
       "name": "Walnut Grove city",
@@ -4749,7 +4766,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 262
+      "pop_rank": 263
     },
     "comer-ga": {
       "name": "Comer city",
@@ -4762,7 +4779,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 263
+      "pop_rank": 264
     },
     "east-ellijay-ga": {
       "name": "East Ellijay city",
@@ -4775,7 +4792,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 264
+      "pop_rank": 265
     },
     "buena-vista-ga": {
       "name": "Buena Vista city",
@@ -4788,7 +4805,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 265
+      "pop_rank": 266
     },
     "wadley-ga": {
       "name": "Wadley city",
@@ -4801,7 +4818,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 266
+      "pop_rank": 267
     },
     "lake-park-ga": {
       "name": "Lake Park city",
@@ -4814,7 +4831,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 267
+      "pop_rank": 268
     },
     "ellaville-ga": {
       "name": "Ellaville city",
@@ -4827,7 +4844,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 268
+      "pop_rank": 269
     },
     "aragon-ga": {
       "name": "Aragon city",
@@ -4840,7 +4857,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 269
+      "pop_rank": 270
     },
     "mount-airy-ga": {
       "name": "Mount Airy town",
@@ -4853,7 +4870,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 270
+      "pop_rank": 271
     },
     "chester-ga": {
       "name": "Chester town",
@@ -4866,7 +4883,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 271
+      "pop_rank": 272
     },
     "richland-ga": {
       "name": "Richland city",
@@ -4879,7 +4896,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 272
+      "pop_rank": 273
     },
     "lincolnton-ga": {
       "name": "Lincolnton city",
@@ -4892,7 +4909,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 273
+      "pop_rank": 274
     },
     "bogart-ga": {
       "name": "Bogart town",
@@ -4906,7 +4923,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 274
+      "pop_rank": 275
     },
     "zebulon-ga": {
       "name": "Zebulon city",
@@ -4919,7 +4936,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 275
+      "pop_rank": 276
     },
     "omega-ga": {
       "name": "Omega city",
@@ -4933,7 +4950,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 276
+      "pop_rank": 277
     },
     "sparta-ga": {
       "name": "Sparta city",
@@ -4946,7 +4963,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 277
+      "pop_rank": 278
     },
     "remerton-ga": {
       "name": "Remerton city",
@@ -4959,7 +4976,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 278
+      "pop_rank": 279
     },
     "pine-mountain-ga": {
       "name": "Pine Mountain town",
@@ -4973,7 +4990,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 279
+      "pop_rank": 280
     },
     "willacoochee-ga": {
       "name": "Willacoochee city",
@@ -4986,7 +5003,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 280
+      "pop_rank": 281
     },
     "blue-ridge-ga": {
       "name": "Blue Ridge city",
@@ -4999,7 +5016,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 281
+      "pop_rank": 282
     },
     "boston-ga": {
       "name": "Boston city",
@@ -5012,7 +5029,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 282
+      "pop_rank": 283
     },
     "cave-spring-ga": {
       "name": "Cave Spring city",
@@ -5025,7 +5042,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 283
+      "pop_rank": 284
     },
     "winterville-ga": {
       "name": "Winterville city",
@@ -5038,7 +5055,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 284
+      "pop_rank": 285
     },
     "franklin-springs-ga": {
       "name": "Franklin Springs city",
@@ -5051,7 +5068,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 285
+      "pop_rank": 286
     },
     "nelson-ga": {
       "name": "Nelson city",
@@ -5065,7 +5082,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 286
+      "pop_rank": 287
     },
     "mccaysville-ga": {
       "name": "McCaysville city",
@@ -5078,7 +5095,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 287
+      "pop_rank": 288
     },
     "edison-ga": {
       "name": "Edison city",
@@ -5091,7 +5108,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 288
+      "pop_rank": 289
     },
     "rochelle-ga": {
       "name": "Rochelle city",
@@ -5104,7 +5121,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 289
+      "pop_rank": 290
     },
     "clermont-ga": {
       "name": "Clermont town",
@@ -5117,7 +5134,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 290
+      "pop_rank": 291
     },
     "arlington-ga": {
       "name": "Arlington city",
@@ -5131,7 +5148,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 291
+      "pop_rank": 292
     },
     "resaca-ga": {
       "name": "Resaca town",
@@ -5144,7 +5161,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 292
+      "pop_rank": 293
     },
     "enigma-ga": {
       "name": "Enigma town",
@@ -5157,7 +5174,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 293
+      "pop_rank": 294
     },
     "kingston-ga": {
       "name": "Kingston city",
@@ -5170,7 +5187,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 294
+      "pop_rank": 295
     },
     "broxton-ga": {
       "name": "Broxton city",
@@ -5183,7 +5200,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 295
+      "pop_rank": 296
     },
     "woodbine-ga": {
       "name": "Woodbine city",
@@ -5196,7 +5213,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 296
+      "pop_rank": 297
     },
     "hiawassee-ga": {
       "name": "Hiawassee city",
@@ -5209,7 +5226,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 297
+      "pop_rank": 298
     },
     "ray-city-ga": {
       "name": "Ray City city",
@@ -5223,7 +5240,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 298
+      "pop_rank": 299
     },
     "nahunta-ga": {
       "name": "Nahunta city",
@@ -5236,7 +5253,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 299
+      "pop_rank": 300
     },
     "alto-ga": {
       "name": "Alto town",
@@ -5250,7 +5267,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 300
+      "pop_rank": 301
     },
     "ivey-ga": {
       "name": "Ivey city",
@@ -5263,7 +5280,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 301
+      "pop_rank": 302
     },
     "sardis-ga": {
       "name": "Sardis city",
@@ -5276,7 +5293,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 302
+      "pop_rank": 303
     },
     "norman-park-ga": {
       "name": "Norman Park city",
@@ -5289,7 +5306,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 303
+      "pop_rank": 304
     },
     "tunnel-hill-ga": {
       "name": "Tunnel Hill city",
@@ -5302,7 +5319,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 304
+      "pop_rank": 305
     },
     "marshallville-ga": {
       "name": "Marshallville city",
@@ -5315,7 +5332,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 305
+      "pop_rank": 306
     },
     "franklin-ga": {
       "name": "Franklin city",
@@ -5328,7 +5345,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 306
+      "pop_rank": 307
     },
     "fort-gaines-ga": {
       "name": "Fort Gaines city",
@@ -5341,7 +5358,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 307
+      "pop_rank": 308
     },
     "waleska-ga": {
       "name": "Waleska city",
@@ -5354,7 +5371,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 308
+      "pop_rank": 309
     },
     "lumber-city-ga": {
       "name": "Lumber City city",
@@ -5367,7 +5384,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 309
+      "pop_rank": 310
     },
     "mountain-city-ga": {
       "name": "Mountain City town",
@@ -5380,7 +5397,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 310
+      "pop_rank": 311
     },
     "oglethorpe-ga": {
       "name": "Oglethorpe city",
@@ -5393,7 +5410,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 311
+      "pop_rank": 312
     },
     "buchanan-ga": {
       "name": "Buchanan city",
@@ -5406,7 +5423,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 312
+      "pop_rank": 313
     },
     "hagan-ga": {
       "name": "Hagan city",
@@ -5419,7 +5436,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 313
+      "pop_rank": 314
     },
     "lumpkin-ga": {
       "name": "Lumpkin city",
@@ -5432,7 +5449,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 314
+      "pop_rank": 315
     },
     "meigs-ga": {
       "name": "Meigs city",
@@ -5446,7 +5463,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 315
+      "pop_rank": 316
     },
     "dasher-ga": {
       "name": "Dasher town",
@@ -5459,7 +5476,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 316
+      "pop_rank": 317
     },
     "rutledge-ga": {
       "name": "Rutledge city",
@@ -5472,7 +5489,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 317
+      "pop_rank": 318
     },
     "jeffersonville-ga": {
       "name": "Jeffersonville city",
@@ -5485,7 +5502,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 318
+      "pop_rank": 319
     },
     "homeland-ga": {
       "name": "Homeland city",
@@ -5498,7 +5515,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 319
+      "pop_rank": 320
     },
     "crawford-ga": {
       "name": "Crawford city",
@@ -5511,7 +5528,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 320
+      "pop_rank": 321
     },
     "reynolds-ga": {
       "name": "Reynolds city",
@@ -5524,7 +5541,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 321
+      "pop_rank": 322
     },
     "flemington-ga": {
       "name": "Flemington city",
@@ -5537,7 +5554,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 322
+      "pop_rank": 323
     },
     "allenhurst-ga": {
       "name": "Allenhurst city",
@@ -5550,7 +5567,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 323
+      "pop_rank": 324
     },
     "danielsville-ga": {
       "name": "Danielsville city",
@@ -5563,7 +5580,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 324
+      "pop_rank": 325
     },
     "bowman-ga": {
       "name": "Bowman city",
@@ -5576,7 +5593,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 325
+      "pop_rank": 326
     },
     "woodbury-ga": {
       "name": "Woodbury city",
@@ -5589,7 +5606,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 326
+      "pop_rank": 327
     },
     "eton-ga": {
       "name": "Eton city",
@@ -5602,7 +5619,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 327
+      "pop_rank": 328
     },
     "blairsville-ga": {
       "name": "Blairsville city",
@@ -5615,7 +5632,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 328
+      "pop_rank": 329
     },
     "cohutta-ga": {
       "name": "Cohutta city",
@@ -5628,7 +5645,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 329
+      "pop_rank": 330
     },
     "baconton-ga": {
       "name": "Baconton city",
@@ -5641,7 +5658,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 330
+      "pop_rank": 331
     },
     "luthersville-ga": {
       "name": "Luthersville city",
@@ -5654,7 +5671,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 331
+      "pop_rank": 332
     },
     "shellman-ga": {
       "name": "Shellman city",
@@ -5667,7 +5684,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 332
+      "pop_rank": 333
     },
     "screven-ga": {
       "name": "Screven city",
@@ -5680,7 +5697,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 333
+      "pop_rank": 334
     },
     "greenville-ga": {
       "name": "Greenville city",
@@ -5693,7 +5710,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 334
+      "pop_rank": 335
     },
     "glenwood-ga": {
       "name": "Glenwood city",
@@ -5706,7 +5723,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 335
+      "pop_rank": 336
     },
     "milner-ga": {
       "name": "Milner city",
@@ -5719,7 +5736,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 336
+      "pop_rank": 337
     },
     "young-harris-ga": {
       "name": "Young Harris city",
@@ -5732,7 +5749,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 337
+      "pop_rank": 338
     },
     "bethlehem-ga": {
       "name": "Bethlehem town",
@@ -5745,7 +5762,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 338
+      "pop_rank": 339
     },
     "blythe-ga": {
       "name": "Blythe city",
@@ -5759,7 +5776,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 339
+      "pop_rank": 340
     },
     "roberta-ga": {
       "name": "Roberta city",
@@ -5772,7 +5789,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 340
+      "pop_rank": 341
     },
     "patterson-ga": {
       "name": "Patterson city",
@@ -5785,7 +5802,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 341
+      "pop_rank": 342
     },
     "carnesville-ga": {
       "name": "Carnesville city",
@@ -5798,7 +5815,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 342
+      "pop_rank": 343
     },
     "fairmount-ga": {
       "name": "Fairmount city",
@@ -5811,7 +5828,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 343
+      "pop_rank": 344
     },
     "newborn-ga": {
       "name": "Newborn town",
@@ -5824,7 +5841,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 344
+      "pop_rank": 345
     },
     "pine-lake-ga": {
       "name": "Pine Lake city",
@@ -5837,7 +5854,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 345
+      "pop_rank": 346
     },
     "williamson-ga": {
       "name": "Williamson city",
@@ -5850,7 +5867,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 346
+      "pop_rank": 347
     },
     "lenox-ga": {
       "name": "Lenox town",
@@ -5863,7 +5880,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 347
+      "pop_rank": 348
     },
     "sycamore-ga": {
       "name": "Sycamore city",
@@ -5876,7 +5893,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 348
+      "pop_rank": 349
     },
     "talbotton-ga": {
       "name": "Talbotton city",
@@ -5889,7 +5906,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 349
+      "pop_rank": 350
     },
     "doerun-ga": {
       "name": "Doerun city",
@@ -5902,7 +5919,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 350
+      "pop_rank": 351
     },
     "poulan-ga": {
       "name": "Poulan city",
@@ -5915,7 +5932,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 351
+      "pop_rank": 352
     },
     "canon-ga": {
       "name": "Canon city",
@@ -5929,7 +5946,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 352
+      "pop_rank": 353
     },
     "flovilla-ga": {
       "name": "Flovilla city",
@@ -5942,7 +5959,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 353
+      "pop_rank": 354
     },
     "ochlocknee-ga": {
       "name": "Ochlocknee town",
@@ -5955,7 +5972,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 354
+      "pop_rank": 355
     },
     "portal-ga": {
       "name": "Portal town",
@@ -5968,7 +5985,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 355
+      "pop_rank": 356
     },
     "colbert-ga": {
       "name": "Colbert city",
@@ -5981,7 +5998,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 356
+      "pop_rank": 357
     },
     "dexter-ga": {
       "name": "Dexter town",
@@ -5994,7 +6011,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 357
+      "pop_rank": 358
     },
     "waverly-hall-ga": {
       "name": "Waverly Hall town",
@@ -6007,7 +6024,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 358
+      "pop_rank": 359
     },
     "riceboro-ga": {
       "name": "Riceboro city",
@@ -6020,7 +6037,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 359
+      "pop_rank": 360
     },
     "gibson-ga": {
       "name": "Gibson city",
@@ -6033,7 +6050,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 360
+      "pop_rank": 361
     },
     "ty-ty-ga": {
       "name": "Ty Ty city",
@@ -6046,7 +6063,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 361
+      "pop_rank": 362
     },
     "white-ga": {
       "name": "White city",
@@ -6059,7 +6076,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 362
+      "pop_rank": 363
     },
     "helen-ga": {
       "name": "Helen city",
@@ -6072,7 +6089,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 363
+      "pop_rank": 364
     },
     "whitesburg-ga": {
       "name": "Whitesburg city",
@@ -6085,7 +6102,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 364
+      "pop_rank": 365
     },
     "smithville-ga": {
       "name": "Smithville city",
@@ -6098,7 +6115,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 365
+      "pop_rank": 366
     },
     "milan-ga": {
       "name": "Milan city",
@@ -6112,7 +6129,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 366
+      "pop_rank": 367
     },
     "pavo-ga": {
       "name": "Pavo city",
@@ -6126,7 +6143,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 367
+      "pop_rank": 368
     },
     "dudley-ga": {
       "name": "Dudley city",
@@ -6139,7 +6156,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 368
+      "pop_rank": 369
     },
     "waco-ga": {
       "name": "Waco city",
@@ -6152,7 +6169,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 369
+      "pop_rank": 370
     },
     "turin-ga": {
       "name": "Turin town",
@@ -6165,7 +6182,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 370
+      "pop_rank": 371
     },
     "brooks-ga": {
       "name": "Brooks town",
@@ -6178,7 +6195,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 371
+      "pop_rank": 372
     },
     "mountain-park-ga": {
       "name": "Mountain Park city",
@@ -6192,7 +6209,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 372
+      "pop_rank": 373
     },
     "north-high-shoals-ga": {
       "name": "North High Shoals town",
@@ -6205,7 +6222,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 373
+      "pop_rank": 374
     },
     "newton-ga": {
       "name": "Newton city",
@@ -6218,7 +6235,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 374
+      "pop_rank": 375
     },
     "adrian-ga": {
       "name": "Adrian city",
@@ -6232,7 +6249,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 375
+      "pop_rank": 376
     },
     "mcintyre-ga": {
       "name": "McIntyre town",
@@ -6245,7 +6262,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 376
+      "pop_rank": 377
     },
     "coolidge-ga": {
       "name": "Coolidge city",
@@ -6258,7 +6275,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 377
+      "pop_rank": 378
     },
     "collins-ga": {
       "name": "Collins city",
@@ -6271,7 +6288,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 378
+      "pop_rank": 379
     },
     "irwinton-ga": {
       "name": "Irwinton city",
@@ -6284,7 +6301,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 379
+      "pop_rank": 380
     },
     "dearing-ga": {
       "name": "Dearing town",
@@ -6297,7 +6314,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 380
+      "pop_rank": 381
     },
     "berlin-ga": {
       "name": "Berlin city",
@@ -6310,7 +6327,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 381
+      "pop_rank": 382
     },
     "ailey-ga": {
       "name": "Ailey city",
@@ -6323,7 +6340,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 382
+      "pop_rank": 383
     },
     "plains-ga": {
       "name": "Plains city",
@@ -6336,7 +6353,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 383
+      "pop_rank": 384
     },
     "oak-park-ga": {
       "name": "Oak Park town",
@@ -6349,7 +6366,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 384
+      "pop_rank": 385
     },
     "yatesville-ga": {
       "name": "Yatesville town",
@@ -6362,7 +6379,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 385
+      "pop_rank": 386
     },
     "morven-ga": {
       "name": "Morven city",
@@ -6375,7 +6392,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 386
+      "pop_rank": 387
     },
     "hoboken-ga": {
       "name": "Hoboken city",
@@ -6388,7 +6405,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 387
+      "pop_rank": 388
     },
     "tignall-ga": {
       "name": "Tignall town",
@@ -6401,7 +6418,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 388
+      "pop_rank": 389
     },
     "leary-ga": {
       "name": "Leary city",
@@ -6414,7 +6431,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 389
+      "pop_rank": 390
     },
     "ephesus-ga": {
       "name": "Ephesus city",
@@ -6427,7 +6444,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 390
+      "pop_rank": 391
     },
     "crawfordville-ga": {
       "name": "Crawfordville city",
@@ -6440,7 +6457,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 391
+      "pop_rank": 392
     },
     "odum-ga": {
       "name": "Odum city",
@@ -6453,7 +6470,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 392
+      "pop_rank": 393
     },
     "mansfield-ga": {
       "name": "Mansfield city",
@@ -6466,7 +6483,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 393
+      "pop_rank": 394
     },
     "alapaha-ga": {
       "name": "Alapaha town",
@@ -6479,7 +6496,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 394
+      "pop_rank": 395
     },
     "sky-valley-ga": {
       "name": "Sky Valley city",
@@ -6492,7 +6509,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 395
+      "pop_rank": 396
     },
     "warwick-ga": {
       "name": "Warwick city",
@@ -6505,7 +6522,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 396
+      "pop_rank": 397
     },
     "menlo-ga": {
       "name": "Menlo city",
@@ -6518,7 +6535,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 397
+      "pop_rank": 398
     },
     "between-ga": {
       "name": "Between town",
@@ -6531,7 +6548,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 398
+      "pop_rank": 399
     },
     "arnoldsville-ga": {
       "name": "Arnoldsville city",
@@ -6544,7 +6561,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 399
+      "pop_rank": 400
     },
     "pineview-ga": {
       "name": "Pineview town",
@@ -6557,7 +6574,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 400
+      "pop_rank": 401
     },
     "offerman-ga": {
       "name": "Offerman city",
@@ -6570,7 +6587,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 401
+      "pop_rank": 402
     },
     "lyerly-ga": {
       "name": "Lyerly town",
@@ -6583,7 +6600,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 402
+      "pop_rank": 403
     },
     "arabi-ga": {
       "name": "Arabi town",
@@ -6596,7 +6613,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 403
+      "pop_rank": 404
     },
     "stillmore-ga": {
       "name": "Stillmore city",
@@ -6609,7 +6626,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 404
+      "pop_rank": 405
     },
     "attapulgus-ga": {
       "name": "Attapulgus city",
@@ -6622,7 +6639,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 405
+      "pop_rank": 406
     },
     "warm-springs-ga": {
       "name": "Warm Springs city",
@@ -6635,7 +6652,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 406
+      "pop_rank": 407
     },
     "sumner-ga": {
       "name": "Sumner town",
@@ -6648,7 +6665,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 407
+      "pop_rank": 408
     },
     "uvalda-ga": {
       "name": "Uvalda city",
@@ -6661,7 +6678,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 408
+      "pop_rank": 409
     },
     "tiger-ga": {
       "name": "Tiger town",
@@ -6674,7 +6691,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 409
+      "pop_rank": 410
     },
     "shiloh-ga": {
       "name": "Shiloh city",
@@ -6687,7 +6704,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 410
+      "pop_rank": 411
     },
     "bowersville-ga": {
       "name": "Bowersville town",
@@ -6700,7 +6717,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 411
+      "pop_rank": 412
     },
     "cadwell-ga": {
       "name": "Cadwell town",
@@ -6713,7 +6730,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 412
+      "pop_rank": 413
     },
     "funston-ga": {
       "name": "Funston city",
@@ -6726,7 +6743,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 413
+      "pop_rank": 414
     },
     "molena-ga": {
       "name": "Molena city",
@@ -6739,7 +6756,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 414
+      "pop_rank": 415
     },
     "jenkinsburg-ga": {
       "name": "Jenkinsburg city",
@@ -6752,7 +6769,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 415
+      "pop_rank": 416
     },
     "concord-ga": {
       "name": "Concord city",
@@ -6765,7 +6782,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 416
+      "pop_rank": 417
     },
     "gillsville-ga": {
       "name": "Gillsville city",
@@ -6780,7 +6797,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 417
+      "pop_rank": 418
     },
     "bostwick-ga": {
       "name": "Bostwick city",
@@ -6793,7 +6810,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 418
+      "pop_rank": 419
     },
     "stapleton-ga": {
       "name": "Stapleton city",
@@ -6806,7 +6823,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 419
+      "pop_rank": 420
     },
     "good-hope-ga": {
       "name": "Good Hope city",
@@ -6819,7 +6836,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 420
+      "pop_rank": 421
     },
     "ideal-ga": {
       "name": "Ideal city",
@@ -6832,7 +6849,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 421
+      "pop_rank": 422
     },
     "moreland-ga": {
       "name": "Moreland town",
@@ -6845,7 +6862,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 422
+      "pop_rank": 423
     },
     "whigham-ga": {
       "name": "Whigham city",
@@ -6858,7 +6875,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 423
+      "pop_rank": 424
     },
     "ila-ga": {
       "name": "Ila city",
@@ -6871,7 +6888,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 424
+      "pop_rank": 425
     },
     "midville-ga": {
       "name": "Midville city",
@@ -6884,7 +6901,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 425
+      "pop_rank": 426
     },
     "toomsboro-ga": {
       "name": "Toomsboro city",
@@ -6897,7 +6914,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 426
+      "pop_rank": 427
     },
     "braswell-ga": {
       "name": "Braswell town",
@@ -6911,7 +6928,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 427
+      "pop_rank": 428
     },
     "centralhatchee-ga": {
       "name": "Centralhatchee town",
@@ -6924,7 +6941,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 428
+      "pop_rank": 429
     },
     "barwick-ga": {
       "name": "Barwick city",
@@ -6938,7 +6955,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 429
+      "pop_rank": 430
     },
     "plainville-ga": {
       "name": "Plainville city",
@@ -6951,7 +6968,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 430
+      "pop_rank": 431
     },
     "sale-city-ga": {
       "name": "Sale City city",
@@ -6964,7 +6981,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 431
+      "pop_rank": 432
     },
     "bishop-ga": {
       "name": "Bishop town",
@@ -6977,7 +6994,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 432
+      "pop_rank": 433
     },
     "martin-ga": {
       "name": "Martin town",
@@ -6991,7 +7008,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 433
+      "pop_rank": 434
     },
     "byromville-ga": {
       "name": "Byromville town",
@@ -7004,7 +7021,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 434
+      "pop_rank": 435
     },
     "ambrose-ga": {
       "name": "Ambrose city",
@@ -7017,7 +7034,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 435
+      "pop_rank": 436
     },
     "cobbtown-ga": {
       "name": "Cobbtown city",
@@ -7030,7 +7047,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 436
+      "pop_rank": 437
     },
     "dillard-ga": {
       "name": "Dillard city",
@@ -7043,7 +7060,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 437
+      "pop_rank": 438
     },
     "leslie-ga": {
       "name": "Leslie city",
@@ -7056,7 +7073,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 438
+      "pop_rank": 439
     },
     "sharpsburg-ga": {
       "name": "Sharpsburg town",
@@ -7069,7 +7086,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 439
+      "pop_rank": 440
     },
     "harrison-ga": {
       "name": "Harrison town",
@@ -7082,7 +7099,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 440
+      "pop_rank": 441
     },
     "hiltonia-ga": {
       "name": "Hiltonia town",
@@ -7095,7 +7112,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 441
+      "pop_rank": 442
     },
     "keysville-ga": {
       "name": "Keysville city",
@@ -7108,7 +7125,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 442
+      "pop_rank": 443
     },
     "rentz-ga": {
       "name": "Rentz city",
@@ -7121,7 +7138,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 443
+      "pop_rank": 444
     },
     "iron-city-ga": {
       "name": "Iron City town",
@@ -7134,7 +7151,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 444
+      "pop_rank": 445
     },
     "bronwood-ga": {
       "name": "Bronwood town",
@@ -7147,7 +7164,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 445
+      "pop_rank": 446
     },
     "higgston-ga": {
       "name": "Higgston town",
@@ -7160,7 +7177,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 446
+      "pop_rank": 447
     },
     "carlton-ga": {
       "name": "Carlton city",
@@ -7173,7 +7190,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 447
+      "pop_rank": 448
     },
     "pinehurst-ga": {
       "name": "Pinehurst city",
@@ -7186,7 +7203,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 448
+      "pop_rank": 449
     },
     "woodville-ga": {
       "name": "Woodville city",
@@ -7199,7 +7216,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 449
+      "pop_rank": 450
     },
     "woodland-ga": {
       "name": "Woodland city",
@@ -7212,7 +7229,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 450
+      "pop_rank": 451
     },
     "newington-ga": {
       "name": "Newington town",
@@ -7225,7 +7242,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 451
+      "pop_rank": 452
     },
     "shady-dale-ga": {
       "name": "Shady Dale town",
@@ -7238,7 +7255,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 452
+      "pop_rank": 453
     },
     "morganton-ga": {
       "name": "Morganton city",
@@ -7251,7 +7268,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 453
+      "pop_rank": 454
     },
     "talmo-ga": {
       "name": "Talmo town",
@@ -7264,7 +7281,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 454
+      "pop_rank": 455
     },
     "rhine-ga": {
       "name": "Rhine town",
@@ -7277,7 +7294,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 455
+      "pop_rank": 456
     },
     "chauncey-ga": {
       "name": "Chauncey city",
@@ -7290,7 +7307,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 456
+      "pop_rank": 457
     },
     "cecil-ga": {
       "name": "Cecil city",
@@ -7303,7 +7320,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 457
+      "pop_rank": 458
     },
     "meansville-ga": {
       "name": "Meansville city",
@@ -7316,7 +7333,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 458
+      "pop_rank": 459
     },
     "white-plains-ga": {
       "name": "White Plains city",
@@ -7329,7 +7346,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 459
+      "pop_rank": 460
     },
     "sasser-ga": {
       "name": "Sasser town",
@@ -7342,7 +7359,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 460
+      "pop_rank": 461
     },
     "climax-ga": {
       "name": "Climax city",
@@ -7355,7 +7372,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 461
+      "pop_rank": 462
     },
     "graham-ga": {
       "name": "Graham city",
@@ -7368,7 +7385,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 462
+      "pop_rank": 463
     },
     "taylorsville-ga": {
       "name": "Taylorsville town",
@@ -7382,7 +7399,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 463
+      "pop_rank": 464
     },
     "fargo-ga": {
       "name": "Fargo city",
@@ -7395,7 +7412,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 464
+      "pop_rank": 465
     },
     "gumbranch-ga": {
       "name": "Gumbranch city",
@@ -7408,7 +7425,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 465
+      "pop_rank": 466
     },
     "garfield-ga": {
       "name": "Garfield city",
@@ -7421,7 +7438,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 466
+      "pop_rank": 467
     },
     "pitts-ga": {
       "name": "Pitts city",
@@ -7434,7 +7451,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 467
+      "pop_rank": 468
     },
     "roopville-ga": {
       "name": "Roopville town",
@@ -7447,7 +7464,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 468
+      "pop_rank": 469
     },
     "avalon-ga": {
       "name": "Avalon town",
@@ -7460,7 +7477,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 469
+      "pop_rank": 470
     },
     "hull-ga": {
       "name": "Hull city",
@@ -7473,7 +7490,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 470
+      "pop_rank": 471
     },
     "andersonville-ga": {
       "name": "Andersonville city",
@@ -7486,7 +7503,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 471
+      "pop_rank": 472
     },
     "orchard-hill-ga": {
       "name": "Orchard Hill town",
@@ -7499,7 +7516,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 472
+      "pop_rank": 473
     },
     "carl-ga": {
       "name": "Carl town",
@@ -7512,7 +7529,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 473
+      "pop_rank": 474
     },
     "oliver-ga": {
       "name": "Oliver city",
@@ -7525,7 +7542,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 474
+      "pop_rank": 475
     },
     "ellenton-ga": {
       "name": "Ellenton town",
@@ -7538,7 +7555,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 475
+      "pop_rank": 476
     },
     "maxeys-ga": {
       "name": "Maxeys town",
@@ -7551,7 +7568,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 476
+      "pop_rank": 477
     },
     "lexington-ga": {
       "name": "Lexington city",
@@ -7564,7 +7581,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 477
+      "pop_rank": 478
     },
     "brinson-ga": {
       "name": "Brinson town",
@@ -7577,7 +7594,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 478
+      "pop_rank": 479
     },
     "avera-ga": {
       "name": "Avera city",
@@ -7590,7 +7607,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 479
+      "pop_rank": 480
     },
     "tallulah-falls-ga": {
       "name": "Tallulah Falls town",
@@ -7604,7 +7621,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 480
+      "pop_rank": 481
     },
     "montrose-ga": {
       "name": "Montrose town",
@@ -7617,7 +7634,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 481
+      "pop_rank": 482
     },
     "pulaski-ga": {
       "name": "Pulaski town",
@@ -7630,7 +7647,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 482
+      "pop_rank": 483
     },
     "woolsey-ga": {
       "name": "Woolsey town",
@@ -7643,7 +7660,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 483
+      "pop_rank": 484
     },
     "rebecca-ga": {
       "name": "Rebecca town",
@@ -7656,7 +7673,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 484
+      "pop_rank": 485
     },
     "santa-claus-ga": {
       "name": "Santa Claus city",
@@ -7669,7 +7686,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 485
+      "pop_rank": 486
     },
     "culloden-ga": {
       "name": "Culloden city",
@@ -7682,7 +7699,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 486
+      "pop_rank": 487
     },
     "buckhead-ga": {
       "name": "Buckhead town",
@@ -7695,7 +7712,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 487
+      "pop_rank": 488
     },
     "damascus-ga": {
       "name": "Damascus city",
@@ -7708,7 +7725,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 488
+      "pop_rank": 489
     },
     "haralson-ga": {
       "name": "Haralson town",
@@ -7722,7 +7739,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 489
+      "pop_rank": 490
     },
     "surrency-ga": {
       "name": "Surrency town",
@@ -7735,7 +7752,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 490
+      "pop_rank": 491
     },
     "norwood-ga": {
       "name": "Norwood city",
@@ -7748,7 +7765,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 491
+      "pop_rank": 492
     },
     "argyle-ga": {
       "name": "Argyle town",
@@ -7761,7 +7778,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 492
+      "pop_rank": 493
     },
     "denton-ga": {
       "name": "Denton city",
@@ -7774,7 +7791,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 493
+      "pop_rank": 494
     },
     "allentown-ga": {
       "name": "Allentown city",
@@ -7790,7 +7807,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 494
+      "pop_rank": 495
     },
     "siloam-ga": {
       "name": "Siloam town",
@@ -7803,7 +7820,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 495
+      "pop_rank": 496
     },
     "aldora-ga": {
       "name": "Aldora town",
@@ -7816,7 +7833,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 496
+      "pop_rank": 497
     },
     "girard-ga": {
       "name": "Girard town",
@@ -7829,7 +7846,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 497
+      "pop_rank": 498
     },
     "oconee-ga": {
       "name": "Oconee city",
@@ -7842,7 +7859,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 498
+      "pop_rank": 499
     },
     "bartow-ga": {
       "name": "Bartow town",
@@ -7855,7 +7872,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 499
+      "pop_rank": 500
     },
     "alston-ga": {
       "name": "Alston town",
@@ -7868,7 +7885,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 500
+      "pop_rank": 501
     },
     "scotland-ga": {
       "name": "Scotland city",
@@ -7882,7 +7899,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 501
+      "pop_rank": 502
     },
     "rocky-ford-ga": {
       "name": "Rocky Ford town",
@@ -7895,7 +7912,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 502
+      "pop_rank": 503
     },
     "register-ga": {
       "name": "Register town",
@@ -7908,7 +7925,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 503
+      "pop_rank": 504
     },
     "danville-ga": {
       "name": "Danville town",
@@ -7922,7 +7939,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 504
+      "pop_rank": 505
     },
     "mitchell-ga": {
       "name": "Mitchell town",
@@ -7935,7 +7952,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 505
+      "pop_rank": 506
     },
     "kite-ga": {
       "name": "Kite city",
@@ -7948,7 +7965,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 506
+      "pop_rank": 507
     },
     "daisy-ga": {
       "name": "Daisy city",
@@ -7961,7 +7978,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 507
+      "pop_rank": 508
     },
     "rayle-ga": {
       "name": "Rayle town",
@@ -7974,7 +7991,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 508
+      "pop_rank": 509
     },
     "jersey-ga": {
       "name": "Jersey city",
@@ -7987,7 +8004,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 509
+      "pop_rank": 510
     },
     "junction-city-ga": {
       "name": "Junction City town",
@@ -8000,7 +8017,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 510
+      "pop_rank": 511
     },
     "vernonburg-ga": {
       "name": "Vernonburg town",
@@ -8013,7 +8030,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 511
+      "pop_rank": 512
     },
     "du-pont-ga": {
       "name": "Du Pont town",
@@ -8026,7 +8043,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 512
+      "pop_rank": 513
     },
     "nunez-ga": {
       "name": "Nunez city",
@@ -8039,7 +8056,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 513
+      "pop_rank": 514
     },
     "jakin-ga": {
       "name": "Jakin city",
@@ -8052,7 +8069,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 514
+      "pop_rank": 515
     },
     "camak-ga": {
       "name": "Camak town",
@@ -8065,7 +8082,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 515
+      "pop_rank": 516
     },
     "lilly-ga": {
       "name": "Lilly city",
@@ -8078,7 +8095,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 516
+      "pop_rank": 517
     },
     "bellville-ga": {
       "name": "Bellville city",
@@ -8091,7 +8108,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 517
+      "pop_rank": 518
     },
     "de-soto-ga": {
       "name": "De Soto city",
@@ -8104,7 +8121,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 518
+      "pop_rank": 519
     },
     "summertown-ga": {
       "name": "Summertown city",
@@ -8117,7 +8134,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 519
+      "pop_rank": 520
     },
     "lone-oak-ga": {
       "name": "Lone Oak town",
@@ -8130,7 +8147,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 520
+      "pop_rank": 521
     },
     "bluffton-ga": {
       "name": "Bluffton town",
@@ -8143,7 +8160,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 521
+      "pop_rank": 522
     },
     "gay-ga": {
       "name": "Gay town",
@@ -8156,7 +8173,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 522
+      "pop_rank": 523
     },
     "deepstep-ga": {
       "name": "Deepstep town",
@@ -8169,7 +8186,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 523
+      "pop_rank": 524
     },
     "talking-rock-ga": {
       "name": "Talking Rock town",
@@ -8182,7 +8199,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 524
+      "pop_rank": 525
     },
     "parrott-ga": {
       "name": "Parrott town",
@@ -8195,7 +8212,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 525
+      "pop_rank": 526
     },
     "sharon-ga": {
       "name": "Sharon city",
@@ -8208,7 +8225,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 526
+      "pop_rank": 527
     },
     "jacksonville-ga": {
       "name": "Jacksonville city",
@@ -8221,7 +8238,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 527
+      "pop_rank": 528
     },
     "vidette-ga": {
       "name": "Vidette city",
@@ -8234,7 +8251,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 528
+      "pop_rank": 529
     },
     "riddleville-ga": {
       "name": "Riddleville town",
@@ -8247,7 +8264,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 529
+      "pop_rank": 530
     },
     "geneva-ga": {
       "name": "Geneva town",
@@ -8260,7 +8277,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 530
+      "pop_rank": 531
     },
     "dooling-ga": {
       "name": "Dooling town",
@@ -8273,7 +8290,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 531
+      "pop_rank": 532
     },
     "tarrytown-ga": {
       "name": "Tarrytown town",
@@ -8286,7 +8303,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 532
+      "pop_rank": 533
     },
     "manassas-ga": {
       "name": "Manassas city",
@@ -8299,7 +8316,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 533
+      "pop_rank": 534
     },
     "rest-haven-ga": {
       "name": "Rest Haven town",
@@ -8313,7 +8330,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 534
+      "pop_rank": 535
     },
     "edge-hill-ga": {
       "name": "Edge Hill city",
@@ -8326,22 +8343,7 @@
       "consolidated_government": false,
       "covered": false,
       "registry_slug": null,
-      "pop_rank": 535
-    },
-    "mulberry-ga": {
-      "name": "Mulberry city",
-      "short_name": "Mulberry",
-      "place_fips": "53706",
-      "geoid": "1353706",
-      "counties": [
-        "Gwinnett County"
-      ],
-      "pop_2024": null,
-      "pop_rank": null,
-      "consolidated_government": false,
-      "covered": false,
-      "registry_slug": null,
-      "note": "Incorporated 2024 (referendum May 2024, government effective 2025) — absent from Census sub-est2024 (boundaries as of Jan 1 2024), present in TIGERweb ACS25 (Jan 1 2025) as FUNCSTAT=A, GEOID 1353706, and in the GMA 536-city directory. Population estimate not yet published in Census PEP; pull from Vintage 2025 PEP when released."
+      "pop_rank": 536
     }
   },
   "school_systems": {

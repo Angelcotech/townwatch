@@ -83,7 +83,8 @@
       ]
     },
     "changelog": [
-      "0.2 (2026-06-10): added public_comment dimension; BoE coverage round (24 boe_known_areas + 9 boe_population school districts); public_comment backfilled on the 3 onboarded entries; vocab additions: agenda_platform += finalsite; comment_service vocab introduced (+ qualtrics, diligent_community, droplet)"
+      "0.2 (2026-06-10): added public_comment dimension; BoE coverage round (24 boe_known_areas + 9 boe_population school districts); public_comment backfilled on the 3 onboarded entries; vocab additions: agenda_platform += finalsite; comment_service vocab introduced (+ qualtrics, diligent_community, droplet)",
+      "0.2.1 (2026-06-10): adversarial verification pass over all flagged findings (16 confirmed, 4 corrected: Gwinnett deadline inference, Glascock staff emails, CCSD comment-form parent 404, Paulding minutes caught up; Houston upgraded to never-publishes-minutes). Searchable jurisdiction_directory re-seeded to the verified universe (2025 gazetteer + school districts)."
     ]
   },
   "jurisdictions": {
@@ -216,7 +217,8 @@
         "agendas NOT published as documents (empty agendas page) -> OCGA 50-14-1(e)(1) finding",
         "minutes are Google Docs; some 410-Gone dead",
         "no emailable custodian; staff emails obfuscated",
-        "public comment only via web form (Policy BCBI)"
+        "public comment only via web form (Policy BCBI)",
+        "Public-participation form's parent page 404s as of 2026-06-10 (form reachable only by direct Edlio URL) — citizens navigating from the Board Meetings page cannot find the comment form"
       ],
       "verified": "verified",
       "confidence": "high",
@@ -224,7 +226,7 @@
       "public_comment": {
         "channel": "web_form",
         "comment_service": "custom_form",
-        "submit_url": "https://www.ccboe.net/apps/pages/index.jsp?uREC_ID=4394898&type=d&pREC_ID=form.COLCS.sPdNlct.1nS",
+        "submit_url": "https://www.ccboe.net/apps/form/form.COLCS.sPdNlct.1nS",
         "recipient_email": null,
         "deadline_rule": "Must register at least 24 hours prior to the regular Board meeting; speakers must check in 15 minutes before the meeting starts",
         "max_comment_chars": null,
@@ -234,7 +236,7 @@
         "by_body": [],
         "verified": "verified",
         "confidence": "high",
-        "notes": "Verified live this session. 'Public Participation Request Form' link confirmed in raw HTML of Board Meetings page (uREC_ID=4394898); it iframes an Edlio-hosted form at /apps/form/form.COLCS.sPdNlct.1nS containing reCAPTCHA, fields for name/date/address/email/phone, group representation, '5. Topic/Concern' textarea (no maxlength attribute), signature + confirmation-email fields, and NO file-upload input. 'Rules of Conduct for Public Participation' page (pREC_ID=2362519) verified: register >=24h before regular meeting, check in 15 min early, 3 minutes per speaker, must be Columbia County resident or parent/guardian of a CCSD student, no props/signs, no profane/defamatory remarks or student/employee-identifying info; employee grievances routed to Policy GAE. This is a request-to-speak form (comment delivered orally at meeting). Board Policy BCBI itself could not be retrieved this session — the Simbli policy portal (simbli.eboardsolutions.com/Policy/PolicyListing.aspx?S=36031361) is JS-rendered and a direct ePolicy URL returned 'Invalid URL'; the 24h/3-min constraints above come from the district's Rules of Conduct page, which does not cite BCBI by name. automatable=false due to reCAPTCHA."
+        "notes": "Verified live this session. 'Public Participation Request Form' link confirmed in raw HTML of Board Meetings page (uREC_ID=4394898); it iframes an Edlio-hosted form at /apps/form/form.COLCS.sPdNlct.1nS containing reCAPTCHA, fields for name/date/address/email/phone, group representation, '5. Topic/Concern' textarea (no maxlength attribute), signature + confirmation-email fields, and NO file-upload input. 'Rules of Conduct for Public Participation' page (pREC_ID=2362519) verified: register >=24h before regular meeting, check in 15 min early, 3 minutes per speaker, must be Columbia County resident or parent/guardian of a CCSD student, no props/signs, no profane/defamatory remarks or student/employee-identifying info; employee grievances routed to Policy GAE. This is a request-to-speak form (comment delivered orally at meeting). Board Policy BCBI itself could not be retrieved this session — the Simbli policy portal (simbli.eboardsolutions.com/Policy/PolicyListing.aspx?S=36031361) is JS-rendered and a direct ePolicy URL returned 'Invalid URL'; the 24h/3-min constraints above come from the district's Rules of Conduct page, which does not cite BCBI by name. automatable=false due to reCAPTCHA. UPDATE 2026-06-10 verification: the Board-Meetings page that iframed the form (uREC_ID=4394898) now returns 404; the Edlio form itself (apps/form/form.COLCS.sPdNlct.1nS, HTTP 200) still has reCAPTCHA active (isFormsCaptchaActive:true) — submit_url repointed to the direct form; link-rot on the parent page is itself a finding."
       }
     },
     "richmond-county-augusta-ga": {
@@ -1128,7 +1130,8 @@
       "notable_gaps": [
         "No open-records request page or procedure published on district site",
         "No staff or board email addresses published anywhere on the site (phone 706-678-2718 only)",
-        "Simbli policy module (linked from official site) is JS-rendered and not crawlable without a browser"
+        "Simbli policy module (linked from official site) is JS-rendered and not crawlable without a browser",
+        "Site now serves a JS anti-bot 'Client Challenge' to plain HTTP clients (observed 2026-06-10) — scraping and automated ORR discovery require a real browser context"
       ],
       "public_comment": {
         "channel": "unknown",
@@ -1165,7 +1168,7 @@
       "records_intake": "unknown",
       "notable_gaps": [
         "No open-records request page or named custodian; only a general role alias (contactus@hancock.k12.ga.us) in the site footer",
-        "Several recent work sessions and called meetings show 'UnPublished' minutes status in Simbli (May-June 2026 plus a 05/04/2026 joint retreat)"
+        "Minutes unpublished in Simbli for 13 May-June 2026 meetings (work sessions, called meetings, 06/10 regular) while April 2026 and earlier are published — publication lag re-confirmed 2026-06-10"
       ],
       "public_comment": {
         "channel": "unknown",
@@ -1240,7 +1243,7 @@
       "notable_gaps": [
         "Board meeting agendas and minutes are not published anywhere on the official site - possible OCGA 50-14-1(e)(1)/(e)(2) finding (only a 2026 meeting-dates schedule is posted)",
         "'Public Participation in Board Meetings' link on the official BOE page returns HTTP 404 - dead link, verified this session",
-        "No staff/board email addresses published (Superintendent Jessica Miller listed with no email)",
+        "No board-member or superintendent emails published on the BOE page; department staff emails ARE plaintext on staff pages (e.g. tsmith@glascock.k12.ga.us HR, kkitchens@glascock.k12.ga.us Finance) — corrected 2026-06-10 verification pass",
         "No open-records page or custodian designation",
         "Site search and Google site: search surface no agenda/minutes documents"
       ],
@@ -1261,7 +1264,7 @@
       },
       "verified": "verified",
       "confidence": "high",
-      "notes": "Finalsite-powered site, checked live this session: BOE page (/about-us/board-of-education) has 2026 meeting dates (all ~7:00 PM, mix of 3rd/4th Thursdays), budget/SPLOST PDFs, and board roster, but no agenda or minutes archive. GSBA/Simbli membership material mentions Glascock but no public Simbli site (S=) is linked from the district site. High onboarding cost: agendas would require ORR or in-person collection. 'Verified' applies to the absence findings; name on site appears as both 'Glascock County Consolidated School' and 'Glascock County School System'."
+      "notes": "Finalsite-powered site, checked live this session: BOE page (/about-us/board-of-education) has 2026 meeting dates (all ~7:00 PM, mix of 3rd/4th Thursdays), budget/SPLOST PDFs, and board roster, but no agenda or minutes archive. GSBA/Simbli membership material mentions Glascock but no public Simbli site (S=) is linked from the district site. High onboarding cost: agendas would require ORR or in-person collection. 'Verified' applies to the absence findings; name on site appears as both 'Glascock County Consolidated School' and 'Glascock County School System'. Verification 2026-06-10: agenda/minutes absence and 404 participation link re-confirmed live; staff emails found on department pages (custodian still undesignated)."
     },
     "taliaferro-county-school-district-ga": {
       "name": "Taliaferro County School District",
@@ -1358,7 +1361,7 @@
       "records_intake_url": "https://www.gcpsk12.org/about-us/open-records-requests",
       "notable_gaps": [
         "Legacy BoardDocs site (go.boarddocs.com/ga/gcps) still indexed alongside current Simbli listing — split agenda history across two platforms is a continuity/link-rot risk",
-        "Public comment is in-person delivery only (no remote/written comment read into record); sign-up deadline is the Wednesday before the meeting, which is early relative to agenda publication (agenda posts noon Monday of meeting week)"
+        "Public comment is in-person delivery only (no remote/written comment read into record); sign-up deadline is 7:00 PM the Wednesday before the (third-Thursday) business meeting — i.e. the day before the meeting, after the Monday-noon agenda posting (verification pass 2026-06-10 corrected an earlier note that claimed the deadline preceded agenda publication)"
       ],
       "public_comment": {
         "channel": "web_form",
@@ -1924,7 +1927,7 @@
       },
       "verified": "verified",
       "confidence": "high",
-      "notes": "Board Meetings Online page links simbli.eboardsolutions.com/index.aspx?S=4125; Simbli meeting listing fetched live (Paulding County Schools, meetings incl. 05/19/2026 Regular Board Meeting; note recent minutes shown unpublished). Records custodian verified on Records Management F.A.Q. page (/Page/415): Beth Beaty, 770-443-8003 ext. 10348, 522 Hardee Street, Dallas GA. Onboarding cost: low for agendas (Simbli), modest for comment automation (MS Forms)."
+      "notes": "Board Meetings Online page links simbli.eboardsolutions.com/index.aspx?S=4125; Simbli meeting listing fetched live (Paulding County Schools, meetings incl. 05/19/2026 Regular Board Meeting; minutes lag resolved by 2026-06-10 verification: 48/50 published, only 05/19/2026 and the upcoming 06/11/2026 unpublished). Records custodian verified on Records Management F.A.Q. page (/Page/415): Beth Beaty, 770-443-8003 ext. 10348, 522 Hardee Street, Dallas GA. Onboarding cost: low for agendas (Simbli), modest for comment automation (MS Forms)."
     },
     "bibb-county-school-district-ga": {
       "name": "Bibb County School District",
@@ -1981,7 +1984,7 @@
       "records_intake": "email",
       "records_intake_url": "https://www.hcbe.net/openrecords",
       "notable_gaps": [
-        "Recent meeting minutes shown as 'unpublished' on the Simbli listing (incl. May 2026 meetings) — possible minutes-publication lag worth monitoring as an OCGA 50-14-1(e)(2) timeliness finding",
+        "Minutes for ALL 50 meetings listed on the Simbli listing (May 2023 through 06/02/2026) show status UNPUBLISHED (re-verified 2026-06-10) — the district appears to never publish minutes via Simbli; standing OCGA 50-14-1(e)(2) finding, minutes must be obtained another way",
         "Speaker eligibility restricted to Houston County residents, district employees, and business/organization reps; one spokesperson per group",
         "Domain confusion hazard: hcboe.us is Houston County Board of Education in ALABAMA — do not ingest"
       ],

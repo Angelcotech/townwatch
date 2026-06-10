@@ -60,3 +60,39 @@
 ## 7. Stats (deep-research run wf_76553993-a93)
 
 5 search angles → 20 sources fetched (3 URL dupes filtered, 6 dropped on budget) → 95 claims extracted → 25 top claims through 3-vote adversarial verification → 24 confirmed, 1 refuted → 12 synthesized findings. 103 agents, ~2.16M subagent tokens, 794 tool uses, 57 min wall clock. One fetch agent died on a certificate-verification error (its source was not load-bearing).
+
+---
+
+# Verification pass — 2026-06-10 (second sweep over all flagged findings)
+
+Independent re-verification of every flagged item (4 parallel agents, live fetches, adversarial framing: each agent instructed to try to DISPROVE the claim). Verdicts: **16 confirmed, 4 corrected, 2 upgraded**, plus one open question answered and one new fact (statutory dissolutions).
+
+## Corrections applied to registry.json (changelog 0.2.1)
+
+1. **Gwinnett County Public Schools** — both component facts held (7 PM Wednesday sign-up deadline; Monday-noon agenda posting) but the *inference* was wrong: business meetings are the **third Thursday**, so the Wednesday deadline is the day before the meeting — ~2 days **after** agenda publication, not before. Gap note rewritten.
+2. **Glascock County Consolidated Schools** — "no staff emails" sub-claim refuted: department staff emails ARE plaintext on staff pages (HR, Finance, etc.). Board/superintendent emails and any custodian designation remain unpublished. The core findings (no agendas/minutes online; participation link 404) re-confirmed live.
+3. **Columbia County School District** — the Board-Meetings page that iframed the public-participation form (uREC_ID=4394898) now returns **404**; the Edlio form itself still works (reCAPTCHA still active). `submit_url` repointed to the direct form URL; the broken parent page recorded as a navigation finding.
+4. **Paulding County School District** — minutes have caught up (48/50 published; only 05/19/2026 and the future meeting unpublished). Lag note softened.
+
+## Upgrades (stronger than originally flagged)
+
+- **Houston County Schools** — not a "lag": **all 50 meetings** on the Simbli listing (May 2023 → June 2026) show minutes UNPUBLISHED. The district appears to never publish minutes via Simbli — standing OCGA 50-14-1(e)(2) finding.
+- **Mulberry** — Census **Vintage 2025** sub-county estimates are now published (`sub-est2025_13.csv`) and include Mulberry: POPESTIMATE2025 = 41,445 (2024 back-cast 41,170). Roster updated; Mulberry ranks ~#23 among GA municipalities.
+
+## Confirmed unchanged (spot list)
+
+Taliaferro absence findings; Bibb `none_found` comment channel; Hancock minutes lag (13 May–June 2026 meetings); the five rural CSRA no-ORR districts (McDuffie, Jefferson, Lincoln, Wilkes¹, Warren); Cobb ID-required in-person comment; Cherokee in-person + security screening; DeKalb deadlines and form-only ORR; Fulton email-refusing portal-only ORR; all 5 legacy BoardDocs instances still resolve; Richmond NextRequest still answers HTTP 204 to plain clients; all four off-domain form artifacts still live; all five wrong-state lookalike domains re-confirmed; DCA contact DB still credential-gated; 8 consolidated governments re-confirmed from the DCA PDF; no post-Jan-2025 incorporations or dissolutions found.
+
+¹ Wilkes now serves a JS anti-bot "Client Challenge" to plain HTTP clients — new automation hazard recorded.
+
+## Open question answered: GaDOE machine-readable directory
+
+**No.** `data.gadoe.org` does not exist (NXDOMAIN); GaDOE's public data hub is Georgia Insights, whose "Data Downloads" page is a Power BI iframe (no direct CSV/Excel/API); the legacy contacts export (`archives.gadoe.org/findaschool.aspx?contacts=ALL`) now redirects to the homepage (retired). Practical alternatives: GOSA's download repository (district-level CSVs, also JS-listed) or NCES CCD files. **NCES CCD remains the canonical machine-readable LEA source.**
+
+## New fact: statutory municipal dissolutions (pre-2025)
+
+Georgia dissolves non-functioning municipalities by statute. Two were repealed between the 2023 and 2025 gazetteer vintages — **Ranger** (Gordon Co., HB 773, May 2023; town had not held an election since 2005) and **Sunny Side** (Spalding Co., HB 542, effective 2024-01-01). Both were stale rows in the seeded `jurisdiction_directory` (2023 vintage) and are now removed; the seed job gained a stale-row cleanup step (uncovered rows only; covered rows warn for human review).
+
+## Implementation note
+
+The searchable `jurisdiction_directory` (powering the public "find your town" search) was re-seeded to match this verified universe: Census **2025** gazetteer (place/county/unsd; pipe-delimited — format changed from tab in 2023), school-district layer added (migration 055; DoDEA Fort Stewart excluded by GEOID — name-based exclusion is unsafe because civilian "Fort X" districts exist in other states), Mulberry present, Ranger/Sunny Side removed. GA directory now: **538 city rows (536 municipalities + 2 consolidated balance entries) + 159 counties + 180 school districts = 877 searchable**, 3 covered.
