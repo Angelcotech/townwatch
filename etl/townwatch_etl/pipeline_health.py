@@ -166,17 +166,21 @@ def resolve_issue(conn, issue_id: int, *, resolved_by: str, status: str = "resol
 
 # ---------------------------------------------------------------- environment
 
-# Keys the pipeline needs to run end-to-end. A missing one is a config problem the
-# pipeline can't fix itself, so it opens an org-level issue for a human. (severity,
-# impact-if-missing.)
+# Keys the pipeline needs to run end-to-end RIGHT NOW. A missing one is a config
+# problem the pipeline can't fix itself, so it opens an org-level issue for a human.
+# (severity, impact-if-missing.)
+#
+# NOTE: RESEND_API_KEY / RESEND_FROM / RESEND_REPLY_TO are intentionally NOT here —
+# outbound email isn't exercised pre-launch (the email client no-ops when unset,
+# records requests are admin-reviewed/mailto), so flagging them now would be noise.
+# They're a go-live gate instead (see BACKLOG.md "Launch gates"); add them back to
+# this list when flipping PRELAUNCH_LOCK so the pipeline guards them from then on.
 _REQUIRED_KEYS = [
     ("ANTHROPIC_API_KEY", "high",
      "AI extraction (agendas/minutes/roster) can't run — jobs fail Anthropic auth."),
     ("MISTRAL_API_KEY", "high",
      "scanned-document OCR can't run; extraction falls back to expensive Claude vision "
      "(~50x cost) for every scan."),
-    ("RESEND_API_KEY", "low",
-     "outbound email (records requests, forum digests) silently won't send."),
 ]
 
 
