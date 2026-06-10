@@ -72,6 +72,19 @@ def _cmd_show(args) -> int:
         if ctx:
             print(f"\n  context: {ctx}")
 
+        # Prior fixes for this problem CLASS — read these BEFORE diagnosing; a fix
+        # applied to one jurisdiction shows here for the same problem elsewhere.
+        prior = pipeline_health.fixes_for(conn, i["dedupe_key"])
+        if prior:
+            print("\n  --- prior fixes for this problem (dedupe_key) ---")
+            for fx in prior:
+                print(f"  {fx['created_at']:%Y-%m-%d} [{fx['resolution']}] "
+                      f"{fx['jurisdiction'] or 'org'} by {fx['resolved_by']}")
+                if fx["diagnosis"]:
+                    print(f"      cause: {fx['diagnosis']}")
+                if fx["fix_notes"]:
+                    print(f"      fix:   {fx['fix_notes']}")
+
         # Linked failure tracebacks — the diagnostic payload.
         fids = (ctx or {}).get("failure_ids") or []
         if fids:
@@ -100,6 +113,15 @@ def _cmd_show(args) -> int:
 
 def _cmd_resolve(args) -> int:
     status = "wont_fix" if args.wont_fix else "resolved"
+    # The resolution IS the knowledge-base entry — require a breadcrumb so the next
+    # session (human or agent) isn't troubleshooting this from scratch.
+    if not (args.notes and args.notes.strip()):
+        print("Refusing to resolve without --notes (what you changed, or why it's won't-fix).")
+        return 2
+    if status == "resolved" and not (args.diagnosis and args.diagnosis.strip()):
+        print("Refusing to resolve without --diagnosis (the root cause). "
+              "Use --wont-fix if there's nothing to fix.")
+        return 2
     with connect() as conn:
         ok = pipeline_health.resolve_issue(
             conn, args.id, resolved_by="claude-code", status=status,
@@ -110,6 +132,23 @@ def _cmd_resolve(args) -> int:
         return 0
     print(f"Issue {args.id} not open (already resolved, or no such id).")
     return 1
+
+
+def _cmd_fixes(args) -> int:
+    with connect() as conn:
+        rows = pipeline_health.list_fixes(conn, grep=args.grep, limit=args.limit)
+    if not rows:
+        print("No fixes recorded yet." + (f" (grep={args.grep!r})" if args.grep else ""))
+        return 0
+    for f in rows:
+        print(f"#{f['id']} {f['created_at']:%Y-%m-%d} [{f['resolution']}] {f['dedupe_key']} "
+              f"— {f['jurisdiction'] or 'org'} by {f['resolved_by']}")
+        if f["diagnosis"]:
+            print(f"    cause: {f['diagnosis']}")
+        if f["fix_notes"]:
+            print(f"    fix:   {f['fix_notes']}")
+    print(f"\n{len(rows)} fix(es). The pipeline-health knowledge base.")
+    return 0
 
 
 def main() -> int:
@@ -133,6 +172,11 @@ def main() -> int:
     p_res.add_argument("--diagnosis", help="root cause")
     p_res.add_argument("--wont-fix", action="store_true", help="suppress instead of fix")
     p_res.set_defaults(fn=_cmd_resolve)
+
+    p_fix = sub.add_parser("fixes", help="the resolution knowledge base (prior fixes)")
+    p_fix.add_argument("--grep", help="filter across dedupe_key / diagnosis / fix_notes")
+    p_fix.add_argument("--limit", type=int, default=50)
+    p_fix.set_defaults(fn=_cmd_fixes)
 
     args = ap.parse_args()
     return args.fn(args)

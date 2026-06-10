@@ -131,15 +131,66 @@ def close_issue(conn, jurisdiction_id: int, dedupe_key: str, *, reason: str | No
 
 def resolve_issue(conn, issue_id: int, *, resolved_by: str, status: str = "resolved",
                   notes: str | None = None, diagnosis: str | None = None) -> bool:
-    """Mark an open issue fixed (or wont_fix). The human/agent action. Returns True
-    if the row was open and got updated."""
+    """Mark an open issue fixed (or wont_fix). The human/agent action — also appends
+    a pipeline_fix row so the resolution accumulates in the knowledge base (the
+    observer's auto-clear does NOT, since it isn't a troubleshooting fix). Returns
+    True if the row was open and got updated."""
     row = conn.execute(
         "UPDATE pipeline_issue SET status = %s, resolved_at = now(), resolved_by = %s, "
         "fix_notes = COALESCE(%s, fix_notes), diagnosis = COALESCE(%s, diagnosis) "
-        "WHERE id = %s AND status = 'open' RETURNING id",
+        "WHERE id = %s AND status = 'open' RETURNING jurisdiction_id, dedupe_key",
         (status, resolved_by, notes, diagnosis, issue_id),
     ).fetchone()
-    return row is not None
+    if row is None:
+        return False
+    record_fix(conn, issue_id=issue_id, jurisdiction_id=row["jurisdiction_id"],
+               dedupe_key=row["dedupe_key"], resolution=status,
+               diagnosis=diagnosis, fix_notes=notes, resolved_by=resolved_by)
+    return True
+
+
+# ---------------------------------------------------------------- fix log (KB)
+
+def record_fix(conn, *, issue_id: int | None, jurisdiction_id: int | None,
+               dedupe_key: str, resolution: str, diagnosis: str | None,
+               fix_notes: str | None, resolved_by: str) -> None:
+    """Append one resolution to the knowledge base (append-only; never overwritten)."""
+    conn.execute(
+        "INSERT INTO pipeline_fix "
+        "(issue_id, jurisdiction_id, dedupe_key, resolution, diagnosis, fix_notes, resolved_by) "
+        "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+        (issue_id, jurisdiction_id, dedupe_key, resolution, diagnosis, fix_notes, resolved_by),
+    )
+
+
+def fixes_for(conn, dedupe_key: str, limit: int = 10) -> list[dict]:
+    """Prior resolutions for a problem CLASS (across jurisdictions) — the 'how did
+    we fix this last time' panel shown at triage time."""
+    return conn.execute(
+        "SELECT f.created_at, f.resolution, f.diagnosis, f.fix_notes, f.resolved_by, "
+        "       j.display_name AS jurisdiction "
+        "FROM pipeline_fix f LEFT JOIN jurisdiction j ON j.id = f.jurisdiction_id "
+        "WHERE f.dedupe_key = %s ORDER BY f.created_at DESC LIMIT %s",
+        (dedupe_key, limit),
+    ).fetchall()
+
+
+def list_fixes(conn, *, grep: str | None = None, limit: int = 50) -> list[dict]:
+    """The whole fix knowledge base, newest first. `grep` filters across the
+    dedupe_key / diagnosis / fix_notes text."""
+    sql = (
+        "SELECT f.id, f.created_at, f.dedupe_key, f.resolution, f.diagnosis, f.fix_notes, "
+        "       f.resolved_by, j.display_name AS jurisdiction "
+        "FROM pipeline_fix f LEFT JOIN jurisdiction j ON j.id = f.jurisdiction_id WHERE TRUE"
+    )
+    params: list[Any] = []
+    if grep:
+        sql += (" AND (f.dedupe_key ILIKE %s OR f.diagnosis ILIKE %s OR f.fix_notes ILIKE %s)")
+        like = f"%{grep}%"
+        params += [like, like, like]
+    sql += " ORDER BY f.created_at DESC LIMIT %s"
+    params.append(limit)
+    return conn.execute(sql, tuple(params)).fetchall()
 
 
 def list_issues(conn, *, jurisdiction_id: int | None = None, status: str | None = "open",
