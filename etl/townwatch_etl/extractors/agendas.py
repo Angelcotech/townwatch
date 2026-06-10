@@ -36,7 +36,7 @@ from ..config import ANTHROPIC_API_KEY, VISION_RENDER_DPI
 from ..llm_client import record_anthropic
 from .mistral_ocr import ocr_pdf
 from .rasterize import vision_content
-from .recovery import ExtractionReport, build_source, extract_with_ladder
+from .recovery import ExtractionReport, build_source, extract_with_ladder, source_from_store
 
 
 # =====================================================================
@@ -274,7 +274,9 @@ STUB_PDF_SIZE_BYTES = 5_000
 # API calls
 # =====================================================================
 
-def extract_from_pdf(pdf_path: Path) -> tuple[AgendaExtraction, str, ExtractionReport]:
+def extract_from_pdf(
+    pdf_path: Path, *, conn=None, source_url: str | None = None,
+) -> tuple[AgendaExtraction, str, ExtractionReport]:
     """
     Returns (extraction, method, report) where method is 'text_layer',
     'vision', or 'stub_skipped'.
@@ -285,19 +287,32 @@ def extract_from_pdf(pdf_path: Path) -> tuple[AgendaExtraction, str, ExtractionR
     with primary → retry → sub-chunk → cross-strategy → pdf-repair recovery
     and classified anomalies in the report. No OCR tier — OCR errors break
     identity resolution.
-    """
-    text_layer = extract_text_layer_only(pdf_path)
-    # Stub detection BEFORE OCR: empty text layer + tiny file = placeholder
-    # PDF, return an empty extraction with no API call.
-    if text_layer is None and pdf_path.stat().st_size <= STUB_PDF_SIZE_BYTES:
-        return _stub_extraction(pdf_path), "stub_skipped", ExtractionReport(total_units=1, clean=1, method="stub_skipped")
 
-    method = "text_layer"
-    if text_layer is None:
-        # Scanned: Mistral OCR primary; vision fallback if OCR yields nothing.
-        text_layer = ocr_pdf(pdf_path)
-        method = "ocr" if text_layer else "vision"
-    source = build_source(pdf_path, text_layer)
+    When `conn` is given, the readable text comes from the content-addressed
+    document_text store (get_or_recover): recovered once per document (text
+    layer → OCR) and reused by every extractor, so nothing is ever re-scanned.
+    Without `conn` the legacy inline text-layer/OCR path runs unchanged.
+    """
+    if conn is not None:
+        from ..document_text import get_or_recover
+        pages, tmethod = get_or_recover(conn, pdf_path.read_bytes(), source_url=source_url)
+        # Stub: empty text layer + tiny file = CivicEngage placeholder, no API call.
+        if tmethod == "stub" or (not pages and pdf_path.stat().st_size <= STUB_PDF_SIZE_BYTES):
+            return _stub_extraction(pdf_path), "stub_skipped", ExtractionReport(total_units=1, clean=1, method="stub_skipped")
+        source, method = source_from_store(pdf_path, pages, tmethod)
+    else:
+        text_layer = extract_text_layer_only(pdf_path)
+        # Stub detection BEFORE OCR: empty text layer + tiny file = placeholder
+        # PDF, return an empty extraction with no API call.
+        if text_layer is None and pdf_path.stat().st_size <= STUB_PDF_SIZE_BYTES:
+            return _stub_extraction(pdf_path), "stub_skipped", ExtractionReport(total_units=1, clean=1, method="stub_skipped")
+
+        method = "text_layer"
+        if text_layer is None:
+            # Scanned: Mistral OCR primary; vision fallback if OCR yields nothing.
+            text_layer = ocr_pdf(pdf_path)
+            method = "ocr" if text_layer else "vision"
+        source = build_source(pdf_path, text_layer)
     extraction, report = extract_with_ladder(
         source,
         text_window_fn=_extract_text_window,
@@ -359,6 +374,9 @@ def _sniff_ct_from_magic(path: Path) -> str | None:
 def extract_from_document(
     path: Path,
     content_type: str | None = None,
+    *,
+    conn=None,
+    source_url: str | None = None,
 ) -> tuple[AgendaExtraction, str, ExtractionReport]:
     """Dispatch extraction by content type.
 
@@ -371,6 +389,10 @@ def extract_from_document(
     if absent or unrecognised, we sniff the file's magic bytes. Raises
     RuntimeError for unsupported formats so the caller can mark the
     meeting unavailable cleanly.
+
+    `conn`/`source_url` route the PDF path through the content-addressed
+    document_text store (DOCX/DOC keep their own text path — the store is
+    PDF-keyed).
     """
     ct = _normalize_ct(content_type)
     if ct not in (PDF_CT, DOCX_CT, DOC_CT):
@@ -379,7 +401,7 @@ def extract_from_document(
             ct = sniffed
 
     if ct == PDF_CT:
-        return extract_from_pdf(path)
+        return extract_from_pdf(path, conn=conn, source_url=source_url)
     if ct == DOCX_CT:
         return _extract_from_docx(path), "docx_text", ExtractionReport(total_units=1, clean=1)
     if ct == DOC_CT:

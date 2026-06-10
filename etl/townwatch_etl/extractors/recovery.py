@@ -117,6 +117,21 @@ def build_source(pdf_path: Path, text_layer: str | None) -> Source:
     return Source(pdf_path=pdf_path, pages_text=pages, total_pages=max(n, 1))
 
 
+def source_from_store(pdf_path: Path, pages: list[str], method: str) -> tuple[Source, str]:
+    """Build a ladder Source from document_text.get_or_recover output.
+
+    `pages`/`method` come straight from the content-addressed text store, which
+    already paid for text-layer or OCR recovery once. Returns (source, read_method)
+    where read_method is the honest underlying read: 'text_layer', 'ocr', or
+    'vision' (the latter when the store has no usable text — stub/none/not_pdf —
+    so the ladder resolves each window by vision, exactly as before the store).
+    """
+    text_layer = PAGE_BREAK.join(pages) if pages else None
+    source = build_source(pdf_path, text_layer)
+    read_method = method if method in ("text_layer", "ocr") else "vision"
+    return source, read_method
+
+
 def _sub_pdf(pdf_path: Path, a: int, b: int) -> Path:
     """Write pages a..b (1-indexed inclusive) to a temp PDF; caller unlinks."""
     reader = pypdf.PdfReader(str(pdf_path))

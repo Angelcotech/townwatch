@@ -165,7 +165,9 @@ class MinutesExtract(IngestJob):
 
                 # Extract via tiered pipeline (text layer → OCR → vision fallback)
                 print(f"     pdf={len(r.content):,} bytes → extracting...")
-                extraction, method, report = extract_from_pdf(pdf_path)
+                extraction, method, report = extract_from_pdf(
+                    pdf_path, conn=self.conn, source_url=meeting["minutes_url"],
+                )
                 self.report = report
                 self.read_method = method
                 print(f"     method={method}  items={len(extraction.agenda_items)}  confidence={extraction.meeting.extraction_confidence}")

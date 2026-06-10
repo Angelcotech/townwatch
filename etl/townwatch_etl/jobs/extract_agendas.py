@@ -145,7 +145,9 @@ class AgendasExtract(IngestJob):
                     doc_path = Path(f.name)
 
                 print(f"     doc={len(r.content):,} bytes content-type={content_type!r} → extracting...")
-                extraction, method, report = extract_from_document(doc_path, content_type)
+                extraction, method, report = extract_from_document(
+                    doc_path, content_type, conn=self.conn, source_url=meeting["agenda_url"],
+                )
                 self.report = report
                 self.read_method = method
                 print(f"     method={method}  items={len(extraction.agenda_items)}  confidence={extraction.meeting.extraction_confidence}")

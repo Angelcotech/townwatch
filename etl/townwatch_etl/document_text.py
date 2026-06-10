@@ -21,8 +21,10 @@ import tempfile
 from pathlib import Path
 
 # A document with fewer than this many characters of text layer is treated as
-# having none (scanned image) and sent to OCR.
-_TEXT_LAYER_MIN_CHARS = 50
+# having none (scanned image) and sent to OCR. Shared with the agenda/minutes
+# extractors (pdf_text.CONTENT_CHAR_THRESHOLD) so the store's "is there real
+# text?" decision is identical to theirs — one source of truth, no drift.
+from .extractors.pdf_text import CONTENT_CHAR_THRESHOLD as _TEXT_LAYER_MIN_CHARS
 # A textless PDF at/under this size is a placeholder STUB (CivicEngage serves
 # tiny blank PDFs for never-uploaded documents) — there's nothing to OCR, so we
 # don't waste a Mistral page on it. Matches the agenda extractor's stub cutoff.
@@ -56,9 +58,13 @@ def put(conn, hash_: str, *, source_url: str | None, method: str, pages: list[st
 
 
 def _text_layer_pages(data: bytes) -> list[str]:
-    from pypdf import PdfReader
-    rd = PdfReader(io.BytesIO(data))
-    return [((p.extract_text() or "").strip()) for p in rd.pages]
+    # pdfplumber, matching the agenda/minutes extractors' text engine — so every
+    # consumer of the store reads the same (higher-fidelity) text it would have
+    # extracted itself, not pypdf's weaker output. Identity resolution depends on
+    # this, so the store must not silently downgrade it.
+    import pdfplumber  # lazy import — heavy dep
+    with pdfplumber.open(io.BytesIO(data)) as pdf:
+        return [((p.extract_text() or "").strip()) for p in pdf.pages]
 
 
 def _ocr_pages(data: bytes) -> list[str]:

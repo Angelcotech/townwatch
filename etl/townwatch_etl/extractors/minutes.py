@@ -34,7 +34,7 @@ from .mistral_ocr import ocr_pdf
 from ..llm_client import record_anthropic
 from .pdf_text import extract_text
 from .rasterize import vision_content
-from .recovery import ExtractionReport, build_source, extract_with_ladder
+from .recovery import ExtractionReport, build_source, extract_with_ladder, source_from_store
 
 
 # =====================================================================
@@ -310,7 +310,9 @@ EXTRACTOR_VERSION = f"minutes-v2:{TEXT_MODEL}+{VISION_MODEL}"  # v2: + meeting_t
 # API calls
 # =====================================================================
 
-def extract_from_pdf(pdf_path: Path) -> tuple[MeetingExtraction, str, ExtractionReport]:
+def extract_from_pdf(
+    pdf_path: Path, *, conn=None, source_url: str | None = None,
+) -> tuple[MeetingExtraction, str, ExtractionReport]:
     """
     Returns (extraction, method, report).
 
@@ -320,16 +322,25 @@ def extract_from_pdf(pdf_path: Path) -> tuple[MeetingExtraction, str, Extraction
     irreducible windows classified as anomalies in the returned report. The
     text-layer path is preferred when the PDF has real text; otherwise vision.
     We never OCR locally — OCR errors break identity resolution.
+
+    When `conn` is given, readable text comes from the content-addressed
+    document_text store (get_or_recover): recovered once per document and
+    reused everywhere. Without `conn` the legacy inline path runs unchanged.
     """
-    text_layer = extract_text_layer_only(pdf_path)
-    method = "text_layer"
-    if text_layer is None:
-        # Scanned: Mistral OCR is the primary path — cheaper, faster, and more
-        # complete than vision. If OCR yields nothing, the source has no text
-        # layer and the ladder falls back to vision per-window.
-        text_layer = ocr_pdf(pdf_path)
-        method = "ocr" if text_layer else "vision"
-    source = build_source(pdf_path, text_layer)
+    if conn is not None:
+        from ..document_text import get_or_recover
+        pages, tmethod = get_or_recover(conn, pdf_path.read_bytes(), source_url=source_url)
+        source, method = source_from_store(pdf_path, pages, tmethod)
+    else:
+        text_layer = extract_text_layer_only(pdf_path)
+        method = "text_layer"
+        if text_layer is None:
+            # Scanned: Mistral OCR is the primary path — cheaper, faster, and more
+            # complete than vision. If OCR yields nothing, the source has no text
+            # layer and the ladder falls back to vision per-window.
+            text_layer = ocr_pdf(pdf_path)
+            method = "ocr" if text_layer else "vision"
+        source = build_source(pdf_path, text_layer)
     extraction, report = extract_with_ladder(
         source,
         text_window_fn=_extract_text_window,
