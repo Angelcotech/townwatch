@@ -96,3 +96,7 @@ Georgia dissolves non-functioning municipalities by statute. Two were repealed b
 ## Implementation note
 
 The searchable `jurisdiction_directory` (powering the public "find your town" search) was re-seeded to match this verified universe: Census **2025** gazetteer (place/county/unsd; pipe-delimited — format changed from tab in 2023), school-district layer added (migration 055; DoDEA Fort Stewart excluded by GEOID — name-based exclusion is unsafe because civilian "Fort X" districts exist in other states), Mulberry present, Ranger/Sunny Side removed. GA directory now: **538 city rows (536 municipalities + 2 consolidated balance entries) + 159 counties + 180 school districts = 877 searchable**, 3 covered.
+
+## Erratum (2026-06-10, post-pass)
+
+Correction #3 above (CCSD comment-form parent page 404) was a **verifier artifact**: the agent fetched the parent URL truncated to `uREC_ID=4394898` (which hard-404s) instead of the full URL with `pREC_ID` (which returns 200 — re-tested with all six CCSD config URLs, all live; the live config needed no fix). The corrected count is **3 corrections, not 4**. Durable lesson for the planned URL-health monitor: test the exact full URL, never a normalized/truncated form, and detect Edlio-style soft-404 bodies ("Page not found" under HTTP 200) as well as hard 404s.

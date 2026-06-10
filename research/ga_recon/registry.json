@@ -84,7 +84,8 @@
     },
     "changelog": [
       "0.2 (2026-06-10): added public_comment dimension; BoE coverage round (24 boe_known_areas + 9 boe_population school districts); public_comment backfilled on the 3 onboarded entries; vocab additions: agenda_platform += finalsite; comment_service vocab introduced (+ qualtrics, diligent_community, droplet)",
-      "0.2.1 (2026-06-10): adversarial verification pass over all flagged findings (16 confirmed, 4 corrected: Gwinnett deadline inference, Glascock staff emails, CCSD comment-form parent 404, Paulding minutes caught up; Houston upgraded to never-publishes-minutes). Searchable jurisdiction_directory re-seeded to the verified universe (2025 gazetteer + school districts)."
+      "0.2.1 (2026-06-10): adversarial verification pass over all flagged findings (16 confirmed, 4 corrected: Gwinnett deadline inference, Glascock staff emails, CCSD comment-form parent 404, Paulding minutes caught up; Houston upgraded to never-publishes-minutes). Searchable jurisdiction_directory re-seeded to the verified universe (2025 gazetteer + school districts).",
+      "0.2.2 (2026-06-10): erratum — CCSD comment-form parent-page '404' was a verifier artifact (truncated URL); full URLs verified live, erroneous gap removed. Verification corrections: 3, not 4."
     ]
   },
   "jurisdictions": {
@@ -217,8 +218,7 @@
         "agendas NOT published as documents (empty agendas page) -> OCGA 50-14-1(e)(1) finding",
         "minutes are Google Docs; some 410-Gone dead",
         "no emailable custodian; staff emails obfuscated",
-        "public comment only via web form (Policy BCBI)",
-        "Public-participation form's parent page 404s as of 2026-06-10 (form reachable only by direct Edlio URL) — citizens navigating from the Board Meetings page cannot find the comment form"
+        "public comment only via web form (Policy BCBI)"
       ],
       "verified": "verified",
       "confidence": "high",
@@ -236,7 +236,7 @@
         "by_body": [],
         "verified": "verified",
         "confidence": "high",
-        "notes": "Verified live this session. 'Public Participation Request Form' link confirmed in raw HTML of Board Meetings page (uREC_ID=4394898); it iframes an Edlio-hosted form at /apps/form/form.COLCS.sPdNlct.1nS containing reCAPTCHA, fields for name/date/address/email/phone, group representation, '5. Topic/Concern' textarea (no maxlength attribute), signature + confirmation-email fields, and NO file-upload input. 'Rules of Conduct for Public Participation' page (pREC_ID=2362519) verified: register >=24h before regular meeting, check in 15 min early, 3 minutes per speaker, must be Columbia County resident or parent/guardian of a CCSD student, no props/signs, no profane/defamatory remarks or student/employee-identifying info; employee grievances routed to Policy GAE. This is a request-to-speak form (comment delivered orally at meeting). Board Policy BCBI itself could not be retrieved this session — the Simbli policy portal (simbli.eboardsolutions.com/Policy/PolicyListing.aspx?S=36031361) is JS-rendered and a direct ePolicy URL returned 'Invalid URL'; the 24h/3-min constraints above come from the district's Rules of Conduct page, which does not cite BCBI by name. automatable=false due to reCAPTCHA. UPDATE 2026-06-10 verification: the Board-Meetings page that iframed the form (uREC_ID=4394898) now returns 404; the Edlio form itself (apps/form/form.COLCS.sPdNlct.1nS, HTTP 200) still has reCAPTCHA active (isFormsCaptchaActive:true) — submit_url repointed to the direct form; link-rot on the parent page is itself a finding."
+        "notes": "Verified live this session. 'Public Participation Request Form' link confirmed in raw HTML of Board Meetings page (uREC_ID=4394898); it iframes an Edlio-hosted form at /apps/form/form.COLCS.sPdNlct.1nS containing reCAPTCHA, fields for name/date/address/email/phone, group representation, '5. Topic/Concern' textarea (no maxlength attribute), signature + confirmation-email fields, and NO file-upload input. 'Rules of Conduct for Public Participation' page (pREC_ID=2362519) verified: register >=24h before regular meeting, check in 15 min early, 3 minutes per speaker, must be Columbia County resident or parent/guardian of a CCSD student, no props/signs, no profane/defamatory remarks or student/employee-identifying info; employee grievances routed to Policy GAE. This is a request-to-speak form (comment delivered orally at meeting). Board Policy BCBI itself could not be retrieved this session — the Simbli policy portal (simbli.eboardsolutions.com/Policy/PolicyListing.aspx?S=36031361) is JS-rendered and a direct ePolicy URL returned 'Invalid URL'; the 24h/3-min constraints above come from the district's Rules of Conduct page, which does not cite BCBI by name. automatable=false due to reCAPTCHA. ERRATUM 2026-06-10: an earlier verification note claimed the Board-Meetings page hosting the form had gone 404 — that was a verifier artifact (the agent fetched the URL truncated to uREC_ID only, which hard-404s; the full URLs with pREC_ID all return 200 and the Board Meetings page is live, re-tested with exact URLs). submit_url intentionally points at the direct Edlio form (apps/form/form.COLCS.sPdNlct.1nS, reCAPTCHA active); the parent page remains a valid navigation path. Lesson recorded: URL liveness checks must use the exact full URL and detect Edlio soft-404 bodies."
       }
     },
     "richmond-county-augusta-ga": {
