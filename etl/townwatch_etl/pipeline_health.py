@@ -21,6 +21,7 @@ Two concerns, kept separate from compliance_finding (which audits the published 
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from psycopg.types.json import Json
@@ -70,7 +71,9 @@ def observe_issue(conn, jurisdiction_id: int, *, issue_type: str, dedupe_key: st
     - exists & wont_fix            → UPDATE fields but stay suppressed (no reopen)
     """
     existing = conn.execute(
-        "SELECT id, status FROM pipeline_issue WHERE jurisdiction_id = %s AND dedupe_key = %s",
+        # IS NOT DISTINCT FROM so a NULL jurisdiction_id (org-level issue) matches.
+        "SELECT id, status FROM pipeline_issue "
+        "WHERE jurisdiction_id IS NOT DISTINCT FROM %s AND dedupe_key = %s",
         (jurisdiction_id, dedupe_key),
     ).fetchone()
 
@@ -123,7 +126,8 @@ def close_issue(conn, jurisdiction_id: int, dedupe_key: str, *, reason: str | No
         "resolved_by = 'auto-cleared', "
         "fix_notes = COALESCE(%s, 'condition no longer observed at refresh'), "
         "last_observed_at = now() "
-        "WHERE jurisdiction_id = %s AND dedupe_key = %s AND status = 'open' RETURNING id",
+        "WHERE jurisdiction_id IS NOT DISTINCT FROM %s AND dedupe_key = %s "
+        "AND status = 'open' RETURNING id",
         (reason, jurisdiction_id, dedupe_key),
     ).fetchone()
     return row is not None
@@ -158,6 +162,45 @@ def resolve_issue(conn, issue_id: int, *, resolved_by: str, status: str = "resol
             (f"resolved via pipeline_issue #{issue_id}: {notes or 'fixed'}", list(failure_ids)),
         )
     return True
+
+
+# ---------------------------------------------------------------- environment
+
+# Keys the pipeline needs to run end-to-end. A missing one is a config problem the
+# pipeline can't fix itself, so it opens an org-level issue for a human. (severity,
+# impact-if-missing.)
+_REQUIRED_KEYS = [
+    ("ANTHROPIC_API_KEY", "high",
+     "AI extraction (agendas/minutes/roster) can't run — jobs fail Anthropic auth."),
+    ("MISTRAL_API_KEY", "high",
+     "scanned-document OCR can't run; extraction falls back to expensive Claude vision "
+     "(~50x cost) for every scan."),
+    ("RESEND_API_KEY", "low",
+     "outbound email (records requests, forum digests) silently won't send."),
+]
+
+
+def check_environment(conn) -> list[str]:
+    """Investigate the runtime config and open an org-level issue for each required
+    key that's missing (closing it again once the key is present). Returns the list
+    of missing key names. Meant to run as a pipeline preflight — a missing key can't
+    be auto-resolved, so surfacing it as a tracked issue IS the resolution path."""
+    missing: list[str] = []
+    for name, severity, impact in _REQUIRED_KEYS:
+        dedupe = f"missing_key:{name}"
+        if os.environ.get(name):
+            close_issue(conn, None, dedupe, reason=f"{name} is now set")
+            continue
+        missing.append(name)
+        observe_issue(
+            conn, None, issue_type="config", dedupe_key=dedupe, severity=severity,
+            title=f"{name} is not set in the pipeline environment",
+            detail=(f"{name} is missing on the service running the pipeline. {impact} "
+                    f"This can't be auto-resolved — set {name} on the Railway ETL "
+                    f"service(s) (townwatch, townwatch intake) and redeploy."),
+            context={"key": name},
+        )
+    return missing
 
 
 # ---------------------------------------------------------------- fix log (KB)
@@ -207,10 +250,10 @@ def list_fixes(conn, *, grep: str | None = None, limit: int = 50) -> list[dict]:
 def list_issues(conn, *, jurisdiction_id: int | None = None, status: str | None = "open",
                 limit: int = 200) -> list[dict]:
     sql = (
-        "SELECT i.id, i.jurisdiction_id, j.display_name AS jurisdiction, j.state_abbr, "
-        "       i.issue_type, i.severity, i.title, i.detail, i.status, "
+        "SELECT i.id, i.jurisdiction_id, COALESCE(j.display_name, 'Org-wide') AS jurisdiction, "
+        "       j.state_abbr, i.issue_type, i.severity, i.title, i.detail, i.status, "
         "       i.first_observed_at, i.last_observed_at, i.resolved_at, i.resolved_by, i.dedupe_key "
-        "FROM pipeline_issue i JOIN jurisdiction j ON j.id = i.jurisdiction_id WHERE TRUE"
+        "FROM pipeline_issue i LEFT JOIN jurisdiction j ON j.id = i.jurisdiction_id WHERE TRUE"
     )
     params: list[Any] = []
     if status:
@@ -227,7 +270,7 @@ def list_issues(conn, *, jurisdiction_id: int | None = None, status: str | None 
 
 def get_issue(conn, issue_id: int) -> dict | None:
     return conn.execute(
-        "SELECT i.*, j.display_name AS jurisdiction, j.state_abbr "
-        "FROM pipeline_issue i JOIN jurisdiction j ON j.id = i.jurisdiction_id WHERE i.id = %s",
+        "SELECT i.*, COALESCE(j.display_name, 'Org-wide') AS jurisdiction, j.state_abbr "
+        "FROM pipeline_issue i LEFT JOIN jurisdiction j ON j.id = i.jurisdiction_id WHERE i.id = %s",
         (issue_id,),
     ).fetchone()

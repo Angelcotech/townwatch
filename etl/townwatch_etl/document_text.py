@@ -100,10 +100,19 @@ def get_or_recover(conn, data: bytes, *, source_url: str | None = None) -> tuple
         if len(data) <= _STUB_PDF_SIZE_BYTES:
             pages, method = [], "stub"  # blank placeholder — nothing to OCR
         else:
+            from .config import MISTRAL_API_KEY
+            if not MISTRAL_API_KEY:
+                # This doc needs OCR but the OCR key is absent — a CONFIG problem,
+                # not a property of the document. Do NOT cache: an empty 'none' here
+                # is content-addressed and reused forever, so it would never re-OCR
+                # even after the key is set. Return uncached so it self-heals on the
+                # next run once MISTRAL_API_KEY is present. (check_environment opens a
+                # pipeline issue for the missing key.)
+                return [], "ocr_unavailable"
             ocr = _ocr_pages(data)
             if ocr:
                 pages, method = ocr, "ocr"
             else:
-                method = "none"  # neither text layer nor OCR yielded text
+                method = "none"  # OCR ran but yielded nothing — a real property; cache it
     put(conn, h, source_url=source_url, method=method, pages=pages)
     return pages, method

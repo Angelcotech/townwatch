@@ -353,6 +353,17 @@ def main() -> int:
     summary: dict = {"started_at": started_at, "jurisdictions": slugs, "steps": []}
     trigger = "manual" if args.jurisdiction else "cron"
 
+    # Preflight: surface any missing required keys (Anthropic/Mistral/Resend) as
+    # org-level pipeline issues before doing work — a missing key can't be
+    # auto-fixed, so a tracked issue is the resolution path. Never blocks the run.
+    try:
+        with connect() as conn:
+            missing = pipeline_health.check_environment(conn)
+        if missing:
+            print(f"⚠ missing required env key(s): {', '.join(missing)} — opened pipeline issue(s)")
+    except Exception as e:
+        print(f"  ⚠ environment check failed: {type(e).__name__}: {e}")
+
     # Per-jurisdiction steps. One advisory lock per jurisdiction so a
     # deposit-triggered run never doubles up with the cron (or another trigger):
     # whoever holds the lock processes it; everyone else skips it this pass.
