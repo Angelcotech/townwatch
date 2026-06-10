@@ -140,11 +140,17 @@ def sync_one(conn, slug: str, *, dry_run: bool = False) -> dict:
     config = load_config(slug)
     _ensure_timezone(config, slug)
     fips = jurisdiction_fips(config)
+    # Canonical city-level slug = the config handle with its trailing state suffix
+    # removed (e.g. 'grovetown-ga' -> 'grovetown'). Derived from the immutable
+    # config filename, NOT the mutable display name, so a rename never moves URLs.
+    # Identity is the (state_abbr, slug) pair, mirroring the /[state]/[city] route.
+    state_l = (config["jurisdiction"]["state"] or "").lower()
+    slug_col = slug.removesuffix(f"-{state_l}") if state_l else slug
     # SELECT each writable column so the diff-check below sees current
     # state on the existing row. The column list is derived from
     # WRITABLE_FIELDS so adding a new sync target requires no further
     # plumbing here.
-    select_cols = ", ".join(["id"] + [c for c, _ in WRITABLE_FIELDS])
+    select_cols = ", ".join(["id", "slug"] + [c for c, _ in WRITABLE_FIELDS])
     existing = conn.execute(
         f"SELECT {select_cols} FROM jurisdiction WHERE fips_code = %s",
         (fips,),
@@ -159,6 +165,7 @@ def sync_one(conn, slug: str, *, dry_run: bool = False) -> dict:
         j = config["jurisdiction"]
         cols = {
             "fips_code":         fips,
+            "slug":              slug_col,
             "name":              j["name"],
             "jurisdiction_type": j["type"],
             "state_fips":        j["state_fips"],
@@ -188,6 +195,10 @@ def sync_one(conn, slug: str, *, dry_run: bool = False) -> dict:
         # doesn't get bumped on no-op runs.
         diffs = {col: new_values[col] for col, _ in WRITABLE_FIELDS
                  if new_values[col] is not None and existing[col] != new_values[col]}
+        # slug is structural (not a WRITABLE_FIELDS config path) — reconcile it too
+        # so a config rename re-points the canonical slug.
+        if slug_col and existing["slug"] != slug_col:
+            diffs["slug"] = slug_col
         if dry_run:
             return ({"action": "would_update", "slug": slug, "fips": fips, "diffs": diffs}
                     if diffs else {"action": "unchanged", "slug": slug, "fips": fips})
