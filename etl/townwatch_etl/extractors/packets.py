@@ -47,7 +47,7 @@ class PacketSegmentation(BaseModel):
     items: list[ItemSegment]
 
 
-def _page_texts(pdf_bytes: bytes, *, conn=None) -> list[str]:
+def _page_texts(pdf_bytes: bytes, *, conn=None, source_url: str | None = None) -> list[str]:
     """Per-page text for segmentation, each capped at _MAX_PAGE_CHARS (the
     model only needs enough of a page to recognise which item it belongs to).
 
@@ -59,7 +59,7 @@ def _page_texts(pdf_bytes: bytes, *, conn=None) -> list[str]:
     """
     if conn is not None:
         from ..document_text import get_or_recover
-        pages, _method = get_or_recover(conn, pdf_bytes)
+        pages, _method = get_or_recover(conn, pdf_bytes, source_url=source_url)
         return [p[:_MAX_PAGE_CHARS] for p in pages]
     from pypdf import PdfReader
     rd = PdfReader(io.BytesIO(pdf_bytes))
@@ -204,15 +204,16 @@ def _merge_windows(raw: list[dict[str, Any]], npages: int) -> list[dict[str, Any
 
 
 def segment_packet(
-    pdf_bytes: bytes, items: list[dict[str, Any]], *, conn=None,
+    pdf_bytes: bytes, items: list[dict[str, Any]], *, conn=None, source_url: str | None = None,
 ) -> PacketSegmentation:
     """items: [{item_number, title}]. Returns per-item packet page ranges +
     summaries. One model call for normal packets; large packets are split into
     page windows (sized to _CHAR_BUDGET) and merged so arbitrarily long
     major-city packets segment without blowing the context window.
 
-    `conn` routes page-text recovery through the shared document_text store."""
-    pages = _page_texts(pdf_bytes, conn=conn)
+    `conn`/`source_url` route page-text recovery through the shared
+    document_text store (source_url lets the backfill's skip-filter see it)."""
+    pages = _page_texts(pdf_bytes, conn=conn, source_url=source_url)
     npages = len(pages)
     items_block = _items_block(items)
     total_chars = sum(len(p) for p in pages) + npages * 12  # +page labels

@@ -149,7 +149,7 @@ def _process(m: dict[str, Any]) -> str:
             return "paused"
         try:
             with connect() as conn:
-                seg = segment_packet(pdf, items, conn=conn)
+                seg = segment_packet(pdf, items, conn=conn, source_url=packet_url)
         except Exception as e:
             print(f"  ✗ meeting {mid}: segmentation failed: {type(e).__name__}: {e}")
             return "seg_failed"

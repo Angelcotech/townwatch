@@ -51,16 +51,31 @@ _KIND_COLUMNS = {
 }
 
 
-def _candidate_urls(conn, kinds: list[str]) -> list[tuple[str, str]]:
-    """Distinct (url, kind) across the requested kinds, in a stable order."""
+def _candidate_urls(conn, kinds: list[str], *, fips: str | None = None) -> list[tuple[str, str]]:
+    """Distinct (url, kind) across the requested kinds, in a stable order.
+
+    When `fips` is given, restrict to one jurisdiction via the same
+    meeting → governing_body → jurisdiction chain the extractors use, so a
+    per-jurisdiction pipeline run only reconciles its own documents.
+    """
     out: list[tuple[str, str]] = []
     seen: set[str] = set()
     for kind in kinds:
         col = _KIND_COLUMNS[kind]
-        rows = conn.execute(
-            f"SELECT DISTINCT {col} AS url FROM meeting "
-            f"WHERE {col} IS NOT NULL ORDER BY {col}"
-        ).fetchall()
+        if fips is None:
+            rows = conn.execute(
+                f"SELECT DISTINCT m.{col} AS url FROM meeting m "
+                f"WHERE m.{col} IS NOT NULL ORDER BY m.{col}"
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                f"SELECT DISTINCT m.{col} AS url FROM meeting m "
+                f"JOIN governing_body gb ON gb.id = m.governing_body_id "
+                f"JOIN jurisdiction j ON j.id = gb.jurisdiction_id "
+                f"WHERE m.{col} IS NOT NULL AND j.fips_code = %s "
+                f"ORDER BY m.{col}",
+                (fips,),
+            ).fetchall()
         for r in rows:
             url = r["url"]
             if url not in seen:  # first kind to claim a URL labels it
@@ -79,14 +94,21 @@ def _already_stored(conn) -> set[str]:
     return {r["source_url"] for r in rows}
 
 
-def run(kinds: list[str], *, limit: int | None, dry_run: bool, force: bool) -> None:
+def run(kinds: list[str], *, limit: int | None, dry_run: bool, force: bool,
+        jurisdiction: str | None = None) -> None:
+    fips = None
+    if jurisdiction:
+        from ..jurisdiction import load_config, jurisdiction_fips
+        fips = jurisdiction_fips(load_config(jurisdiction))
     with connect() as conn:
-        candidates = _candidate_urls(conn, kinds)
+        candidates = _candidate_urls(conn, kinds, fips=fips)
         stored = set() if force else _already_stored(conn)
 
     todo = [(u, k) for (u, k) in candidates if u not in stored]
     print(
-        f"kinds={','.join(kinds)}  candidates={len(candidates)}  "
+        f"kinds={','.join(kinds)}"
+        + (f"  jurisdiction={jurisdiction}" if jurisdiction else "")
+        + f"  candidates={len(candidates)}  "
         f"already_stored={len(candidates) - len(todo)}  to_do={len(todo)}"
         + (f"  (capped at {limit})" if limit else "")
     )
@@ -134,6 +156,7 @@ def main() -> None:
         help="comma-separated subset of: agenda, minutes, packet (default: all)",
     )
     ap.add_argument("--limit", type=int, default=None, help="max documents to fetch this run")
+    ap.add_argument("--jurisdiction", help="restrict to one jurisdiction slug (per-jurisdiction pipeline use)")
     ap.add_argument("--dry-run", action="store_true", help="list candidates; no network, no writes")
     ap.add_argument(
         "--force", action="store_true",
@@ -146,7 +169,8 @@ def main() -> None:
     if bad:
         ap.error(f"unknown kind(s): {', '.join(bad)} (valid: {', '.join(_KIND_COLUMNS)})")
 
-    run(kinds, limit=args.limit, dry_run=args.dry_run, force=args.force)
+    run(kinds, limit=args.limit, dry_run=args.dry_run, force=args.force,
+        jurisdiction=args.jurisdiction)
 
 
 if __name__ == "__main__":

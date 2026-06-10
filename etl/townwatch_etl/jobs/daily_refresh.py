@@ -56,6 +56,9 @@ PER_JURISDICTION_STEPS = [
     "estimate_onboarding",         # cheap: turn the scanned inventory into a $ funding goal
     "extract_agendas",
     "extract_minutes",
+    "backfill_document_text",      # mop up: store readable text for any doc the extractors
+                                   # didn't store (cache-hit replays, batch-vision path). Bounded;
+                                   # ~free once a jurisdiction's corpus is stored.
     "refresh_council_roster",
 ]
 
@@ -67,7 +70,7 @@ PER_JURISDICTION_STEPS = [
 # global backfill_summaries, which is gated when a run is scoped to one
 # jurisdiction (so a deposit for town A never buys summaries for town B).
 SPENDING_STEPS = {"extract_agendas", "extract_minutes", "refresh_council_roster",
-                  "backfill_summaries"}
+                  "backfill_document_text", "backfill_summaries"}
 
 JURISDICTION_AGNOSTIC_STEPS = [
     "refresh_findings",
@@ -279,6 +282,10 @@ def _per_jurisdiction_args(module: str, slug: str) -> list[str]:
         return ["--all", "--jurisdiction", slug]
     if module == "extract_minutes":
         return ["--all", "--jurisdiction", slug]
+    if module == "backfill_document_text":
+        # Bounded per run: extraction already stores text on cache-miss, so this
+        # only mops up stragglers. Drains the historical backlog a chunk at a time.
+        return ["--jurisdiction", slug, "--limit", "100"]
     if module == "refresh_council_roster":
         return ["--slug", slug]
     raise ValueError(f"Unknown per-jurisdiction module: {module}")
