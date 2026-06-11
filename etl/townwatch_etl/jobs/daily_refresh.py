@@ -92,15 +92,31 @@ JURISDICTION_AGNOSTIC_STEPS = [
 ]
 
 
+# Per-step wall-clock budgets. Document extraction is minutes-per-document
+# (vision windows + extended thinking on long scanned minutes), so an outage
+# backlog of ~20 documents legitimately needs hours — and the work is
+# incremental (per-meeting commits + extraction cache), so a generous budget
+# just lets a backlog drain in one run instead of tripping step_failed issues
+# for days. Catalog/mapping steps stay on the tight default: if they run long,
+# something is actually wrong.
+_DEFAULT_STEP_TIMEOUT = 3600
+_STEP_TIMEOUTS = {
+    "extract_minutes": 4 * 3600,
+    "extract_agendas": 4 * 3600,
+    "backfill_document_text": 2 * 3600,
+}
+
+
 def _run_step(module: str, args: list[str]) -> tuple[bool, str]:
     """Run one job as a subprocess. Returns (ok, output).
     Subprocess isolation means one job's bad state doesn't poison later jobs."""
     cmd = [sys.executable, "-m", f"townwatch_etl.jobs.{module}", *args]
     print(f"  → {module} {' '.join(args)}")
     started = time.time()
+    timeout = _STEP_TIMEOUTS.get(module, _DEFAULT_STEP_TIMEOUT)
     try:
         result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=3600,
+            cmd, capture_output=True, text=True, timeout=timeout,
         )
         elapsed = time.time() - started
         ok = result.returncode == 0
@@ -113,7 +129,7 @@ def _run_step(module: str, args: list[str]) -> tuple[bool, str]:
             print(f"     stderr: {err_tail}")
         return ok, result.stdout + ("\n" + result.stderr if result.stderr else "")
     except subprocess.TimeoutExpired:
-        print(f"     ✗ TIMEOUT after 3600s")
+        print(f"     ✗ TIMEOUT after {timeout}s")
         return False, "timeout"
 
 
@@ -446,7 +462,9 @@ def _per_jurisdiction_args(module: str, slug: str) -> list[str]:
     if module == "backfill_document_text":
         # Bounded per run: extraction already stores text on cache-miss, so this
         # only mops up stragglers. Drains the historical backlog a chunk at a time.
-        return ["--jurisdiction", slug, "--limit", "100"]
+        # The soft time budget (under the step's 2h hard kill) makes a slow batch
+        # of giant packet PDFs a clean partial instead of a step_failed timeout.
+        return ["--jurisdiction", slug, "--limit", "100", "--max-seconds", "5400"]
     if module == "refresh_council_roster":
         return ["--slug", slug]
     if module == "extract_budgets":

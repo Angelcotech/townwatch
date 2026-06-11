@@ -174,6 +174,20 @@ _PLATFORM_BINDINGS: dict[str, callable] = {
 }
 
 
+def documented_absence(config: dict) -> str | None:
+    """A jurisdiction whose config RECORDS that no meeting documents are
+    published anywhere online (documented-absence onboarding: the gap is the
+    record, surfaced via known_gaps/findings, remediated by an open-records
+    request). There is nothing to inventory, so the daily pipeline must treat
+    it as a clean no-op — only a config that is silent about the absence is a
+    misconfiguration worth failing on."""
+    src = (config.get("data_sources") or {}).get("meeting_agendas_minutes") or {}
+    if src.get("status") == "not_available":
+        return (f"meeting agendas/minutes documented as not published online "
+                f"(source={src.get('source')}, ingest={src.get('ingest_method')})")
+    return None
+
+
 class MeetingsInventory(IngestJob):
     """Platform-agnostic inventory job."""
     source_type = "scrape"
@@ -479,6 +493,10 @@ def main() -> int:
                 if args.calendar_since else None)
     since_override = (datetime.strptime(args.since, "%Y-%m-%d").date()
                       if args.since else None)
+    absence = documented_absence(load_config(args.jurisdiction))
+    if absence:
+        print(f"⊘ {args.jurisdiction}: nothing to inventory — {absence}")
+        return 0
     result = MeetingsInventory(
         args.jurisdiction, calendar_from=cal_from,
         force_full=args.full, since_override=since_override,

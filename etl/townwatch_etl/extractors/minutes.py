@@ -30,6 +30,15 @@ from pydantic import BaseModel, Field
 
 from ..config import ANTHROPIC_API_KEY, VISION_RENDER_DPI
 from .chunking import extend_unique
+from .doc_formats import (
+    DOC_CT,
+    DOCX_CT,
+    PDF_CT,
+    doc_to_text,
+    docx_to_text,
+    resolve_ct,
+    unsupported_format_error,
+)
 from .mistral_ocr import ocr_pdf
 from ..llm_client import record_anthropic
 from .pdf_text import extract_text
@@ -53,9 +62,14 @@ Confidence = Literal["high", "medium", "low"]
 
 
 class MeetingMeta(BaseModel):
-    date: str = Field(description="YYYY-MM-DD format")
-    body_name: str = Field(description="The governing body (e.g. 'City Council')")
-    meeting_type: MeetingType
+    # date/body_name/meeting_type are nullable because extraction runs per
+    # page-window: a continuation window (e.g. page 43 of a packet) has no
+    # meeting header, and the prompt rightly forbids guessing. The merge
+    # coalesces the first non-null value across windows; the meeting row's
+    # own date/body (from the inventory scrape) stay authoritative anyway.
+    date: str | None = Field(default=None, description="YYYY-MM-DD format; null if not shown in this excerpt")
+    body_name: str | None = Field(default=None, description="The governing body (e.g. 'City Council'); null if not shown")
+    meeting_type: MeetingType | None = None
     meeting_time: str | None = Field(
         default=None,
         description="Scheduled start time of the meeting in 24-hour HH:MM, if "
@@ -310,6 +324,37 @@ EXTRACTOR_VERSION = f"minutes-v2:{TEXT_MODEL}+{VISION_MODEL}"  # v2: + meeting_t
 # API calls
 # =====================================================================
 
+def extract_from_document(
+    path: Path,
+    content_type: str | None = None,
+    *,
+    conn=None,
+    source_url: str | None = None,
+) -> tuple[MeetingExtraction, str, ExtractionReport]:
+    """Dispatch extraction by content type — the entry point callers should use.
+
+    Minutes arrive as PDF / DOCX / DOC depending on jurisdiction vintage
+    (CivicEngage AgendaCenter serves DOCX behind PDF-looking URLs). PDF runs
+    the recovery ladder; DOCX/DOC convert to text and extract as one window
+    (trivially-clean report). content_type may come straight from an HTTP
+    Content-Type header; if absent or unrecognised, magic bytes are sniffed.
+    Raises RuntimeError for unsupported formats so the caller can mark the
+    meeting unavailable cleanly.
+    """
+    ct = resolve_ct(path, content_type)
+
+    if ct == PDF_CT:
+        return extract_from_pdf(path, conn=conn, source_url=source_url)
+    if ct == DOCX_CT:
+        return (_extract_text_window(docx_to_text(path)), "docx_text",
+                ExtractionReport(total_units=1, clean=1))
+    if ct == DOC_CT:
+        return (_extract_text_window(doc_to_text(path)), "doc_libreoffice",
+                ExtractionReport(total_units=1, clean=1))
+
+    raise unsupported_format_error(path, content_type)
+
+
 def extract_from_pdf(
     pdf_path: Path, *, conn=None, source_url: str | None = None,
 ) -> tuple[MeetingExtraction, str, ExtractionReport]:
@@ -445,9 +490,16 @@ def _extract_vision_window(pdf_path: Path, dpi: int | None = VISION_RENDER_DPI) 
 def _merge_extractions(partials: list[tuple[MeetingExtraction, int]]) -> MeetingExtraction:
     """Reduce per-window extractions into one whole-document extraction.
     Items are offset-corrected to document page numbers and de-duplicated by
-    (page, title); attendance lists are unioned; meeting metadata comes from
-    the first window; the document summary is synthesized from the windows."""
+    (page, title); attendance lists are unioned; each meeting-metadata field
+    takes its first non-null value across windows (continuation windows have
+    no header); the document summary is synthesized from the windows."""
     first = partials[0][0]
+    meta = first.meeting.model_copy()
+    for ext, _off in partials[1:]:
+        for f in ("date", "body_name", "meeting_type", "meeting_time",
+                  "location", "called_to_order_at", "adjourned_at"):
+            if getattr(meta, f) is None and getattr(ext.meeting, f) is not None:
+                setattr(meta, f, getattr(ext.meeting, f))
     items: list[AgendaItem] = []
     seen: set[tuple[int, str]] = set()
     present: list[str] = []
@@ -476,7 +528,7 @@ def _merge_extractions(partials: list[tuple[MeetingExtraction, int]]) -> Meeting
 
     items.sort(key=lambda it: it.source_page)
     return MeetingExtraction(
-        meeting=first.meeting,
+        meeting=meta,
         attendance=Attendance(present=present, absent=absent, staff_present=staff, others_present=others),
         agenda_items=items,
         document_summary=_synthesize_summary(summaries),

@@ -34,6 +34,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import time
 from collections import Counter
 
 from ..db import connect
@@ -95,7 +96,7 @@ def _already_stored(conn) -> set[str]:
 
 
 def run(kinds: list[str], *, limit: int | None, dry_run: bool, force: bool,
-        jurisdiction: str | None = None) -> None:
+        jurisdiction: str | None = None, max_seconds: int | None = None) -> None:
     fips = None
     if jurisdiction:
         from ..jurisdiction import load_config, jurisdiction_fips
@@ -125,7 +126,15 @@ def run(kinds: list[str], *, limit: int | None, dry_run: bool, force: bool,
 
     methods: Counter[str] = Counter()
     failures = 0
+    deadline = (time.monotonic() + max_seconds) if max_seconds else None
     for i, (url, kind) in enumerate(todo, 1):
+        if deadline and time.monotonic() > deadline:
+            # Soft time budget: stop CLEANLY with the work committed so far.
+            # Every store write commits on its own, so the remainder simply
+            # drains on the next run — a clean exit, not a step_failed kill.
+            print(f"  ⏱ time budget ({max_seconds}s) reached after {i - 1}/{len(todo)} — "
+                  f"remainder drains next run")
+            break
         try:
             data = civic_get(url, timeout=120.0).content
         except Exception as e:
@@ -162,6 +171,12 @@ def main() -> None:
         "--force", action="store_true",
         help="re-fetch even URLs already in the store (still deduped by content hash)",
     )
+    ap.add_argument(
+        "--max-seconds", type=int, default=None,
+        help="soft time budget: stop cleanly (exit 0) once elapsed, leaving the "
+             "remainder for the next run — big packet PDFs make per-document "
+             "time unpredictable, and a clean partial beats a timeout kill",
+    )
     args = ap.parse_args()
 
     kinds = [k.strip() for k in args.kinds.split(",") if k.strip()]
@@ -170,7 +185,7 @@ def main() -> None:
         ap.error(f"unknown kind(s): {', '.join(bad)} (valid: {', '.join(_KIND_COLUMNS)})")
 
     run(kinds, limit=args.limit, dry_run=args.dry_run, force=args.force,
-        jurisdiction=args.jurisdiction)
+        jurisdiction=args.jurisdiction, max_seconds=args.max_seconds)
 
 
 if __name__ == "__main__":

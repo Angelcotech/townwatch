@@ -189,7 +189,21 @@ def run(jurisdiction_slug: str | None) -> int:
         for r in rows:
             email = r["records_custodian_email"]
             if not email:
-                # No clerk email on file at all — can't deliver anything to them.
+                documented = _absence_documented(r["name"], r["state_abbr"])
+                if documented:
+                    # The config records that this jurisdiction publishes no
+                    # custodian email (mail/phone intake). Externally caused and
+                    # already a citizen-facing known_gap — keep the status honest
+                    # but don't flag the admin queue every run.
+                    print(f"  ⊘ {r['display_name']}: no custodian email — {documented} (not flagged)")
+                    conn.execute(
+                        "UPDATE jurisdiction SET records_custodian_email_status = 'unverified', "
+                        "records_custodian_email_checked_at = now() WHERE id = %s",
+                        (r["id"],),
+                    )
+                    continue
+                # No clerk email on file and nothing in the config documents why —
+                # a genuine onboarding gap; can't deliver anything to them.
                 status = _apply(conn, r["id"], r["display_name"], "unverified",
                                 "no clerk email on file", r["prev"])
                 if status:
@@ -226,6 +240,28 @@ def run(jurisdiction_slug: str | None) -> int:
     print(f"--- clerk-contact check: {checked} checked, {flagged} need review, "
           f"{drifted} drift candidate(s) ---")
     return 0
+
+
+def _absence_documented(name: str, state_abbr: str) -> str | None:
+    """A reason string when the jurisdiction's config RECORDS that no custodian
+    email is published (mail/phone-only intake, or a no_records_custodian_published
+    known_gap). That absence is the audit finding — already surfaced citizen-facing
+    via known_gaps — not an ops failure the admin queue can ever clear, so the
+    monitor must stay silent about it. Returns None when the missing email is
+    undocumented (a genuine config gap worth flagging)."""
+    slug = f"{name.lower().replace(' ', '-')}-{state_abbr.lower()}"
+    try:
+        from ..jurisdiction import load_config
+        cfg = load_config(slug, validate=False)
+    except Exception:
+        return None
+    rc = cfg.get("records_custodian") or {}
+    if rc and not rc.get("email") and (rc.get("mailing_address") or rc.get("phone")):
+        return "custodian intake is mail/phone-only per config"
+    for gap in cfg.get("known_gaps") or []:
+        if gap.get("category") == "no_records_custodian_published":
+            return "no custodian published (documented known_gap)"
+    return None
 
 
 def _source_url_for(name: str, state_abbr: str) -> str | None:

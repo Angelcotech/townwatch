@@ -45,7 +45,7 @@ from ..extractors.agendas import (
     EXTRACTOR_VERSION,
     extract_from_document,
 )
-from ..extractors.recovery import ExtractionReport
+from ..extractors.recovery import ExtractionReport, FatalExtractionError
 from ..audit import record_failure
 from ..http_client import civic_get
 from ..ingest_base import IngestJob
@@ -168,7 +168,8 @@ class AgendasExtract(IngestJob):
                         },
                     )
                 # Cache a usable result so the next run of this document is free.
-                if extraction.agenda_items or method in ("text_layer", "ocr", "vision", "docx", "doc"):
+                if extraction.agenda_items or method in ("text_layer", "ocr", "vision",
+                                                         "docx_text", "doc_libreoffice"):
                     from ..llm_client import current_usage
                     from ..pricing import cost_usd as _cost_usd
                     _u = current_usage()
@@ -429,6 +430,7 @@ def main() -> int:
         JOIN governing_body gb ON gb.id = m.governing_body_id
         JOIN jurisdiction j ON j.id = gb.jurisdiction_id
         WHERE m.agenda_url IS NOT NULL
+          AND COALESCE(m.agenda_is_placeholder, FALSE) = FALSE
     """
     params: list = []
     if not args.force:
@@ -455,10 +457,18 @@ def main() -> int:
     clean = 0
     recovered = 0
     paused = 0
+    api_down = 0       # skipped: extraction API unusable (billing/auth)
+    fatal_api = False
     paused_jids: set[int] = set()
     anomaly_kinds: dict[str, int] = {}
     for r in rows:
         jid = r["jurisdiction_id"]
+        # Account-level API failure (billing/credentials): every remaining
+        # meeting would fail identically — short-circuit instead of burning a
+        # request per page per document.
+        if fatal_api:
+            api_down += 1
+            continue
         # Once a jurisdiction auto-pauses (out of funds), skip its remaining
         # meetings rather than re-attempting a reservation that will refuse.
         if jid in paused_jids:
@@ -496,10 +506,27 @@ def main() -> int:
                             anomaly_kinds[an.kind] = anomaly_kinds.get(an.kind, 0) + 1
                     record_outcome(run_id=run_id, job_name="extract_agendas", meeting_id=r["id"],
                                    jurisdiction_id=jid, outcome=outcome, report=rep)
+                    # Success supersedes this meeting's open failure rows —
+                    # otherwise rows from a since-recovered failure linger
+                    # unresolved and keep a health issue open for a problem
+                    # that no longer exists.
+                    try:
+                        with connect() as sconn:
+                            sconn.execute(
+                                "UPDATE pipeline_failure SET resolved_at = now(), "
+                                "resolution_notes = 'superseded by successful extract_agendas run' "
+                                "WHERE job_name = 'extract_agendas' AND meeting_id = %s AND resolved_at IS NULL",
+                                (r["id"],),
+                            )
+                    except Exception as sup_err:
+                        print(f"   ⚠ could not supersede prior failures: {sup_err}")
                     succeeded = True
                     break
                 except Exception as e:
                     last_err = e
+                    if isinstance(e, FatalExtractionError):
+                        fatal_api = True
+                        break
                     if is_transient_error(e) and attempt < _MAX_ATTEMPTS:
                         backoff = _BACKOFF_BASE_SECS * (2 ** (attempt - 1))
                         print(f"   ⏳ meeting {r['id']} transient error (attempt {attempt}/{_MAX_ATTEMPTS}): "
@@ -511,6 +538,23 @@ def main() -> int:
                 e = last_err
                 failed += 1
                 print(f"   ✗ failed: {e}")
+                # A permanently-gone document (404/410) must not be re-fetched
+                # daily until the scanner re-probes it: stamp the placeholder
+                # flag now with this freshest evidence. The scanner's 7-day
+                # placeholder recheck revives it if the platform restores it.
+                import httpx
+                if isinstance(e, httpx.HTTPStatusError) and e.response.status_code in (404, 410):
+                    try:
+                        with connect() as pconn:
+                            pconn.execute(
+                                "UPDATE meeting SET agenda_is_placeholder = TRUE, "
+                                "agenda_scanned_at = now() WHERE id = %s", (r["id"],),
+                            )
+                        print(f"   ⊘ meeting {r['id']}: agenda URL is gone "
+                              f"({e.response.status_code}) — flagged placeholder, "
+                              f"skipping until the scanner sees it return")
+                    except Exception as flag_err:
+                        print(f"   ⚠ could not flag placeholder for {r['id']}: {flag_err}")
                 record_outcome(run_id=run_id, job_name="extract_agendas", meeting_id=r["id"],
                                jurisdiction_id=jid, outcome="failed", report=None)
                 # Record it so a throttle-driven backlog is VISIBLE in the admin
@@ -547,6 +591,9 @@ def main() -> int:
     print(f"  failed:    {failed}")
     if paused:
         print(f"  paused:    {paused}  (skipped — jurisdiction out of funds)")
+    if api_down:
+        print(f"  api_down:  {api_down}  (skipped — extraction API unusable; "
+              f"fix billing/credentials and re-run)")
     print(f"  success rate (produced a record): {rate:.0f}%")
     if failed or recovered:
         print("  anomalies recorded to pipeline_failure for admin triage")

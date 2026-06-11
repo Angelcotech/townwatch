@@ -90,13 +90,34 @@ def _cmd_show(args) -> int:
         if fids:
             print("\n  --- linked pipeline_failure rows ---")
             for f in conn.execute(
-                "SELECT id, step, exception_class, message, traceback, created_at "
+                "SELECT id, step, exception_class, message, traceback, context, created_at "
                 "FROM pipeline_failure WHERE id = ANY(%s) ORDER BY created_at DESC",
                 (list(fids),),
             ).fetchall():
                 print(f"\n  [{f['id']}] {f['created_at']:%Y-%m-%d %H:%M}  "
                       f"{f['exception_class'] or ''} {f['step'] or ''}")
                 print(f"      {f['message']}")
+                # The failure's own context is often the REAL evidence — for
+                # recovery anomalies the per-strategy attempt trail says exactly
+                # what error every ladder stage hit (e.g. an account-level API
+                # error masquerading as unknown_extraction_error), and the
+                # document URL identifies the failing source. Render it instead
+                # of making the diagnoser go query the DB by hand.
+                fctx = f["context"] or {}
+                if isinstance(fctx, str):
+                    import json as _json
+                    try:
+                        fctx = _json.loads(fctx)
+                    except ValueError:
+                        fctx = {}
+                for att in fctx.get("attempts") or []:
+                    err = " ".join((att.get("error") or "").split())
+                    print(f"        attempt {att.get('strategy')}: "
+                          f"{att.get('error_type')}: {err[:220]}")
+                for key, val in fctx.items():
+                    if key in ("attempts", "anomaly_kind"):
+                        continue
+                    print(f"        {key}: {val}")
                 if f["traceback"]:
                     tb = "\n      ".join(f["traceback"].strip().splitlines()[-8:])
                     print(f"      {tb}")

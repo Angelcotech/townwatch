@@ -54,13 +54,47 @@ MODEL_EMPTY = "model_empty_exhausted"               # empty output after retries
 PDF_UNREADABLE = "pdf_unreadable"                    # bad PDF, even after repair
 SCHEMA_VIOLATION = "schema_violation"               # output failed the schema
 EMPTY_CONTENT = "empty_content"                      # no extractable content
+API_UNAVAILABLE = "api_unavailable"                  # transport/overload — retry later, not a doc problem
 UNKNOWN = "unknown_extraction_error"
+
+
+class FatalExtractionError(RuntimeError):
+    """The extraction API itself is unusable (billing exhausted, missing/bad
+    credentials). No window of any document can succeed, so the ladder must
+    NOT escalate — every further attempt is a wasted request that buries the
+    real cause under hundreds of per-page anomalies. Callers should stop the
+    run and surface this as the single root cause."""
+
+
+# Message fragments that identify an account-level API failure. These come from
+# the Anthropic SDK: BadRequestError('credit balance is too low'),
+# AuthenticationError, and the client-constructor TypeError('Could not resolve
+# authentication method') when no API key is configured.
+_FATAL_API_FRAGMENTS = (
+    "credit balance is too low",
+    "could not resolve authentication",
+    "invalid x-api-key",
+    "authentication_error",
+)
+
+
+def is_fatal_api_error(e: Exception) -> bool:
+    s = str(e).lower()
+    return isinstance(e, anthropic.AuthenticationError) or any(
+        frag in s for frag in _FATAL_API_FRAGMENTS
+    )
 
 
 def classify_failure(attempts: list[dict]) -> str:
     """Infer the anomaly class from the trail of failed attempts. Looks at the
     error types seen across the whole ladder for this window."""
     errs = " ".join(f"{a.get('error_type','')}: {a.get('error','')}" for a in attempts).lower()
+    # API-infrastructure failures first: they say nothing about the document,
+    # so they must not masquerade as document anomalies (or as "unknown").
+    if any(frag in errs for frag in _FATAL_API_FRAGMENTS):
+        return API_UNAVAILABLE
+    if "overloaded" in errs or "apiconnectionerror" in errs or "connection error" in errs:
+        return API_UNAVAILABLE
     if "badrequest" in errs and ("pdf" in errs or "not valid" in errs or "base64" in errs):
         return PDF_UNREADABLE
     if "jsondecode" in errs or "delimiter" in errs or "expecting" in errs:
@@ -245,6 +279,10 @@ def extract_with_ladder(
                 done = True
                 break
             except Exception as e:
+                if is_fatal_api_error(e):
+                    raise FatalExtractionError(
+                        f"extraction API unusable (window pages {a}-{b}, strategy {name}): {e}"
+                    ) from e
                 attempts.append({"strategy": name, "error_type": type(e).__name__, "error": str(e)[:300]})
         if done:
             continue
@@ -268,6 +306,10 @@ def extract_with_ladder(
                 done = True
                 break
             except Exception as e:
+                if is_fatal_api_error(e):
+                    raise FatalExtractionError(
+                        f"extraction API unusable (window pages {a}-{b}, strategy {name}): {e}"
+                    ) from e
                 attempts.append({"strategy": name, "error_type": type(e).__name__, "error": str(e)[:300]})
         if not done:
             # Phase C: every stage spent — classify and hand to the admin.

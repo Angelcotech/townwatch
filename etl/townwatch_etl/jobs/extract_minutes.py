@@ -30,6 +30,7 @@ import argparse
 import json
 import sys
 import tempfile
+import threading
 import time
 from datetime import date
 from pathlib import Path
@@ -46,9 +47,9 @@ from ..extractors.minutes import (
     IndividualVote,
     MeetingExtraction,
     Recusal,
-    extract_from_pdf,
+    extract_from_document,
 )
-from ..extractors.recovery import ExtractionReport
+from ..extractors.recovery import ExtractionReport, FatalExtractionError
 from ..ingest_base import IngestJob
 from ..resilience import is_transient_error
 
@@ -135,10 +136,11 @@ class MinutesExtract(IngestJob):
             self.read_method = "prebuilt"
             print(f"     method={method}  items={len(extraction.agenda_items)}  confidence={extraction.meeting.extraction_confidence}")
         else:
-            # Download PDF (shared throttled client — same civic hosts as
-            # the scanner / agenda extractor, so it must respect one throttle).
+            # Download the document (shared throttled client — same civic hosts
+            # as the scanner / agenda extractor, so it must respect one throttle).
             r = civic_get(meeting["minutes_url"], timeout=30.0)
             r.raise_for_status()
+            content_type = r.headers.get("content-type")
             chash = extraction_cache.content_hash(r.content)
 
             # Content-addressed cache: if this exact document was already
@@ -159,14 +161,15 @@ class MinutesExtract(IngestJob):
                 print(f"     ✓ cache hit {chash[:12]} — replaying {len(extraction.agenda_items)} "
                       f"items for $0 (orig method={cached['method']})")
             else:
-                with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+                # Suffix is just a hint for shell tools; the dispatcher sniffs magic bytes.
+                with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
                     f.write(r.content)
-                    pdf_path = Path(f.name)
+                    doc_path = Path(f.name)
 
-                # Extract via tiered pipeline (text layer → OCR → vision fallback)
-                print(f"     pdf={len(r.content):,} bytes → extracting...")
-                extraction, method, report = extract_from_pdf(
-                    pdf_path, conn=self.conn, source_url=meeting["minutes_url"],
+                # Extract via format dispatch (PDF → recovery ladder; DOCX/DOC → text)
+                print(f"     doc={len(r.content):,} bytes content-type={content_type!r} → extracting...")
+                extraction, method, report = extract_from_document(
+                    doc_path, content_type, conn=self.conn, source_url=meeting["minutes_url"],
                 )
                 self.report = report
                 self.read_method = method
@@ -192,7 +195,8 @@ class MinutesExtract(IngestJob):
                     )
                 # Store in the cache so the NEXT run of this document is free.
                 # Only cache a usable result (don't cache a total failure).
-                if extraction.agenda_items or method in ("text_layer", "ocr", "vision"):
+                if extraction.agenda_items or method in ("text_layer", "ocr", "vision",
+                                                         "docx_text", "doc_libreoffice"):
                     from ..llm_client import current_usage
                     from ..pricing import cost_usd as _cost_usd
                     _u = current_usage()
@@ -579,6 +583,12 @@ class MinutesExtract(IngestJob):
 _MAX_ATTEMPTS = 5
 _BACKOFF_BASE_SECS = 4  # sleeps 4, 8, 16, 32s between attempts
 
+# Set when any meeting hits a FatalExtractionError (billing exhausted, bad/missing
+# API key). Account-level, not per-document: every subsequent meeting would fail
+# identically, so the rest of the run short-circuits instead of burning a request
+# per page per document and burying the one real cause under hundreds of failures.
+_FATAL_API = threading.Event()
+
 
 def _process_meeting(r, run_id, force: bool = False) -> tuple[str, list]:
     """Extract one meeting end-to-end. Thread-safe — each call opens its own DB
@@ -597,6 +607,9 @@ def _process_meeting(r, run_id, force: bool = False) -> tuple[str, list]:
     from .. import funds
     mid = r["id"]
     jid = r["jurisdiction_id"]
+    if _FATAL_API.is_set():
+        print(f"--- meeting {mid}: ⛔ skipped — extraction API unusable (fatal error earlier in run)")
+        return "api_down", []
     print(f"--- meeting {mid} ({r['meeting_date']}) {r['jurisdiction']} ---")
 
     # Normal extraction of a newly-found meeting is ESSENTIAL (draws to the hard
@@ -619,10 +632,28 @@ def _process_meeting(r, run_id, force: bool = False) -> tuple[str, list]:
                 outcome = "clean" if (rep is None or rep.fully_resolved) else "recovered"
                 record_outcome(run_id=run_id, job_name="extract_minutes", meeting_id=mid,
                                jurisdiction_id=jid, outcome=outcome, report=rep)
+                # Success supersedes this meeting's open failure rows. Without
+                # this, rows from a since-recovered failure linger unresolved
+                # forever and the health observer keeps an issue open for a
+                # problem that no longer exists.
+                try:
+                    from ..db import connect as _connect
+                    with _connect() as sconn:
+                        sconn.execute(
+                            "UPDATE pipeline_failure SET resolved_at = now(), "
+                            "resolution_notes = 'superseded by successful extract_minutes run' "
+                            "WHERE job_name = 'extract_minutes' AND meeting_id = %s AND resolved_at IS NULL",
+                            (mid,),
+                        )
+                except Exception as sup_err:
+                    print(f"   ⚠ could not supersede prior failures for {mid}: {sup_err}")
                 kinds = [an.kind for an in rep.anomalies] if (rep and rep.anomalies) else []
                 return outcome, kinds
             except Exception as e:
                 last_err = e
+                if isinstance(e, FatalExtractionError):
+                    _FATAL_API.set()
+                    break
                 if is_transient_error(e) and attempt < _MAX_ATTEMPTS:
                     backoff = _BACKOFF_BASE_SECS * (2 ** (attempt - 1))
                     print(f"   ⏳ meeting {mid} transient error (attempt {attempt}/{_MAX_ATTEMPTS}): "
@@ -635,6 +666,23 @@ def _process_meeting(r, run_id, force: bool = False) -> tuple[str, list]:
         from ..db import connect
         e = last_err
         print(f"   ✗ meeting {mid} failed: {e}")
+        # A permanently-gone document (404/410) must not be re-fetched daily for
+        # up to AVAILABLE_RECHECK_DAYS until the scanner re-probes it: stamp the
+        # placeholder flag now with this freshest evidence. The scanner's 7-day
+        # placeholder recheck revives it if the platform restores the file.
+        import httpx
+        if isinstance(e, httpx.HTTPStatusError) and e.response.status_code in (404, 410):
+            try:
+                with connect() as pconn:
+                    pconn.execute(
+                        "UPDATE meeting SET minutes_is_placeholder = TRUE, "
+                        "minutes_scanned_at = now() WHERE id = %s", (mid,),
+                    )
+                print(f"   ⊘ meeting {mid}: minutes URL is gone "
+                      f"({e.response.status_code}) — flagged placeholder, "
+                      f"skipping until the scanner sees it return")
+            except Exception as flag_err:
+                print(f"   ⚠ could not flag placeholder for {mid}: {flag_err}")
         record_outcome(run_id=run_id, job_name="extract_minutes", meeting_id=mid,
                        jurisdiction_id=jid, outcome="failed", report=None)
         try:
@@ -788,6 +836,7 @@ def main() -> int:
         JOIN governing_body gb ON gb.id = m.governing_body_id
         JOIN jurisdiction j ON j.id = gb.jurisdiction_id
         WHERE m.minutes_url IS NOT NULL
+          AND COALESCE(m.minutes_is_placeholder, FALSE) = FALSE
     """
     params: list = []
     if not args.force:
@@ -820,10 +869,11 @@ def main() -> int:
     clean = 0          # fully resolved, no anomalies
     recovered = 0      # produced a record but some pages were flagged
     paused = 0         # skipped: jurisdiction out of funds (floor reached)
+    api_down = 0       # skipped: extraction API unusable (billing/auth) — see _FATAL_API
     anomaly_kinds: dict[str, int] = {}
 
     def _tally(result: tuple[str, list]) -> None:
-        nonlocal failed, clean, recovered, paused
+        nonlocal failed, clean, recovered, paused, api_down
         outcome, kinds = result
         if outcome == "clean":
             clean += 1
@@ -833,6 +883,8 @@ def main() -> int:
                 anomaly_kinds[k] = anomaly_kinds.get(k, 0) + 1
         elif outcome == "paused":
             paused += 1
+        elif outcome == "api_down":
+            api_down += 1
         else:
             failed += 1
 
@@ -872,6 +924,9 @@ def main() -> int:
     print(f"  failed:    {failed}")
     if paused:
         print(f"  paused:    {paused}  (skipped — jurisdiction out of funds)")
+    if api_down:
+        print(f"  api_down:  {api_down}  (skipped — extraction API unusable; "
+              f"fix billing/credentials and re-run)")
     print(f"  success rate (produced a record): {rate:.0f}%")
     if failed or recovered:
         print("  anomalies recorded to pipeline_failure for admin triage")

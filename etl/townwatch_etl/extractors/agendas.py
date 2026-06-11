@@ -23,9 +23,6 @@ resolution. Vision reads original glyphs.
 
 from __future__ import annotations
 
-import shutil
-import subprocess
-import tempfile
 from pathlib import Path
 from typing import Literal
 
@@ -34,6 +31,15 @@ from pydantic import BaseModel, Field
 
 from ..config import ANTHROPIC_API_KEY, VISION_RENDER_DPI
 from ..llm_client import record_anthropic
+from .doc_formats import (
+    DOC_CT,
+    DOCX_CT,
+    PDF_CT,
+    doc_to_text,
+    docx_to_text,
+    resolve_ct,
+    unsupported_format_error,
+)
 from .mistral_ocr import ocr_pdf
 from .rasterize import vision_content
 from .recovery import ExtractionReport, build_source, extract_with_ladder, source_from_store
@@ -81,9 +87,13 @@ Confidence = Literal["high", "medium", "low"]
 
 
 class AgendaMeetingMeta(BaseModel):
-    date: str = Field(description="YYYY-MM-DD format")
-    body_name: str = Field(description="The governing body (e.g. 'Planning Commission')")
-    meeting_type: MeetingType
+    # date/body_name/meeting_type are nullable because extraction runs per
+    # page-window: a continuation window has no meeting header, and the prompt
+    # rightly forbids guessing. The merge coalesces the first non-null value
+    # across windows; the meeting row's own date/body stay authoritative.
+    date: str | None = Field(default=None, description="YYYY-MM-DD format; null if not shown in this excerpt")
+    body_name: str | None = Field(default=None, description="The governing body (e.g. 'Planning Commission'); null if not shown")
+    meeting_type: MeetingType | None = None
     scheduled_start_at: str | None = Field(default=None, description="HH:MM (24-hour) if printed on the agenda")
     location: str | None = Field(
         default=None,
@@ -350,27 +360,6 @@ def _stub_extraction(pdf_path: Path) -> AgendaExtraction:
 # use; extract_from_pdf is preserved for backward compatibility.
 # =====================================================================
 
-DOCX_CT = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-DOC_CT = "application/msword"
-PDF_CT = "application/pdf"
-
-
-def _normalize_ct(content_type: str | None) -> str:
-    return (content_type or "").lower().split(";", 1)[0].strip()
-
-
-def _sniff_ct_from_magic(path: Path) -> str | None:
-    """Sniff content type from the first bytes. Used when HTTP didn't tell us."""
-    head = path.read_bytes()[:8]
-    if head.startswith(b"%PDF"):
-        return PDF_CT
-    if head.startswith(b"PK\x03\x04"):  # ZIP container — likely DOCX
-        return DOCX_CT
-    if head.startswith(b"\xd0\xcf\x11\xe0"):  # OLE Compound Document — DOC, XLS, PPT
-        return DOC_CT
-    return None
-
-
 def extract_from_document(
     path: Path,
     content_type: str | None = None,
@@ -394,78 +383,18 @@ def extract_from_document(
     document_text store (DOCX/DOC keep their own text path — the store is
     PDF-keyed).
     """
-    ct = _normalize_ct(content_type)
-    if ct not in (PDF_CT, DOCX_CT, DOC_CT):
-        sniffed = _sniff_ct_from_magic(path)
-        if sniffed:
-            ct = sniffed
+    ct = resolve_ct(path, content_type)
 
     if ct == PDF_CT:
         return extract_from_pdf(path, conn=conn, source_url=source_url)
     if ct == DOCX_CT:
-        return _extract_from_docx(path), "docx_text", ExtractionReport(total_units=1, clean=1)
+        return (_extract_text_window(docx_to_text(path)), "docx_text",
+                ExtractionReport(total_units=1, clean=1))
     if ct == DOC_CT:
-        return _extract_from_doc(path), "doc_libreoffice", ExtractionReport(total_units=1, clean=1)
+        return (_extract_text_window(doc_to_text(path)), "doc_libreoffice",
+                ExtractionReport(total_units=1, clean=1))
 
-    raise RuntimeError(
-        f"unsupported document type {content_type!r} for {path.name} "
-        f"(magic={path.read_bytes()[:4]!r})"
-    )
-
-
-def _extract_from_docx(doc_path: Path) -> AgendaExtraction:
-    """Read DOCX paragraphs + tables as plain text, then feed to Haiku.
-
-    DOCX is structured XML — no vision needed. Tables matter because
-    many older agenda templates put the docket in a table rather than
-    paragraph form.
-    """
-    from docx import Document  # lazy import — python-docx
-    doc = Document(doc_path)
-    parts: list[str] = []
-    for p in doc.paragraphs:
-        t = (p.text or "").strip()
-        if t:
-            parts.append(t)
-    for table in doc.tables:
-        for row in table.rows:
-            row_text = " | ".join((c.text or "").strip() for c in row.cells)
-            if row_text.strip(" |"):
-                parts.append(row_text)
-    text = "\n".join(parts)
-    return _extract_text_window(text)
-
-
-def _extract_from_doc(doc_path: Path) -> AgendaExtraction:
-    """Shell to libreoffice headless to convert legacy DOC → text, then Haiku.
-
-    DOC is the binary Microsoft Word format; no good native Python
-    reader exists. libreoffice is the standard converter on both Mac
-    (brew install --cask libreoffice) and Linux (apt install libreoffice).
-    """
-    binary = shutil.which("libreoffice") or shutil.which("soffice")
-    if binary is None:
-        raise RuntimeError(
-            "DOC extraction requires libreoffice. "
-            "Install on Mac: brew install --cask libreoffice. "
-            "Install on Linux: apt-get install libreoffice-core libreoffice-writer."
-        )
-    with tempfile.TemporaryDirectory() as tmpdir:
-        try:
-            subprocess.run(
-                [binary, "--headless", "--convert-to", "txt:Text",
-                 "--outdir", tmpdir, str(doc_path)],
-                check=True, timeout=180, capture_output=True,
-            )
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError(
-                f"libreoffice conversion failed: {e.stderr.decode('utf-8', errors='replace')[:500]}"
-            ) from e
-        txt_path = Path(tmpdir) / (doc_path.stem + ".txt")
-        if not txt_path.exists():
-            raise RuntimeError(f"libreoffice did not produce {txt_path.name}")
-        text = txt_path.read_text(encoding="utf-8", errors="replace")
-    return _extract_text_window(text)
+    raise unsupported_format_error(path, content_type)
 
 
 def extract_text_layer_only(pdf_path: Path) -> str | None:
@@ -541,9 +470,15 @@ def _extract_vision_window(pdf_path: Path, dpi: int | None = VISION_RENDER_DPI) 
 def _merge_extractions(partials: list[tuple[AgendaExtraction, int]]) -> AgendaExtraction:
     """Reduce per-window agenda extractions into one. Items are offset-
     corrected to document page numbers and de-duplicated by (page, title);
-    meeting metadata comes from the first window; the document summary is
+    each meeting-metadata field takes its first non-null value across windows
+    (continuation windows have no header); the document summary is
     synthesized from the per-window summaries."""
     first = partials[0][0]
+    meta = first.meeting.model_copy()
+    for ext, _off in partials[1:]:
+        for f in ("date", "body_name", "meeting_type", "scheduled_start_at", "location"):
+            if getattr(meta, f) is None and getattr(ext.meeting, f) is not None:
+                setattr(meta, f, getattr(ext.meeting, f))
     items: list[AgendaItemRecord] = []
     seen: set[tuple[int, str]] = set()
     notes: list[str] = []
@@ -562,7 +497,7 @@ def _merge_extractions(partials: list[tuple[AgendaExtraction, int]]) -> AgendaEx
             summaries.append(ext.document_summary.strip())
     items.sort(key=lambda it: it.source_page)
     return AgendaExtraction(
-        meeting=first.meeting,
+        meeting=meta,
         agenda_items=items,
         document_summary=_synthesize_summary(summaries),
         extraction_notes=" | ".join(notes)[:2000],
