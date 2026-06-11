@@ -25,6 +25,7 @@ import argparse
 import sys
 
 from .. import activity
+from ..build_phases import historical_state, initial_cutoff
 from ..db import connect
 from ..jurisdiction import jurisdiction_fips, list_slugs, load_config
 
@@ -36,6 +37,7 @@ _LADDER = [
     ("minutes", "Minutes & votes extracted"),
     ("roster", "Elected roster"),
     ("audit", "Compliance audit"),
+    ("historical", "Historical archive"),
     ("campaign_finance", "Campaign finance"),
     ("elections", "Elections calendar"),
     ("budget", "Budget records"),
@@ -49,13 +51,23 @@ _MILESTONE_TITLE = {
     "minutes": "Minutes & votes extracted",
     "roster": "Elected roster mapped",
     "audit": "Compliance audit live",
+    "historical": "Historical archive indexed",
     "campaign_finance": "Campaign finance indexed",
     "elections": "Elections calendar live",
     "budget": "Budget records indexed",
 }
 
 
+def _fmt_usd(n: float) -> str:
+    return f"${n:,.0f}" if n >= 20 else f"${n:.2f}"
+
+
 def _counts(conn, jid: int) -> dict:
+    # Depth-aware: 'real document' = URL present and not a placeholder stub;
+    # 'extracted' = the meeting has the corresponding output (motions for
+    # minutes, agenda_items for agendas) — same definitions as
+    # estimate_onboarding._counts, split at the build-phase cutoff.
+    cutoff = initial_cutoff()
     return conn.execute(
         """
         SELECT
@@ -68,6 +80,29 @@ def _counts(conn, jid: int) -> dict:
           (SELECT COUNT(DISTINCT m.id) FROM meeting m JOIN governing_body gb ON gb.id = m.governing_body_id
             WHERE gb.jurisdiction_id = j.id
               AND EXISTS (SELECT 1 FROM motion mo WHERE mo.meeting_id = m.id)) AS with_motions,
+          (SELECT COUNT(*) FROM meeting m JOIN governing_body gb ON gb.id = m.governing_body_id
+            WHERE gb.jurisdiction_id = j.id AND m.meeting_date >= %(cutoff)s
+              AND m.minutes_url IS NOT NULL
+              AND NOT COALESCE(m.minutes_is_placeholder, FALSE)) AS minutes_initial_total,
+          (SELECT COUNT(*) FROM meeting m JOIN governing_body gb ON gb.id = m.governing_body_id
+            WHERE gb.jurisdiction_id = j.id AND m.meeting_date >= %(cutoff)s
+              AND m.minutes_url IS NOT NULL
+              AND NOT COALESCE(m.minutes_is_placeholder, FALSE)
+              AND EXISTS (SELECT 1 FROM motion mo WHERE mo.meeting_id = m.id)) AS minutes_initial_done,
+          (SELECT COUNT(*) FILTER (WHERE m.agenda_url IS NOT NULL
+                                     AND NOT COALESCE(m.agenda_is_placeholder, FALSE))
+                + COUNT(*) FILTER (WHERE m.minutes_url IS NOT NULL
+                                     AND NOT COALESCE(m.minutes_is_placeholder, FALSE))
+             FROM meeting m JOIN governing_body gb ON gb.id = m.governing_body_id
+            WHERE gb.jurisdiction_id = j.id AND m.meeting_date < %(cutoff)s) AS hist_total,
+          (SELECT COUNT(*) FILTER (WHERE m.agenda_url IS NOT NULL
+                                     AND NOT COALESCE(m.agenda_is_placeholder, FALSE)
+                                     AND NOT EXISTS (SELECT 1 FROM agenda_item ai WHERE ai.meeting_id = m.id))
+                + COUNT(*) FILTER (WHERE m.minutes_url IS NOT NULL
+                                     AND NOT COALESCE(m.minutes_is_placeholder, FALSE)
+                                     AND NOT EXISTS (SELECT 1 FROM motion mo WHERE mo.meeting_id = m.id))
+             FROM meeting m JOIN governing_body gb ON gb.id = m.governing_body_id
+            WHERE gb.jurisdiction_id = j.id AND m.meeting_date < %(cutoff)s) AS hist_remaining,
           (SELECT COUNT(DISTINCT t.official_id) FROM seat s JOIN term t ON t.seat_id = s.id
             JOIN governing_body gb ON gb.id = s.governing_body_id WHERE gb.jurisdiction_id = j.id) AS officials,
           (SELECT COUNT(*) FROM compliance_finding cf JOIN governing_body gb ON gb.id = cf.governing_body_id
@@ -77,31 +112,71 @@ def _counts(conn, jid: int) -> dict:
             JOIN governing_body gb ON gb.id = s.governing_body_id WHERE gb.jurisdiction_id = j.id) AS contributions
         FROM jurisdiction j
         LEFT JOIN jurisdiction_fund jf ON jf.jurisdiction_id = j.id
-        WHERE j.id = %s
+        WHERE j.id = %(jid)s
         """,
-        (jid,),
+        {"cutoff": cutoff, "jid": jid},
     ).fetchone()
 
 
 def compute(conn, jid: int) -> list[dict]:
-    """The capability ladder + computed state for one jurisdiction. Mirrors
-    lib/funds-queries.ts::getBuildProgress exactly."""
+    """The capability ladder + computed state for one jurisdiction. This is the
+    single source of truth — the web (lib/funds-queries.ts) only reads the
+    persisted jurisdiction_capability rows, never recomputes.
+
+    Depth-aware: 'minutes' measures coverage of the INITIAL build-phase window
+    (one extracted meeting is not "done"); 'historical' is the funded phase-2
+    rung whose needs_funding detail carries the unlock price tag."""
     c = _counts(conn, jid)
     bodies = int(c["bodies"]); meetings = int(c["meetings"])
     with_minutes_url = int(c["with_minutes_url"]); with_motions = int(c["with_motions"])
     officials = int(c["officials"]); findings = int(c["findings_any"])
     contributions = int(c["contributions"])
+    mi_total = int(c["minutes_initial_total"]); mi_done = int(c["minutes_initial_done"])
+    hist_total = int(c["hist_total"]); hist_remaining = int(c["hist_remaining"])
     unfunded = c["fund_status"] in ("unfunded", "paused")
     pending = "needs_funding" if unfunded else "in_progress"
+
+    # Minutes & votes: coverage of the initial window, not "any motion exists".
+    # Partial coverage on an UNFUNDED town is stalled, not in progress — the
+    # funding wall is the honest state.
+    if mi_total > 0:
+        minutes_state = "indexed" if mi_done >= mi_total else pending
+        minutes_detail = f"{mi_done} of {mi_total} recent meetings extracted"
+    elif with_motions > 0:
+        # No real minutes documents inside the window (small bodies can go
+        # quiet for years) — older extractions still count as the capability.
+        minutes_state, minutes_detail = "indexed", f"{with_motions} meetings with votes"
+    elif with_minutes_url > 0:
+        minutes_state, minutes_detail = pending, "pending"
+    else:
+        minutes_state, minutes_detail = "needs_funding", "no minutes documents found"
+
+    # Historical archive: the phase-2 rung. build_phases owns the unlock rule;
+    # the detail string IS the price tag the funding widget shows.
+    if hist_total == 0:
+        hist_state, hist_detail = "coming_soon", "no records beyond the recent window yet"
+    elif hist_remaining == 0:
+        hist_state, hist_detail = "indexed", f"{hist_total} historical documents indexed"
+    else:
+        hs = historical_state(conn, jid)
+        done = hist_total - hist_remaining
+        if hs["unlocked"]:
+            hist_state = "in_progress"
+            hist_detail = f"{done} of {hist_total} historical documents extracted"
+        elif hs["needed_usd"] is None:
+            hist_state, hist_detail = "needs_funding", f"{hist_remaining} documents · price estimate pending"
+        else:
+            hist_state = "needs_funding"
+            hist_detail = f"{hist_remaining} documents · ~{_fmt_usd(hs['needed_usd'])} to unlock"
 
     state = {
         "directory": "indexed" if bodies > 0 else pending,
         "meetings": "indexed" if meetings > 0 else pending,
-        "minutes": ("indexed" if with_motions > 0
-                    else pending if with_minutes_url > 0 else "needs_funding"),
+        "minutes": minutes_state,
         "roster": "indexed" if officials > 0 else pending,
         "audit": ("indexed" if findings > 0
                   else "in_progress" if meetings > 0 else pending),
+        "historical": hist_state,
         "campaign_finance": "indexed" if contributions > 0 else "coming_soon",
         "elections": "coming_soon",
         "budget": "coming_soon",
@@ -109,9 +184,10 @@ def compute(conn, jid: int) -> list[dict]:
     detail = {
         "directory": f"{bodies} bodies" if bodies else "pending",
         "meetings": f"{meetings} meetings" if meetings else "pending",
-        "minutes": f"{with_motions} meetings with votes" if with_motions else "pending",
+        "minutes": minutes_detail,
         "roster": f"{officials} officials" if officials else "pending",
         "audit": f"{findings} findings tracked" if findings else "pending",
+        "historical": hist_detail,
         "campaign_finance": f"{contributions} contributions" if contributions else "coming soon",
         "elections": "coming soon",
         "budget": "coming soon",
