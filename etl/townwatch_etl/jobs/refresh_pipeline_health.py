@@ -12,6 +12,12 @@ deduplicated, resolvable pipeline_issues:
      jobs log, with tracebacks) into one issue per (jurisdiction, job, step), so a human
      or Claude Code sees an actionable problem instead of a wall of log rows. Closes when
      no unresolved failures of that kind remain.
+  3. SOURCE DRIFT — absence signals that look like a site/service CHANGE rather than a
+     publishing gap: a body whose inventory has gone cold relative to its own cadence,
+     or whose recent documents are dying (placeholder spike). These open recon_needed
+     issues that route to the recon-jurisdiction skill (web-search pass + structure
+     sweep) — the GA audit showed sites migrate platforms, restructure URLs, and move
+     content behind new portals while a naive scraper quietly reports "nothing new".
 
 Observe/close discipline mirrors refresh_findings.upsert_finding + close_resolved_finding.
 All writes go through pipeline_health.py (the single writer). Read-mostly, no spend.
@@ -76,6 +82,116 @@ def _check_stale(conn, fips: str | None, dry_run: bool) -> tuple[int, int]:
         else:
             if not dry_run and pipeline_health.close_issue(conn, r["id"], key,
                                                            reason="ran again"):
+                closed += 1
+    return opened, closed
+
+
+def _check_source_drift(conn, fips: str | None, dry_run: bool) -> tuple[int, int]:
+    """Open a recon_needed issue when a body's source looks like it MOVED.
+
+    Two signals, both judged against the body's own history (no per-platform
+    config needed):
+
+      cold_inventory — no meeting newer than max(3× the body's median
+          inter-meeting gap, 90 days). A monthly board that suddenly has no
+          meetings for a quarter hasn't gone quiet — its listing page most
+          likely moved (new CMS, new portal, restructured URLs).
+      dead_documents — ≥3 placeholder-flagged documents among the last 180
+          days' meetings AND more than half of that window's documents are
+          placeholders. Documents dying en masse means the file host or URL
+          scheme changed, not that the clerk un-published everything.
+
+    The issue is a RECON worklist item, not a code bug: resolution is running
+    the recon-jurisdiction skill (independent web search + section-structure
+    sweep) and updating config/registry with attestations."""
+    rows = conn.execute(
+        """
+        WITH gaps AS (
+          SELECT m.governing_body_id,
+                 m.meeting_date - lag(m.meeting_date) OVER (
+                     PARTITION BY m.governing_body_id ORDER BY m.meeting_date) AS gap
+          FROM meeting m
+        ),
+        cadence AS (
+          SELECT governing_body_id,
+                 percentile_cont(0.5) WITHIN GROUP (ORDER BY gap) AS median_gap
+          FROM gaps WHERE gap IS NOT NULL AND gap > 0
+          GROUP BY governing_body_id
+          HAVING count(*) >= 5
+        )
+        SELECT gb.id AS body_id, gb.name AS body_name, j.id AS jid,
+               j.display_name, j.fips_code,
+               max(m.meeting_date) AS last_meeting,
+               c.median_gap,
+               (CURRENT_DATE - max(m.meeting_date)) AS days_silent,
+               count(*) FILTER (
+                 WHERE m.meeting_date >= CURRENT_DATE - 180
+                   AND (COALESCE(m.agenda_is_placeholder, false)
+                        OR COALESCE(m.minutes_is_placeholder, false))
+               ) AS recent_placeholders,
+               count(*) FILTER (WHERE m.meeting_date >= CURRENT_DATE - 180
+                                  AND m.meeting_date <= CURRENT_DATE) AS recent_meetings
+        FROM governing_body gb
+        JOIN jurisdiction j ON j.id = gb.jurisdiction_id
+        JOIN meeting m ON m.governing_body_id = gb.id
+        JOIN cadence c ON c.governing_body_id = gb.id
+        """ + (" WHERE j.fips_code = %s" if fips else "") + """
+        GROUP BY gb.id, gb.name, j.id, j.display_name, j.fips_code, c.median_gap
+        """,
+        ((fips,) if fips else ()),
+    ).fetchall()
+
+    observed: set[tuple[int, str]] = set()
+    opened = 0
+    for r in rows:
+        median_days = float(r["median_gap"] or 30)
+        threshold = max(3 * median_days, 90)
+        drifts: list[tuple[str, str]] = []
+        if float(r["days_silent"]) > threshold:
+            drifts.append(("cold_inventory",
+                f"no meeting inventoried in {r['days_silent']} days (median cadence "
+                f"{median_days:.0f}d, threshold {threshold:.0f}d) — the listing page "
+                f"has likely moved or changed platform"))
+        if (r["recent_placeholders"] or 0) >= 3 and r["recent_meetings"] and \
+                r["recent_placeholders"] > r["recent_meetings"] / 2:
+            drifts.append(("dead_documents",
+                f"{r['recent_placeholders']} of {r['recent_meetings']} recent meetings "
+                f"have placeholder/dead documents — the file host or URL scheme has "
+                f"likely changed"))
+        for kind, why in drifts:
+            key = f"recon_drift:{kind}:{r['body_id']}"
+            observed.add((r["jid"], key))
+            opened += 1
+            if dry_run:
+                print(f"  ⚠ drift: {r['display_name']} — {r['body_name']}: {why}")
+                continue
+            pipeline_health.observe_issue(
+                conn, r["jid"], issue_type="recon_needed", dedupe_key=key,
+                severity="medium",
+                title=f"Source drift suspected: {r['body_name']} ({kind})",
+                detail=(f"{why}. This is a RECON task, not a code bug: run the "
+                        f"recon-jurisdiction skill — independent web search "
+                        f"('<name> agenda', '<name> minutes', site:<domain>) plus a "
+                        f"section-structure sweep — to find where the source moved, "
+                        f"then update the jurisdiction config and recon registry "
+                        f"with attestations."),
+                context={"governing_body_id": r["body_id"], "kind": kind,
+                         "last_meeting": str(r["last_meeting"]),
+                         "median_gap_days": median_days},
+            )
+
+    # Close drift issues whose condition cleared (fresh meetings / live docs).
+    closed = 0
+    open_rows = conn.execute(
+        "SELECT id, jurisdiction_id, dedupe_key FROM pipeline_issue "
+        "WHERE status = 'open' AND issue_type = 'recon_needed' AND dedupe_key LIKE %s"
+        + (" AND jurisdiction_id IN (SELECT id FROM jurisdiction WHERE fips_code = %s)" if fips else ""),
+        (("recon_drift:%", fips) if fips else ("recon_drift:%",)),
+    ).fetchall()
+    for row in open_rows:
+        if (row["jurisdiction_id"], row["dedupe_key"]) not in observed:
+            if not dry_run and pipeline_health.close_issue(
+                conn, row["jurisdiction_id"], row["dedupe_key"], reason="source activity resumed"):
                 closed += 1
     return opened, closed
 
@@ -163,8 +279,10 @@ def main() -> int:
     with connect() as conn:
         s_open, s_closed = _check_stale(conn, fips, args.dry_run)
         f_open, f_closed = _rollup_failures(conn, fips, args.dry_run)
+        d_open, d_closed = _check_source_drift(conn, fips, args.dry_run)
     print(f"pipeline-health: stale(open={s_open} closed={s_closed}) "
-          f"failures(observed={f_open} closed={f_closed})"
+          f"failures(observed={f_open} closed={f_closed}) "
+          f"drift(observed={d_open} closed={d_closed})"
           + ("  [dry-run]" if args.dry_run else ""))
     return 0
 

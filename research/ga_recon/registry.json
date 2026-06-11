@@ -64,7 +64,8 @@
         "sign_up_card",
         "in_person_only",
         "none_found",
-        "unknown"
+        "unknown",
+        "mail"
       ],
       "comment_service": [
         "boarddocs_ecomment",
@@ -95,6 +96,16 @@
         "version": "0.3.0",
         "date": "2026-06-11",
         "change": "FULL ABSENCE-CLAIM AUDIT (operator-directed after the CCSD false finding): 8 adversarial agents re-verified all 40 absence claims across 39 jurisdictions. RESULT: 26 REFUTED, 13 CONFIRMED, 1 INCONCLUSIVE. Every county and city custodian-email absence except Gainesville was false — emails were behind Cloudflare obfuscation, on admin/department pages, in ORR form PDFs, on JS-rendered pages raw fetches see as empty, or on a different official domain (Lincoln County entry pointed at the chamber site). School-district absences mostly held (Glascock/Taliaferro publish-nothing claims CONFIRMED exhaustively; APS/DeKalb/RCSS/Gainesville portal-only intakes genuine). Refuted entries corrected with emails + errata; confirmed entries carry attestation blocks. New systemic recon traps recorded: cf-obfuscated emails, JS-shell pages, wrong-domain entries, wrong-state lookalikes (bibbed.org=AL, fcps.net=KY, warrenschools=TN/KY/VA), post-redesign email removal (Wilkes)."
+      },
+      {
+        "version": "0.3.1",
+        "date": "2026-06-11",
+        "change": "ERRATUM grovetown-ga: public_comment.channel in_person_only → mail. The city's Government page officially invites written correspondence to Mayor/Council (P.O. Box 120); clerk email is verified-deliverable. Operator caught the audit answering 'is an email published?' when the claim was 'no remote channel exists' — written-by-mail IS a remote channel. Vocabulary gains 'mail'."
+      },
+      {
+        "version": "0.3.2",
+        "date": "2026-06-11",
+        "change": "URL-liveness audit of all 174 registry URLs: 84% live, 24 bot-walled (unverifiable without a browser), 3 hard failures — gwinnett-county-ga agenda_source_url 404 (corrected), richmond-county-augusta-ga municodemeetings host dropping connections, chatham-county-ga IQM2 timing out (both flagged for re-check; possibly transient). Note: liveness ≠ correctness — the Lincoln County wrong-domain entry returned 200 throughout."
       }
     ]
   },
@@ -192,9 +203,9 @@
       ],
       "verified": "verified",
       "confidence": "high",
-      "notes": "ALREADY ONBOARDED. 13+ yrs archived PDFs. Source of truth = jurisdictions/grovetown-ga.json. AUDIT 2026-06-11: absence claim(s) CONFIRMED by adversarial refutation (see verification block).",
+      "notes": "ALREADY ONBOARDED. 13+ yrs archived PDFs. Source of truth = jurisdictions/grovetown-ga.json. AUDIT 2026-06-11: absence claim(s) CONFIRMED by adversarial refutation (see verification block). ERRATUM 2026-06-11 (operator pushback): 'in_person_only' was wrong — the city's own Government page invites written correspondence to the Mayor/Council at P.O. Box 120 (https://cityofgrovetown.com/27/Government), and the clerk email is a verified-deliverable channel. In-MEETING comment remains in-person (Citizens Comments agenda item, no remote sign-up), but citizens who cannot attend can write. The audit CONFIRMED verdict answered the published-email question, not the written-channel question — channel taxonomy now distinguishes them.",
       "public_comment": {
-        "channel": "in_person_only",
+        "channel": "mail",
         "comment_service": "none",
         "submit_url": null,
         "recipient_email": "clerk@cityofgrovetown.com",
@@ -206,7 +217,9 @@
         "by_body": [],
         "verified": "inferred",
         "confidence": "medium",
-        "notes": "No published public-comment procedure anywhere on cityofgrovetown.com (checked City Council page /198/City-Council, AgendaCenter, site search for 'public comment' and 'citizens comments', FAQ). Verified this session: every Council agenda carries a standing 'Citizens Comments' item (e.g. item 11 on the 2026-06-08 agenda PDF, /AgendaCenter/ViewFile/Agenda/_06082026-307), and May 2026 minutes show citizens simply addressing Mayor Pro-Tem and Council during that item — no sign-up sheet, form, deadline, or remote/email channel is published. Channel 'in_person_only' is inferred from agenda+minutes practice; no Request-to-Speak form exists on the site. recipient_email is the clerk alias supplied from internal data (City Clerk Brian Henderson per May 2026 minutes), NOT verified on the live site this session — emailing the clerk is the only plausible remote route but is unpublished. automatable=false because the only observed channel requires physical attendance."
+        "notes": "No published public-comment procedure anywhere on cityofgrovetown.com (checked City Council page /198/City-Council, AgendaCenter, site search for 'public comment' and 'citizens comments', FAQ). Verified this session: every Council agenda carries a standing 'Citizens Comments' item (e.g. item 11 on the 2026-06-08 agenda PDF, /AgendaCenter/ViewFile/Agenda/_06082026-307), and May 2026 minutes show citizens simply addressing Mayor Pro-Tem and Council during that item — no sign-up sheet, form, deadline, or remote/email channel is published. Channel 'in_person_only' is inferred from agenda+minutes practice; no Request-to-Speak form exists on the site. recipient_email is the clerk alias supplied from internal data (City Clerk Brian Henderson per May 2026 minutes), NOT verified on the live site this session — emailing the clerk is the only plausible remote route but is unpublished. automatable=false because the only observed channel requires physical attendance.",
+        "mailing_address": "City of Grovetown, P.O. Box 120, Grovetown, GA 30813",
+        "source_url": "https://cityofgrovetown.com/27/Government"
       },
       "verification": {
         "session_date": "2026-06-11",
@@ -237,7 +250,7 @@
           "votes": "1 independent refuter per claim; verdicts: {\"NO_COMMENT_CHANNEL\": \"CONFIRMED\"}"
         },
         "audit_verdicts": {
-          "NO_COMMENT_CHANNEL": "CONFIRMED"
+          "NO_COMMENT_CHANNEL": "REFUTED (operator: official mail-correspondence channel on /27/Government)"
         }
       }
     },
@@ -892,7 +905,7 @@
       "county_seat": "Lawrenceville",
       "official_website": "https://www.gwinnettcounty.com",
       "agenda_platform": "custom",
-      "agenda_source_url": "https://www.gwinnettcounty.com/departments/CountyClerk",
+      "agenda_source_url": "https://www.gwinnettcounty.com/government/departments/county-clerk/commission-meetings",
       "records_custodian_name": "Tysh Coleman",
       "records_custodian_title": "Open Records Officer",
       "records_custodian_email": "Tysh.Coleman@gwinnettcounty.com",
@@ -905,7 +918,7 @@
       ],
       "verified": "verified",
       "confidence": "high",
-      "notes": "Rare: TWO plaintext custodian emails. Custom agenda CMS -> bespoke scrape, but intake is easy (email/portal)."
+      "notes": "Rare: TWO plaintext custodian emails. Custom agenda CMS -> bespoke scrape, but intake is easy (email/portal). ERRATUM 2026-06-11 (URL audit): agenda_source_url https://www.gwinnettcounty.com/departments/CountyClerk now 404s after a site restructure; corrected to /government/departments/county-clerk/commission-meetings (verified live)."
     },
     "cobb-county-ga": {
       "name": "Cobb County",

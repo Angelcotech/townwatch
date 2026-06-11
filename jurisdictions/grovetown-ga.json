@@ -6,7 +6,6 @@
     "last_verified": "2026-05-13",
     "review_frequency_days": 90
   },
-
   "jurisdiction": {
     "name": "Grovetown",
     "display_name": "Grovetown",
@@ -26,7 +25,6 @@
     "parent_id": "columbia-county-ga",
     "parent_type": "county"
   },
-
   "records_custodian": {
     "name": "Vicki Capetillo",
     "honorific": "Hon.",
@@ -38,23 +36,49 @@
       "Grovetown, GA 30813"
     ]
   },
-
   "governing_bodies": [
     {
       "name": "City Council",
       "body_type": "city_council",
       "seat_count": 5,
       "seats": [
-        { "name": "Mayor",              "seat_type": "at_large", "is_leadership": true,  "term_length_years": 4 },
-        { "name": "Council Member 1",   "seat_type": "at_large", "is_leadership": false, "term_length_years": 4 },
-        { "name": "Council Member 2",   "seat_type": "at_large", "is_leadership": false, "term_length_years": 4 },
-        { "name": "Council Member 3",   "seat_type": "at_large", "is_leadership": false, "term_length_years": 4 },
-        { "name": "Council Member 4",   "seat_type": "at_large", "is_leadership": false, "term_length_years": 4 }
+        {
+          "name": "Mayor",
+          "seat_type": "at_large",
+          "is_leadership": true,
+          "term_length_years": 4
+        },
+        {
+          "name": "Council Member 1",
+          "seat_type": "at_large",
+          "is_leadership": false,
+          "term_length_years": 4
+        },
+        {
+          "name": "Council Member 2",
+          "seat_type": "at_large",
+          "is_leadership": false,
+          "term_length_years": 4
+        },
+        {
+          "name": "Council Member 3",
+          "seat_type": "at_large",
+          "is_leadership": false,
+          "term_length_years": 4
+        },
+        {
+          "name": "Council Member 4",
+          "seat_type": "at_large",
+          "is_leadership": false,
+          "term_length_years": 4
+        }
       ],
       "election_cycle_pattern": "staggered_2yr",
       "meeting_frequency": "monthly",
       "website_url": "https://cityofgrovetown.com/198/City-Council",
-      "civicengage": { "category_id": 2 }
+      "civicengage": {
+        "category_id": 2
+      }
     },
     {
       "name": "Planning Commission",
@@ -62,7 +86,9 @@
       "seat_count": null,
       "meeting_frequency": "monthly",
       "website_url": "https://cityofgrovetown.com/AgendaCenter",
-      "civicengage": { "category_id": 5 }
+      "civicengage": {
+        "category_id": 5
+      }
     },
     {
       "name": "Board of Zoning Appeals",
@@ -70,19 +96,23 @@
       "seat_count": null,
       "meeting_frequency": "as_needed",
       "website_url": "https://cityofgrovetown.com/AgendaCenter",
-      "civicengage": { "category_id": 6 }
+      "civicengage": {
+        "category_id": 6
+      }
     }
   ],
-
   "platform_hints": {
     "agenda_platform": "civicengage",
     "agenda_base_url": "https://cityofgrovetown.com",
     "officials_table_scraper": "civicengage_officials_table",
     "property_platform": "qpublic_schneider",
     "qpublic_app": "ColumbiaCountyGA",
-    "budget_source": { "provider": "ted", "ted_type": "city", "ted_slug": "grovetown" }
+    "budget_source": {
+      "provider": "ted",
+      "ted_type": "city",
+      "ted_slug": "grovetown"
+    }
   },
-
   "data_sources": {
     "officials_roster": {
       "status": "found",
@@ -93,7 +123,6 @@
       "update_frequency": "as_needed",
       "notes": "Roster of current Mayor + Council. GMA page has stale data — city site is source of truth."
     },
-
     "meeting_agendas_minutes": {
       "status": "found",
       "source": "civicengage_agenda_center",
@@ -103,10 +132,13 @@
       "archive_depth_years": 14,
       "earliest_year": 2012,
       "url_pattern": "https://cityofgrovetown.com/AgendaCenter/ViewFile/{Agenda|Minutes|ArchivedAgenda}/_MMDDYYYY-{id}",
-      "bodies_covered": ["City Council", "Planning Commission", "Board of Zoning Appeals"],
+      "bodies_covered": [
+        "City Council",
+        "Planning Commission",
+        "Board of Zoning Appeals"
+      ],
       "notes": "13+ years of archived PDFs. CivicEngage/CivicPlus platform — consistent URL pattern enables automation."
     },
-
     "property_records": {
       "status": "partial",
       "source": "qpublic_columbia_county",
@@ -117,7 +149,6 @@
       "bulk_data_available": false,
       "notes": "Per-parcel lookup by owner name works. No bulk download or API. Bulk access requires direct request to Columbia County or scraping (against ToS)."
     },
-
     "campaign_finance": {
       "status": "not_available",
       "source": "city_clerk_paper_records",
@@ -129,7 +160,6 @@
       "user_action_path": "Open records request to Grovetown City Clerk, (706) 863-4576",
       "notes": "FollowTheMoney.org has zero Grovetown municipal coverage. This is a documented gap."
     },
-
     "annual_audits": {
       "status": "found",
       "source": "georgia_doaa",
@@ -139,7 +169,6 @@
       "update_frequency": "annual",
       "notes": "Georgia Department of Audits and Accounts. State-mandated annual filing per O.C.G.A. § 36-81-7."
     },
-
     "bond_disclosures": {
       "status": "unverified",
       "source": "msrb_emma",
@@ -148,7 +177,6 @@
       "format": "pdf",
       "notes": "EMMA browse blocked during automated recon. Manual verification needed. Grovetown's size suggests they may issue via county authority rather than direct."
     },
-
     "state_open_data": {
       "status": "found",
       "source": "open_georgia",
@@ -160,7 +188,6 @@
       "notes": "State-level spending and local-government financial filings. Useful supplementary source."
     }
   },
-
   "sunshine_law": {
     "state_statute": "O.C.G.A. § 50-14-1 et seq. (Georgia Open Meetings Act)",
     "open_records_statute": "O.C.G.A. § 50-18-70 et seq.",
@@ -169,7 +196,6 @@
     "records_response_business_days": 3,
     "notes": "Georgia Open Records Act requires response within 3 business days. Open Meetings Act requires 24-hour notice and posted agendas."
   },
-
   "known_gaps": [
     {
       "category": "campaign_finance",
@@ -195,5 +221,16 @@
       "user_facing_message": "Property holdings shown reflect parcels owned in this person's direct name. Properties held in LLCs, trusts, or out-of-state entities are not currently visible to this platform.",
       "remediation": "Phase 2: cross-reference with Georgia Secretary of State Corporate Registry (ecorp.sos.ga.gov) for LLCs where this official is the registered agent or organizer, plus mailing-address matching on parcel records."
     }
-  ]
+  ],
+  "public_comment": {
+    "intake_method": "mail_or_clerk_email",
+    "mailing_address": [
+      "City of Grovetown",
+      "P.O. Box 120",
+      "Grovetown, GA 30813"
+    ],
+    "contact_email": "clerk@cityofgrovetown.com",
+    "source_url": "https://cityofgrovetown.com/27/Government",
+    "notes": "In-MEETING public comment is in-person ('Citizens Comments' agenda item; no remote sign-up, eComment, or published comment email). But the city's Government page officially invites written correspondence to the Mayor and/or City Council at P.O. Box 120, and the City Clerk's email (clerk@cityofgrovetown.com, verified deliverable) is the working written channel. Recorded 2026-06-11 after operator review; digests/correspondence may be delivered to the clerk email and/or by mail."
+  }
 }
