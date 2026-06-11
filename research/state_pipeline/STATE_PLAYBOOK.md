@@ -31,6 +31,15 @@ consolidated city-counties); stale-row cleanup for statutory dissolutions;
 coverage linking by FIPS.
 
 **Per-state reconciliation checklist (the only manual part):**
+- [ ] Run `jobs/backfill_directory_nav.py` after seeding — it fills the nav
+      columns (`slug`, `county_fips`, and the all-counties `nav_county_fips`
+      array; migrations 057/058) that the cascade and `/[state]/[slug]`
+      routing depend on; the seed job does not populate them (new rows land
+      NULL until the backfill runs). Multi-county cities (54 in GA; Braselton
+      spans 4) list under every county they touch. ⚠ As written it derives
+      city→county from `research/ga_recon/universe_roster.json` (GA-only
+      research artifact); before seeding state #2 it must derive from the
+      Census sub-county file directly (SUMLEV-157 place-parts, national).
 - [ ] Triage every `⚠ no bundle target` warning — each is a naming-convention
       surprise; resolve via constants or a derivation fix, never silence.
 - [ ] Add the state's DoDEA base districts to `DODEA_UNSD_GEOIDS` (check the
