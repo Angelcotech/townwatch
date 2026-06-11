@@ -140,3 +140,14 @@ on the live site. When unsure, mark `inferred` + `low` and add a note.
   with `nextrequest`/`govqa` portal intake (needs portal-submission support, but standardized).
 - **Hardest:** `custom` / `edlio` / `none_found` agendas with `obfuscated` / `portal_only` / `mail_or_fax`
   intake → bespoke scraping AND non-email delivery; often an audit finding rather than a clean ingest.
+
+**Bot-wall tier (record it; 2026-06-11 URL audit found 24/174 registry URLs walled):** sites behind
+Cloudflare/Incapsula/Imperva challenges or fully JS-rendered shells block raw HTTP fetching but NOT
+browsers. Record `fetch_tier: browser` in the entry when a wall or JS-shell is observed (the recon
+evidence itself shows it: challenge pages, empty raw HTML vs. populated rendered page, Wayback-only
+verification). Onboarding such a jurisdiction needs the headless-browser fetch layer (Playwright tier
+in http_client — build when the first walled jurisdiction is funded). Two mitigations to check before
+pricing the browser tier: (1) document files often live on CDNs OUTSIDE the wall (files.edl.io,
+docs.google.com, DocumentCenter) even when the HTML site is walled — the scraper may only need the
+browser for the LISTING page; (2) platform APIs (CivicClerk, Legistar, BoardDocs) bypass the wall
+entirely when they exist.

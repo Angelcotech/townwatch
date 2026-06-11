@@ -231,6 +231,6 @@
     ],
     "contact_email": "clerk@cityofgrovetown.com",
     "source_url": "https://cityofgrovetown.com/27/Government",
-    "notes": "In-MEETING public comment is in-person ('Citizens Comments' agenda item; no remote sign-up, eComment, or published comment email). But the city's Government page officially invites written correspondence to the Mayor and/or City Council at P.O. Box 120, and the City Clerk's email (clerk@cityofgrovetown.com, verified deliverable) is the working written channel. Recorded 2026-06-11 after operator review; digests/correspondence may be delivered to the clerk email and/or by mail."
+    "notes": "In-MEETING public comment is in-person ('Citizens Comments' agenda item; no remote sign-up or eComment). The city ADVERTISES only postal correspondence (P.O. Box 120, per /27/Government) — but 'in writing' includes email under GA practice, and the City Clerk's email (clerk@cityofgrovetown.com, verified deliverable) is the working written channel; the city simply doesn't publish it. PARTICIPATION GAP worth surfacing (operator, 2026-06-11): the advertised mail channel is functionally useless against the city's own posting latency — agendas often post days before meetings (see the standing meeting_notice_too_short findings), so a mailed comment cannot arrive in time. This is the core case for the TownWatch bounded comment window: collect digitally during the agenda window, deliver to the clerk email before the meeting."
   }
 }
