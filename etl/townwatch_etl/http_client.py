@@ -50,6 +50,7 @@ designed to stay identical across that swap, so no caller changes.
 
 from __future__ import annotations
 
+import re
 import threading
 import time
 from contextlib import contextmanager
@@ -249,6 +250,93 @@ def civic_request(
 def civic_get(url: str, **kwargs) -> httpx.Response:
     """GET ``url`` through the shared throttled/retrying client."""
     return civic_request("GET", url, **kwargs)
+
+
+# ── browser fetch tier ───────────────────────────────────────────────────────
+# Some civic sites front their HTML with bot challenges (Cloudflare/Incapsula/
+# Imperva) or render content entirely client-side, so a raw HTTP fetch sees a
+# challenge page or an empty shell. Both read fine in a real browser engine —
+# these are public records and rendering them like a normal visitor is the
+# standard civic-tech answer (the 2026-06-11 GA audit found 24/174 registry
+# URLs in this tier, and two false absence findings caused by JS shells).
+#
+# Playwright is an OPTIONAL dependency: lazy-imported, clear error if absent.
+# The deploy container only needs it once a fetch_tier:browser jurisdiction is
+# onboarded (pip install playwright && playwright install chromium).
+
+_BOT_WALL_RE = re.compile(
+    r"just a moment|verifying your browser|client challenge|incapsula|"
+    r"cf-browser-verification|attention required|access denied|_imp_apg_r_",
+    re.I,
+)
+
+
+def looks_bot_walled(response: httpx.Response) -> bool:
+    """True when a response is a bot-challenge interstitial rather than the
+    page — status 403/503 from a challenge vendor, or a challenge body."""
+    if response.status_code in (403, 503) and (
+        "cloudflare" in response.headers.get("server", "").lower()
+        or _BOT_WALL_RE.search(response.text[:4000] or "")
+    ):
+        return True
+    return response.status_code == 200 and bool(_BOT_WALL_RE.search(response.text[:4000] or ""))
+
+
+def civic_get_rendered(url: str, *, timeout: float = 45.0, wait_ms: int = 2500) -> str:
+    """Fetch ``url`` in headless Chromium and return the RENDERED page HTML.
+
+    Respects the same per-host adaptive throttle as civic_get — one cadence
+    per civic host regardless of transport. Use for listing pages behind bot
+    challenges or built as JS shells; documents themselves usually live on
+    unwalled CDNs and should keep using civic_get.
+    """
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError as e:
+        raise RuntimeError(
+            "browser fetch tier requires playwright: "
+            "pip install playwright && playwright install chromium"
+        ) from e
+    host = httpx.URL(url).host or ""
+    _throttle.wait(host)
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            try:
+                page = browser.new_page(user_agent=(
+                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/126.0.0.0 Safari/537.36"))
+                page.goto(url, timeout=timeout * 1000, wait_until="domcontentloaded")
+                # Give challenge scripts / client-side rendering a beat to settle.
+                page.wait_for_timeout(wait_ms)
+                html = page.content()
+            finally:
+                browser.close()
+    except Exception:
+        _throttle.penalize(host)
+        raise
+    _throttle.reward(host)
+    return html
+
+
+def fetch_page(url: str, *, timeout: float = 30.0, render: bool = False) -> tuple[str, str]:
+    """GET a page, transparently escalating to the browser tier when the raw
+    response is bot-walled. Returns (html, transport) where transport is
+    'http' or 'browser'. The self-healing entry point for LISTING pages —
+    scrapers that hit a wall mid-life keep working without a config change.
+
+    ``render=True`` forces the browser tier — for JS-SHELL pages (e.g.
+    CivicPlus tab widgets) that return 200 with an empty body and so can't be
+    auto-detected; platforms known to need it set fetch_tier:browser in
+    config and pass render=True explicitly."""
+    if render:
+        return civic_get_rendered(url, timeout=max(timeout, 45.0)), "browser"
+    r = civic_get(url, timeout=timeout)
+    if not looks_bot_walled(r):
+        r.raise_for_status()
+        return r.text, "http"
+    return civic_get_rendered(url, timeout=max(timeout, 45.0)), "browser"
 
 
 class CivicClient:

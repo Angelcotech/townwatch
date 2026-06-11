@@ -106,6 +106,11 @@
         "version": "0.3.2",
         "date": "2026-06-11",
         "change": "URL-liveness audit of all 174 registry URLs: 84% live, 24 bot-walled (unverifiable without a browser), 3 hard failures — gwinnett-county-ga agenda_source_url 404 (corrected), richmond-county-augusta-ga municodemeetings host dropping connections, chatham-county-ga IQM2 timing out (both flagged for re-check; possibly transient). Note: liveness ≠ correctness — the Lincoln County wrong-domain entry returned 200 throughout."
+      },
+      {
+        "version": "0.3.3",
+        "date": "2026-06-11",
+        "change": "Browser fetch tier (http_client.civic_get_rendered/fetch_page, playwright optional dep) resolves the last audit INCONCLUSIVE: wilkes-county-washington-ga rendered live — zero emails; the county removed its published clerk email in the 2024-2025 redesign (transparency regression, claim CONFIRMED for the current site). Tier also verified against the Hall County JS-shell: raw fetch sees 0 ORR mailboxes, rendered sees 16."
       }
     ]
   },
@@ -550,8 +555,8 @@
         "phone 706-678-2511"
       ],
       "verified": "inferred",
-      "confidence": "low",
-      "notes": "Platform looks bespoke; custodian/intake unconfirmed. Site visit needed. AUDIT 2026-06-11: INCONCLUSIVE — countyclerk@wilkescountyga.org was published pre-2024-redesign (Wayback); current site hides emails behind forms + Cloudflare. Re-check with a browser.",
+      "confidence": "medium",
+      "notes": "Platform looks bespoke; custodian/intake unconfirmed. Site visit needed. AUDIT 2026-06-11: INCONCLUSIVE — countyclerk@wilkescountyga.org was published pre-2024-redesign (Wayback); current site hides emails behind forms + Cloudflare. Re-check with a browser. RESOLVED 2026-06-11 (browser fetch tier): rendered the live Cloudflare-walled pages — ZERO emails on the current site. The county REMOVED its published clerk email (countyclerk@wilkescountyga.org, Wayback 2024) in the 2024-2025 Municode/Drupal redesign, hiding all contacts behind reCAPTCHA forms. A transparency REGRESSION, not a recon error: absence claim CONFIRMED for the current site.",
       "verification": {
         "session_date": "2026-06-11",
         "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
@@ -559,7 +564,9 @@
           "sections_enumerated": [
             "https://web.archive.org/web/20250910163723/https://www.wilkescountyga.org/contact-us",
             "https://web.archive.org/web/20260428224150/https://www.wilkescountyga.org/",
-            "https://www.wilkescountyga.org/contact (Wayback 2024-05-14: mailto present)"
+            "https://www.wilkescountyga.org/contact (Wayback 2024-05-14: mailto present)",
+            "https://www.wilkescountyga.org/contact-us (RENDERED via headless browser: 253KB, zero emails)",
+            "https://www.wilkescountyga.org/boc/directory-listing/karen-burton (RENDERED: zero emails)"
           ]
         },
         "search_pass": {
@@ -580,7 +587,7 @@
           "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"INCONCLUSIVE\"}"
         },
         "audit_verdicts": {
-          "NO_CUSTODIAN_EMAIL": "INCONCLUSIVE"
+          "NO_CUSTODIAN_EMAIL": "CONFIRMED (current site; browser-tier verified 2026-06-11)"
         }
       }
     },

@@ -23,6 +23,13 @@ dependencies = [
     "uvicorn>=0.30",    # ASGI server for the intake service
 ]
 
+[project.optional-dependencies]
+# Browser fetch tier (http_client.civic_get_rendered / fetch_page): bot-walled
+# and JS-shell civic sites. Install in any environment that recons or scrapes a
+# fetch_tier:browser jurisdiction:
+#   pip install -e .[browser] && playwright install chromium
+browser = ["playwright>=1.45"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
