@@ -1,0 +1,1644 @@
+{
+  "schema_version": "0.1",
+  "ledger_meta": {
+    "name": "TownWatch State Expansion Ledger",
+    "purpose": "Phase status per state for the three-tier expansion model. Drives the queue; demand signals reorder it. See STATE_PLAYBOOK.md for phase definitions, exit criteria, and the GA exemplar.",
+    "generated_at": "2026-06-10",
+    "phase_status_vocab": [
+      "not_started",
+      "in_progress",
+      "done",
+      "blocked",
+      "n_a"
+    ],
+    "readiness_vocab": [
+      "unmapped",
+      "seeded",
+      "dossier_in_progress",
+      "ready_for_tier2",
+      "active"
+    ],
+    "quirk_status_vocab": [
+      "prior",
+      "verified",
+      "refuted"
+    ],
+    "notes": [
+      "Quirks marked 'prior' are general-knowledge expectations, NOT verified — Phase B/C must confirm or refute them before any reliance.",
+      "Queue policy: adjacency-first from the GA footprint; demand signals from the adopt funnel reorder; money never gates the map.",
+      "Territories (PR, GU, VI, AS, MP) deferred pending mission scope — add rows when in scope."
+    ]
+  },
+  "states": {
+    "AL": {
+      "name": "Alabama",
+      "fips": "01",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": 3,
+      "priority_reason": "GA border; CSRA-adjacent west.",
+      "quirks": [
+        {
+          "tag": "residency_restricted_orr",
+          "status": "prior",
+          "note": "Public-records requests restricted to state citizens (enforceable per McBurney v. Young) — records automation needs the citizen-proxy lane; confirm statute in Phase A."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "AK": {
+      "name": "Alaska",
+      "fips": "02",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "boroughs_not_counties",
+          "status": "prior",
+          "note": "Boroughs + the Unorganized Borough; several unified home-rule municipalities (Juneau, Anchorage); REAAs for schools."
+        },
+        {
+          "tag": "notable_consolidations",
+          "status": "prior",
+          "note": "Has well-known city-county consolidations to handle in Phase C bundle rules."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "AZ": {
+      "name": "Arizona",
+      "fips": "04",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "two_tier_school_districts",
+          "status": "prior",
+          "note": "Separate elementary/secondary districts — seed job must ingest Census elsd/scsd files, not unsd only (BACKLOG)."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "AR": {
+      "name": "Arkansas",
+      "fips": "05",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "residency_restricted_orr",
+          "status": "prior",
+          "note": "Public-records requests restricted to state citizens (enforceable per McBurney v. Young) — records automation needs the citizen-proxy lane; confirm statute in Phase A."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "CA": {
+      "name": "California",
+      "fips": "06",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "two_tier_school_districts",
+          "status": "prior",
+          "note": "Separate elementary/secondary districts — seed job must ingest Census elsd/scsd files, not unsd only (BACKLOG)."
+        },
+        {
+          "tag": "notable_consolidations",
+          "status": "prior",
+          "note": "Has well-known city-county consolidations to handle in Phase C bundle rules."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "CO": {
+      "name": "Colorado",
+      "fips": "08",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "notable_consolidations",
+          "status": "prior",
+          "note": "Has well-known city-county consolidations to handle in Phase C bundle rules."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "CT": {
+      "name": "Connecticut",
+      "fips": "09",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "township_government",
+          "status": "prior",
+          "note": "Municipal government is largely the Census COUSUB (town/township) layer; the place-based universe model misses it — Tier 0 blocked on the COUSUB layer (BACKLOG)."
+        },
+        {
+          "tag": "regional_school_structures",
+          "status": "prior",
+          "note": "Supervisory unions / regional districts — bundle rule needs a multi-member concept."
+        },
+        {
+          "tag": "no_or_weak_county_government",
+          "status": "prior",
+          "note": "County governments abolished or vestigial — county layer is geography, not government, here."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "DE": {
+      "name": "Delaware",
+      "fips": "10",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "residency_restricted_orr",
+          "status": "prior",
+          "note": "Public-records requests restricted to state citizens (enforceable per McBurney v. Young) — records automation needs the citizen-proxy lane; confirm statute in Phase A."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "DC": {
+      "name": "District of Columbia",
+      "fips": "11",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "single_state_school_district",
+          "status": "prior",
+          "note": "One statewide/district-wide school system."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": "Single-row special case: one general-purpose government + one school district (DCPS) + charter sector; federal overlay (Home Rule). Tier 1 is small; FOIA is DC's own act."
+    },
+    "FL": {
+      "name": "Florida",
+      "fips": "12",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": 2,
+      "priority_reason": "GA border; high-population early target.",
+      "quirks": [],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "GA": {
+      "name": "Georgia",
+      "fips": "13",
+      "phases": {
+        "tier0_universe_seeded": "done",
+        "A_law_dossier": "done",
+        "B_universe_verified": "done",
+        "C_structure_bundles": "done",
+        "D_platform_census": "done",
+        "E_pipeline_delta": "done"
+      },
+      "tier2_recon": {
+        "batches": 5,
+        "registry_entries": 66,
+        "onboarded": 5
+      },
+      "readiness": "active",
+      "queue_position": 0,
+      "priority_reason": "Home state; CSRA pilot footprint.",
+      "quirks": [
+        {
+          "tag": "notable_consolidations",
+          "status": "verified",
+          "note": "8 consolidated city-county governments (DCA-verified): Athens-Clarke, Augusta-Richmond, Columbus-Muscogee, Macon-Bibb, Cusseta-Chattahoochee, Georgetown-Quitman, Echols, Webster. All bundle to their county in jurisdiction_directory."
+        },
+        {
+          "tag": "statutory_dissolutions",
+          "status": "verified",
+          "note": "GA dissolves dead municipalities by statute (Ranger HB 773 2023; Sunny Side HB 542 eff. 2024-01-01) — seed job cleanup handles."
+        },
+        {
+          "tag": "dodea_district",
+          "status": "verified",
+          "note": "Fort Stewart School District (1300003) is DoDEA federal — excluded from the directory."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {
+        "recon_dir": "research/ga_recon/",
+        "registry": "research/ga_recon/registry.json",
+        "universe_roster": "research/ga_recon/universe_roster.json",
+        "sources_doc": "research/ga_recon/UNIVERSE_SOURCES.md",
+        "methodology": "research/ga_recon/METHODOLOGY.md",
+        "state_defaults": "jurisdictions/_state_defaults/ga.json",
+        "orr_drafts": "research/ga_recon/orr_drafts/"
+      },
+      "notes": "Exemplar state. Universe: 159 counties + 536 municipalities + 180 school systems = 875 (directory: 538/159/180, 188 bundled). Recon: 66 registry entries (21 counties, 11 cities, 34 school districts incl. consolidated Augusta). Onboarded: grovetown, columbia-county, columbia-county-school-district + documented-absence placeholders glascock-county-consolidated-schools, taliaferro-county-school-district. Platform census: Simbli 27/33 school districts; CivicClerk/CivicPlus dominant for counties/cities. Pipeline-delta items in townwatch-web/BACKLOG.md ('Pipeline hardening', 2026-06-10)."
+    },
+    "HI": {
+      "name": "Hawaii",
+      "fips": "15",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "single_state_school_district",
+          "status": "prior",
+          "note": "One statewide/district-wide school system."
+        },
+        {
+          "tag": "notable_consolidations",
+          "status": "prior",
+          "note": "Has well-known city-county consolidations to handle in Phase C bundle rules."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "ID": {
+      "name": "Idaho",
+      "fips": "16",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "IL": {
+      "name": "Illinois",
+      "fips": "17",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "township_limited",
+          "status": "prior",
+          "note": "Townships exist with limited functions; decide in Phase C whether they are audit-relevant governments here."
+        },
+        {
+          "tag": "two_tier_school_districts",
+          "status": "prior",
+          "note": "Separate elementary/secondary districts — seed job must ingest Census elsd/scsd files, not unsd only (BACKLOG)."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "IN": {
+      "name": "Indiana",
+      "fips": "18",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "township_limited",
+          "status": "prior",
+          "note": "Townships exist with limited functions; decide in Phase C whether they are audit-relevant governments here."
+        },
+        {
+          "tag": "notable_consolidations",
+          "status": "prior",
+          "note": "Has well-known city-county consolidations to handle in Phase C bundle rules."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "IA": {
+      "name": "Iowa",
+      "fips": "19",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "KS": {
+      "name": "Kansas",
+      "fips": "20",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "township_limited",
+          "status": "prior",
+          "note": "Townships exist with limited functions; decide in Phase C whether they are audit-relevant governments here."
+        },
+        {
+          "tag": "notable_consolidations",
+          "status": "prior",
+          "note": "Has well-known city-county consolidations to handle in Phase C bundle rules."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "KY": {
+      "name": "Kentucky",
+      "fips": "21",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "notable_consolidations",
+          "status": "prior",
+          "note": "Has well-known city-county consolidations to handle in Phase C bundle rules."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "LA": {
+      "name": "Louisiana",
+      "fips": "22",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "parishes_not_counties",
+          "status": "prior",
+          "note": "Parishes; several city-parish consolidations (Baton Rouge, Lafayette, New Orleans)."
+        },
+        {
+          "tag": "notable_consolidations",
+          "status": "prior",
+          "note": "Has well-known city-county consolidations to handle in Phase C bundle rules."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "ME": {
+      "name": "Maine",
+      "fips": "23",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "township_government",
+          "status": "prior",
+          "note": "Municipal government is largely the Census COUSUB (town/township) layer; the place-based universe model misses it — Tier 0 blocked on the COUSUB layer (BACKLOG)."
+        },
+        {
+          "tag": "regional_school_structures",
+          "status": "prior",
+          "note": "Supervisory unions / regional districts — bundle rule needs a multi-member concept."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "MD": {
+      "name": "Maryland",
+      "fips": "24",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "school_boards_county_dependent",
+          "status": "prior",
+          "note": "School boards are county-dependent (body without separate government) — bundles trivially; findings still audit the board."
+        },
+        {
+          "tag": "independent_cities",
+          "status": "prior",
+          "note": "Independent cities are county-equivalents — county layer needs the equivalents concept."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "MA": {
+      "name": "Massachusetts",
+      "fips": "25",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "township_government",
+          "status": "prior",
+          "note": "Municipal government is largely the Census COUSUB (town/township) layer; the place-based universe model misses it — Tier 0 blocked on the COUSUB layer (BACKLOG)."
+        },
+        {
+          "tag": "regional_school_structures",
+          "status": "prior",
+          "note": "Supervisory unions / regional districts — bundle rule needs a multi-member concept."
+        },
+        {
+          "tag": "no_or_weak_county_government",
+          "status": "prior",
+          "note": "County governments abolished or vestigial — county layer is geography, not government, here."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "MI": {
+      "name": "Michigan",
+      "fips": "26",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "township_government",
+          "status": "prior",
+          "note": "Municipal government is largely the Census COUSUB (town/township) layer; the place-based universe model misses it — Tier 0 blocked on the COUSUB layer (BACKLOG)."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "MN": {
+      "name": "Minnesota",
+      "fips": "27",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "township_government",
+          "status": "prior",
+          "note": "Municipal government is largely the Census COUSUB (town/township) layer; the place-based universe model misses it — Tier 0 blocked on the COUSUB layer (BACKLOG)."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "MS": {
+      "name": "Mississippi",
+      "fips": "28",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "MO": {
+      "name": "Missouri",
+      "fips": "29",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "township_limited",
+          "status": "prior",
+          "note": "Townships exist with limited functions; decide in Phase C whether they are audit-relevant governments here."
+        },
+        {
+          "tag": "independent_cities",
+          "status": "prior",
+          "note": "Independent cities are county-equivalents — county layer needs the equivalents concept."
+        },
+        {
+          "tag": "residency_restricted_orr",
+          "status": "prior",
+          "note": "Public-records requests restricted to state citizens (enforceable per McBurney v. Young) — records automation needs the citizen-proxy lane; confirm statute in Phase A."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "MT": {
+      "name": "Montana",
+      "fips": "30",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "two_tier_school_districts",
+          "status": "prior",
+          "note": "Separate elementary/secondary districts — seed job must ingest Census elsd/scsd files, not unsd only (BACKLOG)."
+        },
+        {
+          "tag": "notable_consolidations",
+          "status": "prior",
+          "note": "Has well-known city-county consolidations to handle in Phase C bundle rules."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "NE": {
+      "name": "Nebraska",
+      "fips": "31",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "township_limited",
+          "status": "prior",
+          "note": "Townships exist with limited functions; decide in Phase C whether they are audit-relevant governments here."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "NV": {
+      "name": "Nevada",
+      "fips": "32",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "independent_cities",
+          "status": "prior",
+          "note": "Independent cities are county-equivalents — county layer needs the equivalents concept."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "NH": {
+      "name": "New Hampshire",
+      "fips": "33",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "township_government",
+          "status": "prior",
+          "note": "Municipal government is largely the Census COUSUB (town/township) layer; the place-based universe model misses it — Tier 0 blocked on the COUSUB layer (BACKLOG)."
+        },
+        {
+          "tag": "regional_school_structures",
+          "status": "prior",
+          "note": "Supervisory unions / regional districts — bundle rule needs a multi-member concept."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "NJ": {
+      "name": "New Jersey",
+      "fips": "34",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "township_government",
+          "status": "prior",
+          "note": "Municipal government is largely the Census COUSUB (town/township) layer; the place-based universe model misses it — Tier 0 blocked on the COUSUB layer (BACKLOG)."
+        },
+        {
+          "tag": "two_tier_school_districts",
+          "status": "prior",
+          "note": "Separate elementary/secondary districts — seed job must ingest Census elsd/scsd files, not unsd only (BACKLOG)."
+        },
+        {
+          "tag": "residency_restricted_orr",
+          "status": "prior",
+          "note": "Public-records requests restricted to state citizens (enforceable per McBurney v. Young) — records automation needs the citizen-proxy lane; confirm statute in Phase A."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "NM": {
+      "name": "New Mexico",
+      "fips": "35",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "NY": {
+      "name": "New York",
+      "fips": "36",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "township_government",
+          "status": "prior",
+          "note": "Municipal government is largely the Census COUSUB (town/township) layer; the place-based universe model misses it — Tier 0 blocked on the COUSUB layer (BACKLOG)."
+        },
+        {
+          "tag": "regional_school_structures",
+          "status": "prior",
+          "note": "Supervisory unions / regional districts — bundle rule needs a multi-member concept."
+        },
+        {
+          "tag": "nyc_five_counties",
+          "status": "prior",
+          "note": "NYC is one municipal government spanning five counties — inverse of the consolidation pattern."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "NC": {
+      "name": "North Carolina",
+      "fips": "37",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": 5,
+      "priority_reason": "GA-adjacent region; note county-dependent school boards prior.",
+      "quirks": [
+        {
+          "tag": "school_boards_county_dependent",
+          "status": "prior",
+          "note": "School boards are county-dependent (body without separate government) — bundles trivially; findings still audit the board."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "ND": {
+      "name": "North Dakota",
+      "fips": "38",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "township_limited",
+          "status": "prior",
+          "note": "Townships exist with limited functions; decide in Phase C whether they are audit-relevant governments here."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "OH": {
+      "name": "Ohio",
+      "fips": "39",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "township_limited",
+          "status": "prior",
+          "note": "Townships exist with limited functions; decide in Phase C whether they are audit-relevant governments here."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "OK": {
+      "name": "Oklahoma",
+      "fips": "40",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "OR": {
+      "name": "Oregon",
+      "fips": "41",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "PA": {
+      "name": "Pennsylvania",
+      "fips": "42",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "township_government",
+          "status": "prior",
+          "note": "Municipal government is largely the Census COUSUB (town/township) layer; the place-based universe model misses it — Tier 0 blocked on the COUSUB layer (BACKLOG)."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "RI": {
+      "name": "Rhode Island",
+      "fips": "44",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "township_government",
+          "status": "prior",
+          "note": "Municipal government is largely the Census COUSUB (town/township) layer; the place-based universe model misses it — Tier 0 blocked on the COUSUB layer (BACKLOG)."
+        },
+        {
+          "tag": "regional_school_structures",
+          "status": "prior",
+          "note": "Supervisory unions / regional districts — bundle rule needs a multi-member concept."
+        },
+        {
+          "tag": "no_or_weak_county_government",
+          "status": "prior",
+          "note": "County governments abolished or vestigial — county layer is geography, not government, here."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "SC": {
+      "name": "South Carolina",
+      "fips": "45",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": 1,
+      "priority_reason": "Adjacency-first: the Augusta metro spills into Aiken and Edgefield counties (North Augusta) — the existing CSRA footprint already wants it.",
+      "quirks": [],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": "Start with Tier 0 seeding + the Aiken/Edgefield/North Augusta footprint batch in Tier 2 once the dossier clears. SC quirk to confirm in Phase B: school districts are sub-county in places (multiple districts per county, e.g. Aiken is unified but several counties split) — verify district structure against CCD."
+    },
+    "SD": {
+      "name": "South Dakota",
+      "fips": "46",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "township_limited",
+          "status": "prior",
+          "note": "Townships exist with limited functions; decide in Phase C whether they are audit-relevant governments here."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "TN": {
+      "name": "Tennessee",
+      "fips": "47",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": 4,
+      "priority_reason": "GA border; note residency-restricted ORR prior.",
+      "quirks": [
+        {
+          "tag": "school_boards_county_dependent",
+          "status": "prior",
+          "note": "School boards are county-dependent (body without separate government) — bundles trivially; findings still audit the board."
+        },
+        {
+          "tag": "residency_restricted_orr",
+          "status": "prior",
+          "note": "Public-records requests restricted to state citizens (enforceable per McBurney v. Young) — records automation needs the citizen-proxy lane; confirm statute in Phase A."
+        },
+        {
+          "tag": "notable_consolidations",
+          "status": "prior",
+          "note": "Has well-known city-county consolidations to handle in Phase C bundle rules."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "TX": {
+      "name": "Texas",
+      "fips": "48",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "UT": {
+      "name": "Utah",
+      "fips": "49",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "VT": {
+      "name": "Vermont",
+      "fips": "50",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "township_government",
+          "status": "prior",
+          "note": "Municipal government is largely the Census COUSUB (town/township) layer; the place-based universe model misses it — Tier 0 blocked on the COUSUB layer (BACKLOG)."
+        },
+        {
+          "tag": "regional_school_structures",
+          "status": "prior",
+          "note": "Supervisory unions / regional districts — bundle rule needs a multi-member concept."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "VA": {
+      "name": "Virginia",
+      "fips": "51",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "school_boards_county_dependent",
+          "status": "prior",
+          "note": "School boards are county-dependent (body without separate government) — bundles trivially; findings still audit the board."
+        },
+        {
+          "tag": "independent_cities",
+          "status": "prior",
+          "note": "Independent cities are county-equivalents — county layer needs the equivalents concept."
+        },
+        {
+          "tag": "residency_restricted_orr",
+          "status": "prior",
+          "note": "Public-records requests restricted to state citizens (enforceable per McBurney v. Young) — records automation needs the citizen-proxy lane; confirm statute in Phase A."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "WA": {
+      "name": "Washington",
+      "fips": "53",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "WV": {
+      "name": "West Virginia",
+      "fips": "54",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "WI": {
+      "name": "Wisconsin",
+      "fips": "55",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [
+        {
+          "tag": "township_government",
+          "status": "prior",
+          "note": "Municipal government is largely the Census COUSUB (town/township) layer; the place-based universe model misses it — Tier 0 blocked on the COUSUB layer (BACKLOG)."
+        }
+      ],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    },
+    "WY": {
+      "name": "Wyoming",
+      "fips": "56",
+      "phases": {
+        "tier0_universe_seeded": "not_started",
+        "A_law_dossier": "not_started",
+        "B_universe_verified": "not_started",
+        "C_structure_bundles": "not_started",
+        "D_platform_census": "not_started",
+        "E_pipeline_delta": "not_started"
+      },
+      "tier2_recon": {
+        "batches": 0,
+        "registry_entries": 0,
+        "onboarded": 0
+      },
+      "readiness": "unmapped",
+      "queue_position": null,
+      "priority_reason": null,
+      "quirks": [],
+      "demand_signals": [],
+      "artifacts": {},
+      "notes": null
+    }
+  }
+}
