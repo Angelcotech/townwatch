@@ -40,6 +40,7 @@ import argparse
 import sys
 from decimal import Decimal
 
+from ..build_phases import INITIAL_WINDOW_YEARS, initial_cutoff
 from ..db import connect
 from ..funds import DEFAULT_ESTIMATE
 from ..jurisdiction import jurisdiction_fips, list_slugs, load_config
@@ -79,9 +80,12 @@ def _kind_rate(conn, like: str) -> tuple[Decimal | None, int]:
 
 def _counts(conn, jurisdiction_id: int) -> dict:
     """Real (non-placeholder) agenda/minutes document counts for a jurisdiction,
-    split into total workload vs not-yet-extracted remainder. A document is
+    split into total workload vs not-yet-extracted remainder — and each of those
+    split again by the build-phase window (initial = within
+    build_phases.INITIAL_WINDOW_YEARS, historical = older). A document is
     'extracted' when its meeting has the corresponding output: agenda_items for
     an agenda, motions for minutes."""
+    cutoff = initial_cutoff()
     return conn.execute(
         """
         SELECT
@@ -98,12 +102,22 @@ def _counts(conn, jurisdiction_id: int) -> dict:
           count(*) FILTER (
             WHERE m.minutes_url IS NOT NULL AND NOT COALESCE(m.minutes_is_placeholder, false)
               AND NOT EXISTS (SELECT 1 FROM motion mo WHERE mo.meeting_id = m.id)
-          ) AS minutes_remaining
+          ) AS minutes_remaining,
+          count(*) FILTER (
+            WHERE m.agenda_url IS NOT NULL AND NOT COALESCE(m.agenda_is_placeholder, false)
+              AND NOT EXISTS (SELECT 1 FROM agenda_item ai WHERE ai.meeting_id = m.id)
+              AND m.meeting_date < %s
+          ) AS agenda_remaining_hist,
+          count(*) FILTER (
+            WHERE m.minutes_url IS NOT NULL AND NOT COALESCE(m.minutes_is_placeholder, false)
+              AND NOT EXISTS (SELECT 1 FROM motion mo WHERE mo.meeting_id = m.id)
+              AND m.meeting_date < %s
+          ) AS minutes_remaining_hist
         FROM meeting m
         JOIN governing_body gb ON gb.id = m.governing_body_id
         WHERE gb.jurisdiction_id = %s
         """,
-        (jurisdiction_id,),
+        (cutoff, cutoff, jurisdiction_id),
     ).fetchone()
 
 
@@ -145,11 +159,33 @@ def estimate_for(conn, jurisdiction_id: int) -> dict:
     else:
         basis = "mixed"
 
+    # Build-phase split: what a fresh contribution buys NOW (initial window)
+    # vs the priced-but-locked historical-seeding phase. build_phases reads
+    # phases.historical.remaining_usd as the unlock threshold, so this row is
+    # the ladder's price tag.
+    agenda_rem_hist = int(c["agenda_remaining_hist"])
+    minutes_rem_hist = int(c["minutes_remaining_hist"])
+    hist_remaining_usd = agenda_rem_hist * a_rate + minutes_rem_hist * m_rate
+    initial_remaining_usd = remaining_usd - hist_remaining_usd
+
     meta = {
         "agenda": {"documents": agenda_total, "remaining": agenda_remaining,
                    "rate_usd": float(a_rate), "basis": agenda_basis, "sample": agenda_n},
         "minutes": {"documents": minutes_total, "remaining": minutes_remaining,
                     "rate_usd": float(m_rate), "basis": minutes_basis, "sample": minutes_n},
+        "phases": {
+            "initial_window_years": INITIAL_WINDOW_YEARS,
+            "initial": {
+                "agenda_remaining": agenda_remaining - agenda_rem_hist,
+                "minutes_remaining": minutes_remaining - minutes_rem_hist,
+                "remaining_usd": float(initial_remaining_usd),
+            },
+            "historical": {
+                "agenda_remaining": agenda_rem_hist,
+                "minutes_remaining": minutes_rem_hist,
+                "remaining_usd": float(hist_remaining_usd),
+            },
+        },
         "rate_window": RATE_WINDOW,
         "default_rate_usd": float(DEFAULT_ESTIMATE),
     }

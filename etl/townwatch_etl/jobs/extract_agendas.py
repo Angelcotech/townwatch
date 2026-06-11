@@ -448,6 +448,15 @@ def main() -> int:
 
     with connect() as conn:
         rows = conn.execute(sql, params).fetchall()
+        # Build-phase depth gate (see build_phases): historical meetings wait
+        # for the funded unlock; --force campaigns bypass. Deferrals reported.
+        deferred: dict = {}
+        if not args.force:
+            from ..build_phases import filter_phase_locked
+            rows, deferred = filter_phase_locked(conn, rows)
+    for jid, d in deferred.items():
+        print(f"  ⏳ jurisdiction {jid}: {d['count']} historical meeting(s) deferred — "
+              f"{d['state']['reason']}")
 
     from ..extraction_ledger import new_run_id, record_outcome
     run_id = new_run_id()

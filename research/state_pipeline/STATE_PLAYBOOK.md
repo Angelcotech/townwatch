@@ -157,6 +157,17 @@ Templates, all proven in GA:
   its own corrections visible.
 - Wrong-state lookalike domains are endemic (5 found for GA alone): always
   verify entity identity (state + FIPS + address) before trusting a domain.
+- **Absence claims need two independent methods** (METHODOLOGY.md §3.3–3.8):
+  a section-structure sweep (CMS sections paginate by year/category — one
+  empty subpage is not the section) AND a search-engine pass (`"<name>"
+  board agenda`, `… public comment`, `… records custodian email`,
+  `site:<domain> agenda`). Site-navigation-only recon produced GA's second
+  false finding: CCSD "agendas not published" (posted since 2011 on Edlio
+  year subpages) and "no public-comment email" (`contactus@ccboe.net` was a
+  first-page Google result). Caught by the operator 2026-06-11 — registry
+  errata entry required, and a sibling-record control (minutes parse but
+  agendas "empty" on the same CMS = suspect the recon, not the district)
+  applies before any `*_not_published` gap is recorded.
 
 ## Queue policy
 

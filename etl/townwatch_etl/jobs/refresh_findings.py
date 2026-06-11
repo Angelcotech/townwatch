@@ -49,11 +49,21 @@ class ObservedFinding:
 # =====================================================================
 
 
+# Approval-lag grace for minutes_missing. Minutes are typically only DUE after
+# the body approves them at its NEXT regular meeting (GA: open to inspection
+# within 2 business days of approval, OCGA § 50-14-1(e)(2)(B)) — so the
+# trailing meeting or two ALWAYS lack minutes at a compliant board. 45 days
+# covers a monthly cycle + approval + posting; meetings younger than this are
+# not yet evidence of anything.
+_MINUTES_APPROVAL_GRACE_DAYS = 45
+
+
 def observe_minutes_missing(conn, body_id: int, state_abbr: str, body_type: str | None) -> ObservedFinding | None:
     """The 'trail went cold' finding: meetings AFTER the last meeting that
     had minutes published, with no minutes_url and no explicit unavailable
-    flag in meta. This is the dramatic finding rather than an all-time
-    tally that lumps in sporadic old gaps.
+    flag in meta — excluding meetings still inside the approval-lag grace
+    window. This is the dramatic finding rather than an all-time tally that
+    lumps in sporadic old gaps.
 
     Statute citation is pulled from the state config so the same observer
     works for GA, TN, FL, etc. — the gap-detection SQL is state-agnostic,
@@ -70,12 +80,12 @@ def observe_minutes_missing(conn, body_id: int, state_abbr: str, body_type: str 
         SELECT COUNT(*) AS count, MIN(m.meeting_date) AS since
         FROM meeting m
         WHERE m.governing_body_id = %s
-          AND m.meeting_date < CURRENT_DATE
+          AND m.meeting_date < CURRENT_DATE - make_interval(days => %s)
           AND m.minutes_url IS NULL
           AND NOT (COALESCE(m.meta, '{}'::jsonb) ? 'agenda_unavailable')
           AND m.meeting_date > COALESCE((SELECT d FROM last_with_minutes), DATE '1900-01-01')
         """,
-        (body_id, body_id),
+        (body_id, body_id, _MINUTES_APPROVAL_GRACE_DAYS),
     ).fetchone()
     count = row["count"] or 0
     since = row["since"]

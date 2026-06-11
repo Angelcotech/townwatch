@@ -102,9 +102,33 @@ on the live site. When unsure, mark `inferred` + `low` and add a note.
 2. Locate the agendas/minutes section. Fingerprint the platform from the URL:
    - `/AgendaCenter` → CivicPlus; `portal.civicclerk.com` → CivicClerk; `legistar`/`granicus` → Granicus;
      `go.boarddocs.com` → BoardDocs; `simbli.eboardsolutions.com` → Simbli; `apps/pages/index.jsp` → Edlio.
-3. Find the open-records / records-custodian page. Record the intake method and whether an email is plaintext.
-4. Note gaps: empty agenda pages, dead document links, stub PDFs, portal-only intake, no online minutes.
-5. Set `verified`/`confidence` honestly based on whether you saw it live.
+3. **Sweep the section structure — one page is never the section.** CMS sections paginate by
+   year or category (Edlio: one `pREC_ID` subpage per school year under a shared `uREC_ID`;
+   CivicPlus: per-year AgendaCenter tabs). Enumerate sibling/child pages before recording
+   what a section contains. *Incident this rule exists for:* CCSD recon read one empty Edlio
+   landing subpage and declared "agendas not published" — agendas were on per-year subpages
+   going back to 2011, and a HIGH compliance finding + records-request letter were generated
+   against a compliant district (caught by the operator, 2026-06-11).
+4. **Run an independent search-engine pass — site navigation alone is not recon.** Mandatory
+   queries (record which you ran in the registry notes):
+   - `"<jurisdiction>" board agenda` and `… meeting minutes`
+   - `"<jurisdiction>" public comment` and `… "submit comments"`
+   - `"<jurisdiction>" open records request` and `… records custodian email`
+   - `site:<official-domain> agenda` (catches pages unreachable from the nav)
+   The CCSD public-comment email (`contactus@ccboe.net`) and alternative channels were on a
+   first-page Google result while site-only recon concluded "no public comment email exists."
+5. **Sibling-record control for any absence claim.** If one record type parses fine from a CMS
+   and a sibling type looks empty on the SAME CMS, treat the absence as a recon failure
+   hypothesis first, a finding second. A district that diligently posts minutes but "has no
+   agendas page" is far more likely a mis-navigated section than a compliance gap.
+6. Find the open-records / records-custodian page. Record the intake method and whether an
+   email is plaintext. Separately record PUBLIC-COMMENT channels (form, email, phone,
+   special-topic hearings) — they are distinct from records intake and both feed config.
+7. Note gaps: empty agenda pages, dead document links, stub PDFs, portal-only intake, no online minutes.
+8. **A negative claim ("not published", "no email") requires BOTH a structure sweep (3) and a
+   search pass (4) to agree**, and the config note must say so. Set `verified`/`confidence`
+   honestly based on whether you saw it live; a single-page check never justifies
+   `confidence: high` on an absence.
 
 ## 4. Onboarding cost model (derived)
 

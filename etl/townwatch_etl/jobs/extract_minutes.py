@@ -859,6 +859,18 @@ def main() -> int:
 
     with connect() as conn:
         rows = conn.execute(sql, params).fetchall()
+        # Build-phase depth gate: meetings older than the initial window only
+        # extract once the jurisdiction's historical-seeding phase is funded
+        # to its estimate (see build_phases). Deferrals are reported, never
+        # silent — the catalog still lists these meetings. An explicit --force
+        # campaign (operator-run re-extract) bypasses the gate.
+        deferred: dict = {}
+        if not args.force:
+            from ..build_phases import filter_phase_locked
+            rows, deferred = filter_phase_locked(conn, rows)
+    for jid, d in deferred.items():
+        print(f"  ⏳ jurisdiction {jid}: {d['count']} historical meeting(s) deferred — "
+              f"{d['state']['reason']}")
 
     from ..extraction_ledger import new_run_id
     run_id = new_run_id()
