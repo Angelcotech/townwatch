@@ -65,7 +65,7 @@ Output directory: `research/{st}_recon/` mirroring GA. Phases run in order;
 each ends with an **adversarial verification gate** (independent agents
 instructed to refute, not confirm — see Verification discipline below).
 
-### Phase A — Law layer
+### Phase A — Law layer (statute inventory first)
 What: open records act + open meetings act dossier: statute cites, response
 deadline, fee regime, **requester residency restriction** (post-*McBurney v.
 Young* these are enforceable — VA/TN/AL/AR/DE/NJ/MO priors in the ledger),
@@ -80,6 +80,50 @@ Exit criteria: every pipeline-relevant rule has a statute cite verified
 against the actual statute text; residency posture decided (direct send vs
 citizen-proxy lane).
 GA artifact: `_state_defaults/ga.json` (predates the playbook).
+
+**Statute inventory (the mandatory core of this phase — complete it before
+any jurisdiction recon in the state).** Recording duties differ in SHAPE
+between states, not just wording (confirmed 2026-06-11): Georgia splits the
+post-meeting duty in two tiers — a written summary of subjects acted on
+within 2 business days of adjournment (OCGA § 50-14-1(e)(2)(A)) and full
+minutes open once approved, no later than immediately following the next
+regular meeting ((e)(2)(B)); verified against the AG's published Act text —
+while South Carolina has NO summary tier, minutes due only "within a
+reasonable time" (S.C. Code § 30-4-90), and its sharp deadline is
+PRE-meeting: agendas posted at least 24 hours in advance, including on the
+body's public website (§ 30-4-80; verified at scstatehouse.gov 2026-06-11).
+Each state's fastest audit trigger lives in a different place — GA's is
+post-meeting, SC's is pre-meeting — so neither the finding categories nor
+the recon questions transfer between states unexamined.
+
+Per state, the inventory requires:
+1. Read the open-meetings + public-records statutes from primary sources
+   (the state code site or an AG publication — never a secondary summary);
+   record the URL and verification date.
+2. Enumerate EVERY required record type with its deadline and citation:
+   agenda posting window, minutes deadline/approval rule, any summary tier,
+   notice requirements, recording requirements.
+3. Derive from the inventory:
+   (a) the state's `finding_categories` entries in
+       `jurisdictions/_open_records_laws.json` (statute_label /
+       statute_text / statute_url / verified_at — GA's two-tier (e)(2)
+       entry is the completed reference example);
+   (b) the state's RECON DIMENSIONS for Tier 2 — e.g. a "summary
+       publication channel" dimension exists for Georgia only because
+       Georgia's law has a summary tier; SC instead needs
+       agenda-posting-timeliness observability (which our daily inventory
+       cadence is naturally positioned to watch).
+4. **No observer activates for a record type until (i) the statute
+   inventory cites it AND (ii) ingestion for that record type exists.**
+   Claiming absence from data we never collect is the CCSD-class error
+   (see Verification discipline below, `research/ga_recon/METHODOLOGY.md`
+   §3, and the comment above `_MINUTES_APPROVAL_GRACE_DAYS` in
+   `etl/townwatch_etl/jobs/refresh_findings.py`).
+
+Inventory status: **GA complete** (`_open_records_laws.json`, citations
+re-verified against the AG's Act text 2026-06-11). **SC partially started**
+(the § 30-4-80/-90 facts above, verified 2026-06-11) — finish it as the
+first act of SC's Phase A.
 
 ### Phase B — Universe verification
 What: reconcile Tier-0 counts against state authorities; enumerate
