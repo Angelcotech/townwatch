@@ -147,6 +147,7 @@ def _build_edlio_binding() -> _PlatformBinding:
         return {
             "category_id": cat_id, "category_name": body_name,
             "minutes_url": e.get("minutes_url"), "agendas_url": e.get("agendas_url"),
+            "presentations_url": e.get("presentations_url"),
             "schedule_url": e.get("schedule_url"), "since": since,
         }
 

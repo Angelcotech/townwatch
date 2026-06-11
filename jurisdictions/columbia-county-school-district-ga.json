@@ -3,9 +3,9 @@
   "config_meta": {
     "generated_at": "2026-06-04",
     "generated_by": "manual_recon",
-    "last_verified": "2026-06-04",
+    "last_verified": "2026-06-11",
     "review_frequency_days": 90,
-    "notes": "First school_district jurisdiction. Spike (2026-06-04) found: minutes posted as Google Docs on an Edlio page (export?format=pdf works via redirect; some links are 410-Gone dead docs); agendas page is EMPTY (no documents) -> expect an agenda_missing finding under OCGA 50-14-1(e)(1) and NO live forums for CCSD until agendas are posted."
+    "notes": "First school_district jurisdiction. Edlio sections are YEAR-PAGINATED (one subpage per school year, back to ~2010); the 2026-06-04 spike checked a single empty landing subpage and wrongly concluded agendas were not published — they ARE, on per-year subpages (operator-verified 2026-06-11). Config now points at section ROOTS and the edlio scraper sweeps every year subpage. Minutes are Google Docs (export?format=pdf via redirect; some links 410-Gone); agendas likewise; Meeting Presentations are direct PDFs (mapped to packet_url)."
   },
   "jurisdiction": {
     "name": "Columbia County School District",
@@ -41,8 +41,10 @@
     "request_form_url": "https://www.ccboe.net/apps/pages/index.jsp?uREC_ID=4394898&type=d&pREC_ID=form.COLCS.sPdNlct.1nS",
     "board_meetings_url": "https://www.ccboe.net/apps/pages/index.jsp?uREC_ID=4394898&type=d&pREC_ID=2615343",
     "policy": "BCBI (Public Participation in Board Meetings)",
+    "contact_email": "contactus@ccboe.net",
     "contact_phone": "(706) 541-2723 ext. 5202",
-    "notes": "Public comment to the Board of Education is submitted via the district's 'Public Participation Request Form' (online), governed by Board Policy BCBI, NOT a free-text email. There is no public board-comment email address; the board office line is 706-541-2723 ext. 5202. Implication for TownWatch: the live-forum digest cannot be emailed to CCSD the way it is for the city/county clerk — delivering CCSD comment requires form submission (or directing citizens to the form). Verified 2026-06-04 against the Board Meetings page. Speaker registration window/rules live on the Rules of Conduct for Public Participation page."
+    "registration_deadline_hours": 24,
+    "notes": "Primary channel: the district's 'Public Participation Request Form' (online, 24-hour pre-meeting registration deadline), governed by Board Policy BCBI. ALTERNATIVE channels for those who miss the deadline or cannot attend (operator-verified 2026-06-11): email a statement to contactus@ccboe.net, or leave a message at (706) 541-2723 ext. 5202. The district also hosts standalone special-topic public hearings (annual tax rate, budget adjustments) with dedicated floor time. Implication for TownWatch: the live-forum digest CAN be emailed (contactus@ccboe.net) in addition to directing citizens to the form. Speaker registration window/rules live on the Rules of Conduct for Public Participation page."
   },
   "governing_bodies": [
     {
@@ -53,8 +55,9 @@
       "website_url": "https://www.ccboe.net/apps/pages/index.jsp?uREC_ID=1197232&type=d&pREC_ID=1438919",
       "edlio": {
         "category_id": 1,
-        "minutes_url": "https://www.ccboe.net/apps/pages/index.jsp?uREC_ID=1197295&type=d&pREC_ID=2598629",
-        "agendas_url": "https://www.ccboe.net/apps/pages/index.jsp?uREC_ID=1197294&type=d&pREC_ID=1630751",
+        "minutes_url": "https://www.ccboe.net/apps/pages/index.jsp?uREC_ID=1197295&type=d",
+        "agendas_url": "https://www.ccboe.net/apps/pages/index.jsp?uREC_ID=1197294&type=d",
+        "presentations_url": "https://www.ccboe.net/apps/pages/index.jsp?uREC_ID=4445106&type=d",
         "schedule_url": "https://www.ccboe.net/apps/pages/index.jsp?uREC_ID=4394898&type=d&pREC_ID=2615343"
       }
     }
@@ -73,12 +76,12 @@
       "notes": "Board of Education member directory. Verify member count + posts/districts during first onboarding pass."
     },
     "meeting_agendas_minutes": {
-      "status": "partial",
+      "status": "found",
       "source": "edlio_cms_google_docs",
-      "url": "https://www.ccboe.net/apps/pages/index.jsp?uREC_ID=1197295&type=d&pREC_ID=2598629",
+      "url": "https://www.ccboe.net/apps/pages/index.jsp?uREC_ID=1197295&type=d",
       "ingest_method": "scrape",
       "format": "html_index+google_docs_pdf",
-      "notes": "Minutes only. Each minutes link is a Google Doc; fetch via /export?format=pdf (civic_get follows the googleusercontent redirect). Agendas are NOT posted as documents (empty agendas page) -> agenda_missing finding."
+      "notes": "Agendas AND minutes both published, year-paginated back to ~2010/2011 (operator-verified 2026-06-11; the 2026-06-04 spike saw only an empty landing subpage). Each link is a Google Doc; fetch via /export?format=pdf (civic_get follows the googleusercontent redirect); some old links are 410-Gone. Meeting Presentations (slide decks/proposals, direct PDFs) ride along as packet_url."
     },
     "campaign_finance": {
       "status": "not_available",
@@ -98,12 +101,5 @@
     "source_url": "https://www.ccboe.net/apps/pages/index.jsp?uREC_ID=4394898&type=d&pREC_ID=2615343",
     "notes": "Policy-based, not statutory (OMA does not mandate public comment). Context for the forum config; not an audit finding."
   },
-  "known_gaps": [
-    {
-      "category": "agenda_not_published",
-      "explanation": "CCSD does not post board meeting agendas as accessible documents (agendas page is empty). OCGA 50-14-1(e)(1) requires the agenda to be available. Verified by spike 2026-06-04.",
-      "user_facing_message": "Columbia County School District does not appear to publish its board meeting agendas online; only minutes are posted.",
-      "remediation": "Surfaced automatically as an agenda_missing finding."
-    }
-  ]
+  "known_gaps": []
 }
