@@ -58,6 +58,24 @@ def _render_letter_bytes(letter: dict) -> bytes:
 # language; the boilerplate (response deadline, fee cap, withholding clause)
 # is shared across categories and pulled from state law config.
 _CATEGORY_LETTER_CONFIG = {
+    "agenda_missing": {
+        "subject_template": (
+            "Georgia Open Records Act request &mdash; "
+            "{body_name} meeting agendas, {since_human}&ndash;present"
+        ),
+        "items_template": [
+            (
+                "All meeting agendas of the {city_full} {body_name} for meetings held during "
+                "the period {since_human} through the present ({today_human}), including any "
+                "amended or final versions where the agenda changed at the meeting."
+            ),
+            (
+                "For any {body_name} meeting in that period for which no agenda was prepared, "
+                "a written statement to that effect identifying the meeting by date."
+            ),
+        ],
+        "record_type": "meeting agendas",
+    },
     "minutes_missing": {
         "subject_template": (
             "Georgia Open Records Act request &mdash; "
@@ -312,7 +330,8 @@ def _build_letter(
         "title": f"Records Request — {city_full} {body_name} {tmpl['record_type']}",
         "date": today.strftime("%B %-d, %Y"),
         "recipient": recipient,
-        "delivery_note": f"Sent via: email to {custodian['email']} and U.S. Mail.",
+        "delivery_note": (f"Sent via: email to {custodian['email']} and U.S. Mail."
+                          if custodian.get("email") else "Sent via: U.S. Mail."),
         "subject": tone_block["subject"],
         "greeting": tone_block["greeting"],
         "preamble_paragraphs": tone_block["preamble_paragraphs"],
@@ -330,7 +349,7 @@ def _tone_block(*, tone, custodian, city_full, body_name, record_type, ora, resp
     greeting, preamble_paragraphs (list), body_paragraphs (list),
     closing, signoff. Items list comes from the category template and
     is identical across tones."""
-    first_name = (custodian["name"].split() or [custodian["name"]])[0]
+    first_name = _greeting_first_name(custodian)
     last_with_title = _greeting_last_name(custodian)
     # Bare category suffix (e.g. "Planning Commission meeting minutes, …")
     # — the tone-specific prefix is added below per level.
@@ -359,11 +378,7 @@ def _tone_block(*, tone, custodian, city_full, body_name, record_type, ora, resp
                     "see how their government works."
                 ),
                 # Gratitude
-                (
-                    f"Before I get to my request, I want to thank you for the work you "
-                    f"do as {custodian['title']}. Records custodianship is some of the "
-                    f"most important and least visible work in local government."
-                ),
+                _gratitude_sentence(custodian),
                 # Disarm
                 (
                     "This isn't an adversarial request. Where we find gaps in published "
@@ -448,9 +463,54 @@ def _business_days_word(n: int) -> str:
     return {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 7: "seven", 10: "ten"}.get(n, str(n))
 
 
+_ROLE_NAME_WORDS = {
+    "office", "officer", "custodian", "records", "department", "division",
+    "administrator", "manager", "secretary", "superintendent",
+}
+
+
+def _is_role_name(name: str) -> bool:
+    """True when the configured custodian "name" is a ROLE, not a person
+    (e.g. "Open Records Officer") — some jurisdictions publish only an office,
+    never a named custodian. Person-style greetings built from a role name
+    ("Hi Open,", "Dear Mr./Ms. Officer,") read as botched mail-merge."""
+    return any(w.strip(".,").lower() in _ROLE_NAME_WORDS for w in name.split())
+
+
+def _greeting_first_name(custodian: dict) -> str:
+    """First name for the friendly tone — or "there" when the custodian is an
+    unnamed office ("Hi there," beats "Hi Open,")."""
+    name = custodian["name"]
+    if _is_role_name(name):
+        return "there"
+    return (name.split() or [name])[0]
+
+
+def _gratitude_sentence(custodian: dict) -> str:
+    """The friendly-tone thank-you line. The "work you do as {title}" phrasing
+    assumes a named person with a title; for an unnamed office (role-style
+    custodian) it produced "thank you for the work you do as Columbia County
+    School District" — thank the office instead."""
+    if _is_role_name(custodian["name"]):
+        return (
+            "Before I get to my request, I want to thank your office for its work. "
+            "Records custodianship is some of the most important and least visible "
+            "work in local government."
+        )
+    return (
+        f"Before I get to my request, I want to thank you for the work you "
+        f"do as {custodian['title']}. Records custodianship is some of the "
+        f"most important and least visible work in local government."
+    )
+
+
 def _greeting_last_name(custodian: dict) -> str:
-    parts = custodian["name"].split()
-    last = parts[-1] if parts else custodian["name"]
+    name = custodian["name"]
+    if _is_role_name(name):
+        # Address the office itself: "Dear Open Records Officer,".
+        return name
+    parts = name.split()
+    last = parts[-1] if parts else name
     honorific = custodian.get("honorific", "").strip()
     if honorific in ("Hon.", "Honorable"):
         return f"{honorific} {last}"
@@ -649,7 +709,7 @@ def _build_consolidated_letter(
     response_days = ora["response_deadline_business_days"]
     today = date.today()
     city_full = f"City of {j['display_name']}" if j["type"] == "city" else j["display_name"]
-    first_name = (custodian["name"].split() or [custodian["name"]])[0]
+    first_name = _greeting_first_name(custodian)
     last_with_title = _greeting_last_name(custodian)
 
     # Group findings by body, preserving DB-order so PC/BZA/Council
@@ -667,7 +727,13 @@ def _build_consolidated_letter(
         for f in body_findings:
             tmpl = _CATEGORY_LETTER_CONFIG.get(f["category"])
             if not tmpl:
-                continue
+                # Loud, like the per-finding path: silently dropping a category
+                # here mailed a letter that asked the clerk for NOTHING (CCSD
+                # agenda_missing, 2026-06-11 — agenda_missing had no template).
+                raise ValueError(
+                    f"No letter template for finding category {f['category']!r}. "
+                    f"Add an entry to _CATEGORY_LETTER_CONFIG."
+                )
             if tone == 1:
                 # Friendly default: a tight one-line "what's missing" per item, so
                 # the clerk can scan the ask at a glance. The thorough, formally
@@ -717,7 +783,8 @@ def _build_consolidated_letter(
         "title": f"Records Request — {city_full}",
         "date": today.strftime("%B %-d, %Y"),
         "recipient": recipient,
-        "delivery_note": f"Sent via: email to {custodian['email']} and U.S. Mail.",
+        "delivery_note": (f"Sent via: email to {custodian['email']} and U.S. Mail."
+                          if custodian.get("email") else "Sent via: U.S. Mail."),
         "subject": framing["subject"],
         "greeting": framing["greeting"],
         "preamble_paragraphs": framing["preamble_paragraphs"],
@@ -744,11 +811,7 @@ def _consolidated_tone_block(*, tone, custodian, city_full, first_name, last_wit
                     "project that aggregates local government records so citizens can "
                     "see how their government works."
                 ),
-                (
-                    f"Before I get to my request, I want to thank you for the work you "
-                    f"do as {custodian['title']}. Records custodianship is some of the "
-                    f"most important and least visible work in local government."
-                ),
+                _gratitude_sentence(custodian),
                 (
                     "This isn't an adversarial request. Where we find gaps in published "
                     "records, our goal is to help close them so citizens have a complete "

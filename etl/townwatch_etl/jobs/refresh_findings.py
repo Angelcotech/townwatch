@@ -502,47 +502,12 @@ def refresh_body(
                 summary["actions"].append({
                     "category": obs.category, "count": obs.count, "action": action,
                 })
-                # Auto-prepare records request when a finding is newly opened or
-                # reopened. Uses the consolidated path — one records_request
-                # per jurisdiction covering all open findings — so the clerk
-                # gets one email instead of N. ensure_consolidated_request is
-                # idempotent; it refreshes finding_ids + regenerates the PDF
-                # if the set of open findings has changed.
-                if action in ("inserted", "reopened"):
-                    try:
-                        from .prepare_records_request import ensure_consolidated_request
-                        jurisdiction_id_row = conn.execute(
-                            "SELECT jurisdiction_id FROM governing_body WHERE id = %s",
-                            (body_id,),
-                        ).fetchone()
-                        if jurisdiction_id_row is None:
-                            raise RuntimeError(f"governing_body {body_id} has no jurisdiction_id")
-                        result = ensure_consolidated_request(
-                            conn, jurisdiction_id_row["jurisdiction_id"],
-                        )
-                        if result and (result["created"] or result["updated"]):
-                            summary["actions"].append({
-                                "category": obs.category,
-                                "action": "consolidated_request_prepared" if result["created"] else "consolidated_request_refreshed",
-                                "records_request_id": result["records_request_id"],
-                                "finding_count": len(result["finding_ids"]),
-                            })
-                    except Exception as e:
-                        # Loud failure — preparation problems must not silently
-                        # leave a finding without an actionable request.
-                        record_failure(
-                            conn,
-                            job_name="refresh_findings",
-                            step="auto_prepare_request",
-                            governing_body_id=body_id,
-                            finding_id=finding_id,
-                            message=f"auto-prepare raised {type(e).__name__}: {e}",
-                            exception=e,
-                            context={"category": obs.category},
-                        )
-                        summary["actions"].append({
-                            "category": obs.category, "action": "prepare_failed",
-                        })
+                # Records-request preparation happens in reconcile_requests()
+                # at the end of the run — for EVERY jurisdiction with open
+                # findings, not just on insert/reopen. The insert-time trigger
+                # this replaces was lossy: a finding opened while preparation
+                # was broken (CCSD agenda_missing, 2026-06-04) stayed without
+                # a request forever because nothing ever retried.
             except Exception as e:
                 record_failure(
                     conn,
@@ -575,6 +540,54 @@ def refresh_body(
     return summary
 
 
+def reconcile_requests(conn, fips: str | None, dry_run: bool) -> list[dict]:
+    """Ensure every jurisdiction with open findings has a consolidated
+    records_request covering them. Runs every refresh — reconciliation, not a
+    trigger — so a request missed at finding-open time (preparation broken,
+    crash mid-run) self-heals on the next pass. ensure_consolidated_request is
+    idempotent: unchanged open-finding set → no-op; changed set → refresh the
+    PDF in place; uncovered set → create. Local PDF rendering, no model spend."""
+    from .prepare_records_request import ensure_consolidated_request
+    sql = """
+        SELECT DISTINCT j.id, j.display_name
+        FROM compliance_finding cf
+        JOIN governing_body gb ON gb.id = cf.governing_body_id
+        JOIN jurisdiction j ON j.id = gb.jurisdiction_id
+        WHERE cf.status = 'open'
+    """
+    params: list = []
+    if fips:
+        sql += " AND j.fips_code = %s"
+        params.append(fips)
+    actions: list[dict] = []
+    for j in conn.execute(sql, params).fetchall():
+        if dry_run:
+            actions.append({"jurisdiction": j["display_name"], "action": "would_reconcile"})
+            continue
+        try:
+            result = ensure_consolidated_request(conn, j["id"])
+            if result and (result["created"] or result["updated"]):
+                actions.append({
+                    "jurisdiction": j["display_name"],
+                    "action": "request_prepared" if result["created"] else "request_refreshed",
+                    "records_request_id": result["records_request_id"],
+                    "finding_count": len(result["finding_ids"]),
+                })
+        except Exception as e:
+            # Loud failure — preparation problems must not silently leave a
+            # finding without an actionable request.
+            record_failure(
+                conn,
+                job_name="refresh_findings",
+                step="auto_prepare_request",
+                message=f"reconcile raised {type(e).__name__}: {e}",
+                exception=e,
+                context={"jurisdiction_id": j["id"]},
+            )
+            actions.append({"jurisdiction": j["display_name"], "action": "prepare_failed"})
+    return actions
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--jurisdiction", help="Restrict to this jurisdiction slug")
@@ -588,13 +601,15 @@ def main() -> int:
         JOIN jurisdiction j ON j.id = gb.jurisdiction_id
     """
     params: list = []
+    fips: str | None = None
     if args.jurisdiction:
         from ..jurisdiction import load_config, jurisdiction_fips
         cfg = load_config(args.jurisdiction)
         # Resolve the canonical fips_code (school_district_fips / place_fips /
         # county_fips) so a school district scopes to its own GEOID, not its county.
+        fips = jurisdiction_fips(cfg)
         sql += " WHERE j.fips_code = %s"
-        params.append(jurisdiction_fips(cfg))
+        params.append(fips)
     sql += " ORDER BY j.display_name, gb.name"
 
     with connect() as conn:
@@ -614,6 +629,11 @@ def main() -> int:
                     print(f"  [{summary['body']}] {a}")
             else:
                 print(f"  [{summary['body']}] no findings")
+
+        # Reconcile consolidated records requests across every jurisdiction
+        # with open findings (see reconcile_requests docstring).
+        for a in reconcile_requests(conn, fips, args.dry_run):
+            print(f"  [requests] {a}")
     print(json.dumps({"dry_run": args.dry_run, "bodies": len(all_summaries)}, indent=2))
     return 0
 
