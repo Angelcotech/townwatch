@@ -205,12 +205,17 @@ def extract_from_pdf_bytes(pdf_bytes: bytes) -> ElectionResultsExtraction:
     results are tabular and require little reasoning to extract; with
     thinking on, the model burns the max_tokens budget on internal
     reasoning and returns an empty text block. Plain extraction with
-    a generous max_tokens is more reliable for this content type."""
+    a generous max_tokens is more reliable for this content type.
+
+    Streamed with a 32K output budget (same fix as the minutes extractor):
+    county-wide official results run dozens of pages, and the old 16384
+    non-streaming call either truncated into empty/invalid JSON or tripped
+    the SDK's 10-minute non-streaming guard outright."""
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
     pdf_b64 = base64.standard_b64encode(pdf_bytes).decode("utf-8")
-    response = client.messages.create(
+    with client.messages.stream(
         model=VISION_MODEL,
-        max_tokens=16384,
+        max_tokens=32000,
         messages=[
             {
                 "role": "user",
@@ -227,7 +232,8 @@ def extract_from_pdf_bytes(pdf_bytes: bytes) -> ElectionResultsExtraction:
                 ],
             },
         ],
-    )
+    ) as stream:
+        response = stream.get_final_message()
     return _parse_json_response(response)
 
 
@@ -249,12 +255,13 @@ def extract_from_html(html: str, *, page_url: str | None = None) -> ElectionResu
 
 def extract_from_screenshot(image_path: Path, *, media_type: str = "image/png") -> ElectionResultsExtraction:
     """For JS-rendered results portals (Clarity Elections, modern county
-    sites), screenshot the rendered page and send to vision."""
+    sites), screenshot the rendered page and send to vision. Streamed with
+    a 32K budget for the same reason as the PDF path."""
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
     img_b64 = base64.standard_b64encode(image_path.read_bytes()).decode("utf-8")
-    response = client.messages.create(
+    with client.messages.stream(
         model=VISION_MODEL,
-        max_tokens=16384,
+        max_tokens=32000,
         messages=[
             {
                 "role": "user",
@@ -271,7 +278,8 @@ def extract_from_screenshot(image_path: Path, *, media_type: str = "image/png") 
                 ],
             },
         ],
-    )
+    ) as stream:
+        response = stream.get_final_message()
     return _parse_json_response(response)
 
 

@@ -83,9 +83,13 @@ def _check_stale(conn, fips: str | None, dry_run: bool) -> tuple[int, int]:
 def _rollup_failures(conn, fips: str | None, dry_run: bool) -> tuple[int, int]:
     """One issue per (jurisdiction, job_name, step) with unresolved pipeline_failure
     rows. Resolves each failure to a jurisdiction via governing_body / meeting / the
-    context jurisdiction_id. Closes job_failure issues with no surviving failures."""
+    context jurisdiction_id; failures attributable to NO jurisdiction (cron-level
+    crashes, org-wide ingest jobs) roll up into ORG-LEVEL issues (jurisdiction_id
+    NULL — same convention as the env-key checks) so nothing stays invisible to the
+    health worklist. Closes job_failure issues with no surviving failures."""
     sql = """
-        SELECT f.jid, j.display_name, f.job_name, f.step,
+        SELECT f.jid, COALESCE(j.display_name, '(org)') AS display_name,
+               f.job_name, f.step,
                count(*) AS n, max(f.created_at) AS latest,
                (array_agg(f.message ORDER BY f.created_at DESC))[1] AS latest_message,
                (array_agg(f.id ORDER BY f.created_at DESC))[1:10] AS failure_ids
@@ -99,12 +103,14 @@ def _rollup_failures(conn, fips: str | None, dry_run: bool) -> tuple[int, int]:
             LEFT JOIN governing_body gb2 ON gb2.id = m.governing_body_id
             WHERE pf.resolved_at IS NULL
         ) f
-        JOIN jurisdiction j ON j.id = f.jid
-        WHERE f.jid IS NOT NULL
+        LEFT JOIN jurisdiction j ON j.id = f.jid
     """
     params: list = []
     if fips:
-        sql += " AND j.fips_code = %s"
+        # A scoped (per-jurisdiction) run only reconciles its own issues; org-level
+        # rows are the unscoped daily run's responsibility, mirroring how scoped
+        # daily_refresh runs skip the jurisdiction-agnostic steps.
+        sql += " WHERE f.jid IS NOT NULL AND j.fips_code = %s"
         params.append(fips)
     sql += " GROUP BY f.jid, j.display_name, f.job_name, f.step"
     groups = conn.execute(sql, tuple(params)).fetchall()

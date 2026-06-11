@@ -227,18 +227,46 @@ def run_kind(
                     if not summary:
                         print(f"  ✗ meeting {m['id']}: empty summary returned")
                         errored += 1
+                        _record(conn, m["id"], kind, "empty summary returned")
                         continue
                     column = "agenda_ai_summary" if kind == "agenda" else "minutes_ai_summary"
                     conn.execute(
                         f"UPDATE meeting SET {column} = %s, updated_at = now() WHERE id = %s",
                         (summary, m["id"]),
                     )
+                    conn.execute(
+                        "UPDATE pipeline_failure SET resolved_at = now(), "
+                        "resolution_notes = 'superseded by successful backfill_summaries run' "
+                        "WHERE job_name = 'backfill_summaries' AND meeting_id = %s AND resolved_at IS NULL",
+                        (m["id"],),
+                    )
                     succeeded += 1
                     print(f"  ✓ meeting {m['id']} ({m['body_name']} {m['meeting_date']}): {summary[:100]}{'...' if len(summary) > 100 else ''}")
                 except Exception as e:
                     errored += 1
                     print(f"  ✗ meeting {m['id']}: {e}")
+                    _record(conn, m["id"], kind, f"{type(e).__name__}: {e}", exception=e)
         return succeeded, errored
+
+
+def _record(conn, meeting_id: int, kind: str, message: str, exception: Exception | None = None) -> None:
+    """Persist a per-meeting summary failure so it is attributable (rolls up
+    into the meeting's jurisdiction issue) instead of living only in stdout —
+    the job's non-zero exit was previously undiagnosable without Railway logs.
+    Supersedes the meeting's prior unresolved row so nightly retries can't
+    accumulate duplicates."""
+    try:
+        from ..audit import record_failure
+        conn.execute(
+            "UPDATE pipeline_failure SET resolved_at = now(), "
+            "resolution_notes = 'superseded by later backfill_summaries attempt' "
+            "WHERE job_name = 'backfill_summaries' AND meeting_id = %s AND resolved_at IS NULL",
+            (meeting_id,),
+        )
+        record_failure(conn, job_name="backfill_summaries", step=kind,
+                       meeting_id=meeting_id, message=message, exception=exception)
+    except Exception as rec_err:
+        print(f"  ⚠ could not record failure for {meeting_id}: {rec_err}")
 
 
 def main() -> int:

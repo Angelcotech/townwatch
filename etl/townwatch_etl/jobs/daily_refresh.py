@@ -340,10 +340,15 @@ def _reconcile_data_source_jurisdictions() -> None:
 
 
 def _record_run_summary(summary: dict) -> None:
-    """Record the daily run summary to pipeline_failure if anything broke,
-    so the admin queue surfaces problems even without paging through logs."""
-    failed_steps = [s for s in summary["steps"] if not s["ok"]]
-    if not failed_steps:
+    """Record a pipeline_failure ONLY for failed jurisdiction-AGNOSTIC steps —
+    they have no run heartbeat, so this row is their only surfacing (it rolls
+    up into an org-level pipeline_issue). Per-jurisdiction step failures are
+    deliberately excluded: _record_health already opens a step_failed issue
+    per (jurisdiction, module), and duplicating them here kept a permanent
+    org-level issue open for problems that were already tracked and fixed."""
+    failed_global = [s["module"] for s in summary["steps"]
+                     if not s["ok"] and s.get("slug") is None]
+    if not failed_global:
         return
     with connect() as conn:
         conn.execute(
@@ -354,7 +359,7 @@ def _record_run_summary(summary: dict) -> None:
             (
                 "daily_refresh",
                 "summary",
-                f"{len(failed_steps)} of {len(summary['steps'])} daily-refresh steps failed",
+                f"global step(s) failed: {', '.join(failed_global)}",
                 json.dumps(summary),
             ),
         )
