@@ -35,15 +35,16 @@ def _slugify(name: str) -> str:
     return re.sub(r"-+", "-", re.sub(r"[^a-z0-9]+", "-", name.lower())).strip("-")
 
 
-def _place_to_county_fips(roster: dict) -> dict[str, str]:
-    """7-digit place fips ('13'+place) → primary county fips, from the roster."""
+def _place_to_county_fips(roster: dict) -> dict[str, list[str]]:
+    """7-digit place fips ('13'+place) → the full list of county fips the place spans,
+    from the roster (a city can be in several counties — Atlanta, Roswell, …)."""
     county_fips_by_name = {c["name"]: c["fips"] for c in roster["counties"].values()}
-    out: dict[str, str] = {}
+    out: dict[str, list[str]] = {}
     for m in roster["municipalities"].values():
         place_fips = "13" + str(m["place_fips"]).zfill(5)
-        counties = m.get("counties") or []
-        if counties:
-            out[place_fips] = county_fips_by_name.get(counties[0])
+        fips = [county_fips_by_name[c] for c in (m.get("counties") or []) if c in county_fips_by_name]
+        if fips:
+            out[place_fips] = fips
     return out
 
 
@@ -61,30 +62,32 @@ def run(state: str = "GA", *, dry_run: bool = False) -> dict:
             (state,),
         ).fetchall()
 
-        updates: list[tuple[str | None, str, int]] = []  # (county_fips, slug, id)
+        updates: list[tuple[str | None, list[str], str, int]] = []  # (county_fips, nav_county_fips, slug, id)
         missing_county = 0
         for r in rows:
             t = r["jurisdiction_type"]
             if t == "county":
-                cf = r["fips"]
-            elif t == "school_district":
-                cf = r["bundle_fips"]
-            elif r["bundle_fips"]:          # consolidated city → its county
-                cf = r["bundle_fips"]
-            else:                           # ordinary city
-                cf = muni_county.get(r["fips"])
-            if cf is None and t in ("city", "school_district"):
+                counties = [r["fips"]]
+            elif t == "school_district" or r["bundle_fips"]:   # school district / consolidated → its county
+                counties = [r["bundle_fips"]] if r["bundle_fips"] else []
+            else:                                              # ordinary city → all counties it spans
+                counties = muni_county.get(r["fips"], [])
+            if not counties and t in ("city", "school_district"):
                 missing_county += 1
+            # county_fips = a single primary (first listed) for display; nav_county_fips =
+            # the full set, so the cascade lists a multi-county city under each county.
+            cf = counties[0] if counties else None
             slug = r["covered_slug"] or _slugify(r["name"])
-            updates.append((cf, slug, r["id"]))
+            updates.append((cf, counties, slug, r["id"]))
 
         if dry_run:
-            print(f"[dry-run] {len(updates)} rows; {missing_county} without a county_fips")
+            print(f"[dry-run] {len(updates)} rows; {missing_county} without a county")
             return {"rows": len(updates), "missing_county": missing_county, "dry_run": True}
 
         with conn.cursor() as cur:
             cur.executemany(
-                "UPDATE jurisdiction_directory SET county_fips = %s, slug = %s, updated_at = now() "
+                "UPDATE jurisdiction_directory "
+                "SET county_fips = %s, nav_county_fips = %s, slug = %s, updated_at = now() "
                 "WHERE id = %s",
                 updates,
             )
