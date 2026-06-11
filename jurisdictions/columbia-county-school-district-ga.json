@@ -26,6 +26,7 @@
   "records_custodian": {
     "name": "Open Records Officer",
     "title": "Columbia County School District",
+    "email": "contactus@ccboe.net",
     "mailing_address": [
       "Columbia County School District",
       "Open Records Office",
@@ -34,7 +35,7 @@
     ],
     "intake_method": "web_portal",
     "open_records_portal_url": "https://ccboe-ga.nextrequest.com/requests/new",
-    "notes": "NO emailable records custodian: CCSD accepts open-records requests ONLY through the NextRequest portal (https://ccboe-ga.nextrequest.com/requests/new), not a public email; staff emails on ccboe.net are obfuscated. So 'email' stays null and the contact monitor will read 'unverified' — that is ACCURATE, not a gap to paper over. When records-request auto-send is wired, CCSD needs portal-submission support rather than an email recipient. Verified 2026-06-04 against the district Open Records Requests page. Phone (706) 541-0650, fax (706) 447-2105."
+    "notes": "Primary intake is the NextRequest portal (https://ccboe-ga.nextrequest.com/requests/new). ERRATUM 2026-06-11 (audit): the district's own Open Records page ALSO publishes contactus@ccboe.net (Cloudflare-obfuscated mailto, 'please email contactus@ccboe.net' for portal-process questions) — a deliverable general mailbox, recorded here so requests/digests have an email channel and the contact monitor can verify it. The 2026-06-04 'no emailable custodian' claim was wrong (cf-obfuscation is publication). Phone (706) 541-0650, fax (706) 447-2105."
   },
   "public_comment": {
     "intake_method": "web_form",

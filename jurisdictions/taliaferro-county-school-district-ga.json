@@ -58,19 +58,19 @@
       "source": "none_published",
       "url": null,
       "ingest_method": "open_records_request",
-      "notes": "No agendas or minutes published online (verified live 2026-06-10, recon + adversarial re-check) despite the district's own charter Governance page promising web posting. The only meeting-adjacent documents are 2019-2021 staff leadership-team notes, which are not BOE records. ORR draft: research/ga_recon/orr_drafts/taliaferro-county-school-district-ga.md; superintendent email is a working plaintext recipient."
+      "notes": "No agendas or minutes published online (verified live 2026-06-10, recon + adversarial re-check) despite the district's own charter Governance page promising web posting. The only meeting-adjacent documents are 2019-2021 staff leadership-team notes, which are not BOE records. ORR draft: research/ga_recon/orr_drafts/taliaferro-county-school-district-ga.md; superintendent email is a working plaintext recipient. AUDIT 2026-06-11 (adversarial, exhaustive incl. Wayback CDX both domains, Simbli/BoardDocs): CONFIRMED for the elected Board of Education — but the site's /minutes page hosts two 2018 docx files from the TCS Charter System GOVERNANCE BOARD (a different body) and staff Leadership-Team minutes blog posts exist. All claims and the ORR letter must say 'elected Board of Education agendas/minutes', not 'no meeting documents of any kind'."
     }
   },
   "known_gaps": [
     {
       "category": "agenda_not_published",
-      "explanation": "The district publishes no board meeting agendas online. O.C.G.A. 50-14-1(e)(1) requires an agenda of matters expected to come before the body to be made available. Verified 2026-06-10 (recon + adversarial re-verification).",
+      "explanation": "The district publishes no board meeting agendas online. O.C.G.A. 50-14-1(e)(1) requires an agenda of matters expected to come before the body to be made available. Verified 2026-06-10 (recon + adversarial re-verification). Audit 2026-06-11: confirmed adversarially; scope is the ELECTED Board of Education (2018 charter-governance-board docs exist on /minutes but are a different body).",
       "user_facing_message": "Taliaferro County Schools does not appear to publish its board meeting agendas online.",
       "remediation": "Open-records request drafted 2026-06-10 (research/ga_recon/orr_drafts/taliaferro-county-school-district-ga.md); agendas will be indexed from the response. Surfaced as an agenda_missing finding meanwhile."
     },
     {
       "category": "minutes_not_published",
-      "explanation": "The district publishes no board meeting minutes online, contradicting its own charter Governance page ('All meeting agendas and minutes will be posted on the school website'). O.C.G.A. 50-14-1(e)(2)(B) makes approved minutes open public records. Verified 2026-06-10.",
+      "explanation": "The district publishes no board meeting minutes online, contradicting its own charter Governance page ('All meeting agendas and minutes will be posted on the school website'). O.C.G.A. 50-14-1(e)(2)(B) makes approved minutes open public records. Verified 2026-06-10. Audit 2026-06-11: confirmed adversarially; scope is the ELECTED Board of Education (2018 charter-governance-board docs exist on /minutes but are a different body).",
       "user_facing_message": "Taliaferro County Schools' website promises that agendas and minutes will be posted online, but none are.",
       "remediation": "Included in the same open-records request; minutes will be indexed from the response."
     },

@@ -90,6 +90,11 @@
         "version": "0.2.3",
         "date": "2026-06-11",
         "change": "ERRATUM columbia-county-school-district-ga: agendas ARE published (Edlio year subpages since 2011) and public-comment email exists (contactus@ccboe.net). Single-subpage recon caused a false agenda_missing finding, caught by operator before the records request mailed. METHODOLOGY §3 hardened: section-structure sweep + independent search-engine pass now required for any absence claim."
+      },
+      {
+        "version": "0.3.0",
+        "date": "2026-06-11",
+        "change": "FULL ABSENCE-CLAIM AUDIT (operator-directed after the CCSD false finding): 8 adversarial agents re-verified all 40 absence claims across 39 jurisdictions. RESULT: 26 REFUTED, 13 CONFIRMED, 1 INCONCLUSIVE. Every county and city custodian-email absence except Gainesville was false — emails were behind Cloudflare obfuscation, on admin/department pages, in ORR form PDFs, on JS-rendered pages raw fetches see as empty, or on a different official domain (Lincoln County entry pointed at the chamber site). School-district absences mostly held (Glascock/Taliaferro publish-nothing claims CONFIRMED exhaustively; APS/DeKalb/RCSS/Gainesville portal-only intakes genuine). Refuted entries corrected with emails + errata; confirmed entries carry attestation blocks. New systemic recon traps recorded: cf-obfuscated emails, JS-shell pages, wrong-domain entries, wrong-state lookalikes (bibbed.org=AL, fcps.net=KY, warrenschools=TN/KY/VA), post-redesign email removal (Wilkes)."
       }
     ]
   },
@@ -187,7 +192,7 @@
       ],
       "verified": "verified",
       "confidence": "high",
-      "notes": "ALREADY ONBOARDED. 13+ yrs archived PDFs. Source of truth = jurisdictions/grovetown-ga.json.",
+      "notes": "ALREADY ONBOARDED. 13+ yrs archived PDFs. Source of truth = jurisdictions/grovetown-ga.json. AUDIT 2026-06-11: absence claim(s) CONFIRMED by adversarial refutation (see verification block).",
       "public_comment": {
         "channel": "in_person_only",
         "comment_service": "none",
@@ -202,6 +207,38 @@
         "verified": "inferred",
         "confidence": "medium",
         "notes": "No published public-comment procedure anywhere on cityofgrovetown.com (checked City Council page /198/City-Council, AgendaCenter, site search for 'public comment' and 'citizens comments', FAQ). Verified this session: every Council agenda carries a standing 'Citizens Comments' item (e.g. item 11 on the 2026-06-08 agenda PDF, /AgendaCenter/ViewFile/Agenda/_06082026-307), and May 2026 minutes show citizens simply addressing Mayor Pro-Tem and Council during that item — no sign-up sheet, form, deadline, or remote/email channel is published. Channel 'in_person_only' is inferred from agenda+minutes practice; no Request-to-Speak form exists on the site. recipient_email is the clerk alias supplied from internal data (City Clerk Brian Henderson per May 2026 minutes), NOT verified on the live site this session — emailing the clerk is the only plausible remote route but is unpublished. automatable=false because the only observed channel requires physical attendance."
+      },
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://cityofgrovetown.com/198/City-Council",
+            "https://cityofgrovetown.com/AgendaCenter",
+            "https://cityofgrovetown.com/Directory.aspx",
+            "https://cityofgrovetown.com/FAQ.aspx"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Grovetown\" Georgia city council \"public comment\" email submit",
+            "Grovetown Georgia council \"request to speak\" OR eComment",
+            "site:cityofgrovetown.com \"public comment\" OR \"citizens comments\"",
+            "\"Grovetown\" Georgia open records request email",
+            "\"Grovetown\" Georgia records custodian",
+            "\"Grovetown\" Georgia board agenda",
+            "\"Grovetown\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_COMMENT_CHANNEL\": \"CONFIRMED\"}"
+        },
+        "audit_verdicts": {
+          "NO_COMMENT_CHANNEL": "CONFIRMED"
+        }
       }
     },
     "columbia-county-school-district-ga": {
@@ -215,18 +252,17 @@
       "agenda_source_url": "https://www.ccboe.net/apps/pages/index.jsp?uREC_ID=1197294&type=d",
       "records_custodian_name": "Open Records Officer",
       "records_custodian_title": "Open Records Officer",
-      "records_custodian_email": null,
-      "clerk_email_access": "portal_only",
+      "records_custodian_email": "contactus@ccboe.net",
+      "clerk_email_access": "obfuscated",
       "records_intake": "nextrequest",
       "records_intake_url": "https://ccboe-ga.nextrequest.com/requests/new",
       "notable_gaps": [
         "minutes are Google Docs; some 410-Gone dead",
-        "no emailable custodian; staff emails obfuscated",
         "public comment primarily via web form (Policy BCBI, 24h registration); alternative channels exist — email contactus@ccboe.net, phone ext. 5202 (erratum 2026-06-11)"
       ],
       "verified": "verified",
       "confidence": "high",
-      "notes": "ALREADY ONBOARDED. First school_district. Source of truth = jurisdictions/columbia-county-school-district-ga.json. ERRATUM 2026-06-11: prior entry claimed agendas not published and no public-comment email — both wrong. Agendas are year-paginated Edlio subpages back to 2011 (recon read one empty landing subpage); contactus@ccboe.net + board phone were first-page Google results. See METHODOLOGY.md §3 (structure sweep + search pass now mandatory for absence claims).",
+      "notes": "ALREADY ONBOARDED. First school_district. Source of truth = jurisdictions/columbia-county-school-district-ga.json. ERRATUM 2026-06-11: prior entry claimed agendas not published and no public-comment email — both wrong. Agendas are year-paginated Edlio subpages back to 2011 (recon read one empty landing subpage); contactus@ccboe.net + board phone were first-page Google results. See METHODOLOGY.md §3 (structure sweep + search pass now mandatory for absence claims). ERRATUM 2026-06-11 (audit): custodian email IS published — contactus@ccboe.net. General district mailbox published ON the district's Open Records page (cf-obfuscated) for portal-process questions; primary intake remains NextRequest.",
       "public_comment": {
         "channel": "web_form",
         "comment_service": "custom_form",
@@ -244,6 +280,33 @@
         "alternative_email": "contactus@ccboe.net",
         "alternative_phone": "(706) 541-2723 ext. 5202",
         "special_topic_hearings": true
+      },
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.ccboe.net/apps/pages/index.jsp?uREC_ID=2888666&type=d&pREC_ID=2332785"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Columbia County School District\" Georgia \"open records\" request email custodian",
+            "\"Columbia County School District\" Georgia open records request email",
+            "\"Columbia County School District\" Georgia records custodian",
+            "\"Columbia County School District\" Georgia board agenda",
+            "\"Columbia County School District\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "REFUTED"
+        }
       }
     },
     "richmond-county-augusta-ga": {
@@ -257,7 +320,7 @@
       "agenda_source_url": "https://augustarichmond-ga.municodemeetings.com/",
       "records_custodian_name": null,
       "records_custodian_title": "Open Records Officer",
-      "records_custodian_email": null,
+      "records_custodian_email": "openrecords@augustaga.gov",
       "clerk_email_access": "obfuscated",
       "records_intake": "nextrequest",
       "records_intake_url": "https://cityofaugustaga.nextrequest.com/requests/new",
@@ -268,7 +331,34 @@
       ],
       "verified": "verified",
       "confidence": "high",
-      "notes": "Largest CSRA jurisdiction. Municode Meetings agendas + NextRequest intake. Verify exact custodian name on first onboarding pass."
+      "notes": "Largest CSRA jurisdiction. Municode Meetings agendas + NextRequest intake. Verify exact custodian name on first onboarding pass. ERRATUM 2026-06-11 (audit): custodian email IS published — openrecords@augustaga.gov. Cf-obfuscated on official Open Records page; RCSOOpenRecords@augustaga.gov for Sheriff records. Obfuscation IS publication.",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.augustaga.gov/2982/Open-Records-Requests"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "Augusta Georgia \"open records\" request email records custodian",
+            "\"Augusta-Richmond County (consolidated)\" Georgia open records request email",
+            "\"Augusta-Richmond County (consolidated)\" Georgia records custodian",
+            "\"Augusta-Richmond County (consolidated)\" Georgia board agenda",
+            "\"Augusta-Richmond County (consolidated)\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "REFUTED"
+        }
+      }
     },
     "mcduffie-county-thomson-ga": {
       "name": "McDuffie County (Thomson)",
@@ -279,10 +369,10 @@
       "official_website": "https://www.thomson-mcduffie.gov",
       "agenda_platform": "civicclerk",
       "agenda_source_url": "https://mcduffiecoga.portal.civicclerk.com/",
-      "records_custodian_name": null,
+      "records_custodian_name": "Ashtyn Goodyear",
       "records_custodian_title": "County Clerk / Open Records Officer",
-      "records_custodian_email": null,
-      "clerk_email_access": "unknown",
+      "records_custodian_email": "ashtyn.goodyear@thomson-mcduffie.gov",
+      "clerk_email_access": "plaintext",
       "records_intake": "web_form",
       "notable_gaps": [
         "consolidated Thomson-McDuffie govt site; county+city share thomson-mcduffie.gov",
@@ -291,7 +381,35 @@
       ],
       "verified": "verified",
       "confidence": "high",
-      "notes": "CivicClerk (same family as Columbia County) = LOW onboarding cost for agendas. Intake via written form."
+      "notes": "CivicClerk (same family as Columbia County) = LOW onboarding cost for agendas. Intake via written form. ERRATUM 2026-06-11 (audit): custodian email IS published — ashtyn.goodyear@thomson-mcduffie.gov. Mailto in staff-directory widget on /161/McDuffie-County (recon missed the admin page). Prior custodian Carrie Edwards stale.",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.thomson-mcduffie.gov/161/McDuffie-County",
+            "https://www.thomson-mcduffie.gov/FormCenter/McDuffie-County-Open-RecordsFOIA-Request-8/Thomson-McDuffie-County-Open-RecordsFOIA-49"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"McDuffie County\" Thomson Georgia \"open records request\" county clerk email",
+            "\"McDuffie County (Thomson)\" Georgia open records request email",
+            "\"McDuffie County (Thomson)\" Georgia records custodian",
+            "\"McDuffie County (Thomson)\" Georgia board agenda",
+            "\"McDuffie County (Thomson)\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "REFUTED"
+        }
+      }
     },
     "burke-county-waynesboro-ga": {
       "name": "Burke County (Waynesboro)",
@@ -302,19 +420,46 @@
       "official_website": "https://burkecounty-ga.gov",
       "agenda_platform": "custom",
       "agenda_source_url": "https://burkecounty-ga.gov/departments/board_of_commissioners/meetings_agendas_minutes.php",
-      "records_custodian_name": "Merv Waldrop",
+      "records_custodian_name": "Adam Flakes",
       "records_custodian_title": "County Manager",
-      "records_custodian_email": null,
-      "clerk_email_access": "unknown",
+      "records_custodian_email": "a.flakes@burkecounty-ga.gov",
+      "clerk_email_access": "plaintext",
       "records_intake": "unknown",
       "notable_gaps": [
         "custom .php site (manually posted PDFs) -> bespoke scrape",
-        "custodian = County Manager office, no email surfaced; phone 706-554-2324",
         "note: a 'burkeconc.portal.civicclerk.com' result is Burke County NC (collision), NOT GA"
       ],
       "verified": "verified",
       "confidence": "medium",
-      "notes": "Custom HTML/PDF -> HIGH agenda-onboarding cost. Confirm intake + custodian email by visiting site."
+      "notes": "Custom HTML/PDF -> HIGH agenda-onboarding cost. Confirm intake + custodian email by visiting site. ERRATUM 2026-06-11 (audit): custodian email IS published — a.flakes@burkecounty-ga.gov. Mailto on Administration page (custodian office per registry). Prior custodian name Merv Waldrop stale; ORR page itself is contentless.",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.burkecounty-ga.gov/departments/administration/index.php",
+            "https://www.burkecounty-ga.gov/how_do_i/open_record_request.php"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Burke County\" Georgia Waynesboro \"open records\" request email clerk",
+            "\"Burke County (Waynesboro)\" Georgia open records request email",
+            "\"Burke County (Waynesboro)\" Georgia records custodian",
+            "\"Burke County (Waynesboro)\" Georgia board agenda",
+            "\"Burke County (Waynesboro)\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "REFUTED"
+        }
+      }
     },
     "lincoln-county-lincolnton-ga": {
       "name": "Lincoln County (Lincolnton)",
@@ -322,13 +467,13 @@
       "batch": "csra_footprint",
       "county": "Lincoln County",
       "county_seat": "Lincolnton",
-      "official_website": "https://lincolncountyga.org",
+      "official_website": "https://www.lincolncountyga.gov",
       "agenda_platform": "unknown",
       "agenda_source_url": null,
-      "records_custodian_name": null,
-      "records_custodian_title": null,
-      "records_custodian_email": null,
-      "clerk_email_access": "unknown",
+      "records_custodian_name": "Sherry McKellar",
+      "records_custodian_title": "County Clerk, Board of Commissioners",
+      "records_custodian_email": "smckellar@lincolncountyga.com",
+      "clerk_email_access": "plaintext",
       "records_intake": "unknown",
       "notable_gaps": [
         "consolidated county + City of Lincolnton on one site (lincolncountyga.org)",
@@ -337,7 +482,41 @@
       ],
       "verified": "inferred",
       "confidence": "low",
-      "notes": "NEEDS SITE VISIT. Official site identified but platform/custodian/intake unconfirmed."
+      "notes": "NEEDS SITE VISIT. Official site identified but platform/custodian/intake unconfirmed. ERRATUM 2026-06-11 (audit): custodian email IS published — smckellar@lincolncountyga.com. OFFICIAL SITE CORRECTED: lincolncountyga.org is the Development Authority/Chamber; county government is https://www.lincolncountyga.gov (JS-only SPA). countyclerk@lincolncountyga.gov also published on county job-postings page.",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://lincolncountyga.org/",
+            "https://www.lincolncountyga.gov/",
+            "https://www.lincolncountyga.gov/commissioners",
+            "https://www.lincolncountyga.gov/contact-us",
+            "https://www.lincolncountyga.gov/sitemap.xml"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Lincoln County\" Georgia \"county clerk email\"",
+            "\"Lincoln County\" Georgia \"open records request email\"",
+            "\"smckellar@lincolncountyga.com\"",
+            "site:lincolncountyga.com clerk OR \"open records\"",
+            "\"Lincoln County (Lincolnton)\" Georgia open records request email",
+            "\"Lincoln County (Lincolnton)\" Georgia records custodian",
+            "\"Lincoln County (Lincolnton)\" Georgia board agenda",
+            "\"Lincoln County (Lincolnton)\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "REFUTED"
+        }
+      }
     },
     "wilkes-county-washington-ga": {
       "name": "Wilkes County (Washington)",
@@ -359,7 +538,38 @@
       ],
       "verified": "inferred",
       "confidence": "low",
-      "notes": "Platform looks bespoke; custodian/intake unconfirmed. Site visit needed."
+      "notes": "Platform looks bespoke; custodian/intake unconfirmed. Site visit needed. AUDIT 2026-06-11: INCONCLUSIVE — countyclerk@wilkescountyga.org was published pre-2024-redesign (Wayback); current site hides emails behind forms + Cloudflare. Re-check with a browser.",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://web.archive.org/web/20250910163723/https://www.wilkescountyga.org/contact-us",
+            "https://web.archive.org/web/20260428224150/https://www.wilkescountyga.org/",
+            "https://www.wilkescountyga.org/contact (Wayback 2024-05-14: mailto present)"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Wilkes County\" Georgia \"open records request\" email",
+            "\"countyclerk@wilkescountyga.org\"",
+            "site:wilkescountyga.org \"@wilkescountyga.org\" filetype:pdf",
+            "\"Wilkes County (Washington)\" Georgia open records request email",
+            "\"Wilkes County (Washington)\" Georgia records custodian",
+            "\"Wilkes County (Washington)\" Georgia board agenda",
+            "\"Wilkes County (Washington)\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"INCONCLUSIVE\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "INCONCLUSIVE"
+        }
+      }
     },
     "jefferson-county-louisville-ga": {
       "name": "Jefferson County (Louisville)",
@@ -372,8 +582,8 @@
       "agenda_source_url": "https://www.jeffersoncountyga.gov/425/Board-of-Commissioners-Meeting-Agenda",
       "records_custodian_name": null,
       "records_custodian_title": "Board of Commissioners office",
-      "records_custodian_email": null,
-      "clerk_email_access": "obfuscated",
+      "records_custodian_email": "bwells@jeffersoncountyga.gov",
+      "clerk_email_access": "plaintext",
       "records_intake": "unknown",
       "notable_gaps": [
         "CivicPlus staff directory (/directory.aspx) present but custodian email behind contact form",
@@ -381,7 +591,36 @@
       ],
       "verified": "verified",
       "confidence": "high",
-      "notes": "CivicPlus (numeric-path /XXX/, /directory.aspx, /faq.aspx) -> LOW agenda cost. Custodian email obfuscated."
+      "notes": "CivicPlus (numeric-path /XXX/, /directory.aspx, /faq.aspx) -> LOW agenda cost. Custodian email obfuscated. ERRATUM 2026-06-11 (audit): custodian email IS published — bwells@jeffersoncountyga.gov. Email on the county's own ORR form PDF + mailto on the ORR page; court ORRs to anne.durden@gsccca.org.",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.jeffersoncountyga.gov/249/Open-Records-Request",
+            "https://www.jeffersoncountyga.gov/390/Open-Records-Request-Form",
+            "https://www.jeffersoncountyga.gov/DocumentCenter/View/614/Jefferson-County-Open-Records-Request-Form-08192022"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Jefferson County\" Georgia Louisville \"open records request\" email",
+            "\"Jefferson County (Louisville)\" Georgia open records request email",
+            "\"Jefferson County (Louisville)\" Georgia records custodian",
+            "\"Jefferson County (Louisville)\" Georgia board agenda",
+            "\"Jefferson County (Louisville)\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "REFUTED"
+        }
+      }
     },
     "hancock-county-sparta-ga": {
       "name": "Hancock County (Sparta)",
@@ -392,10 +631,10 @@
       "official_website": "https://www.hancockcountyga.gov",
       "agenda_platform": "custom",
       "agenda_source_url": "https://www.hancockcountyga.gov/board-of-commissioners",
-      "records_custodian_name": null,
-      "records_custodian_title": null,
-      "records_custodian_email": null,
-      "clerk_email_access": "unknown",
+      "records_custodian_name": "Borderick D. Foster",
+      "records_custodian_title": "County Manager / County Clerk",
+      "records_custodian_email": "countyclerk@hancockcountyga.gov",
+      "clerk_email_access": "plaintext",
       "records_intake": "unknown",
       "notable_gaps": [
         "modern custom CMS (Squarespace-style); agendas/minutes posted in-page",
@@ -403,7 +642,37 @@
       ],
       "verified": "verified",
       "confidence": "medium",
-      "notes": "Custom CMS -> bespoke scrape. Site confirmed live; custodian email not surfaced."
+      "notes": "Custom CMS -> bespoke scrape. Site confirmed live; custodian email not surfaced. ERRATUM 2026-06-11 (audit): custodian email IS published — countyclerk@hancockcountyga.gov. Live mailto on BOC page; chairman@/staff mailtos also published.",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.hancockcountyga.gov/board-of-commissioners",
+            "https://www.hancockcountyga.gov/contact-us",
+            "https://www.hancockcountyga.gov/departments-directory"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Hancock County\" Georgia \"records custodian\"",
+            "\"Hancock County\" Georgia Sparta \"open records\" email clerk",
+            "\"Hancock County (Sparta)\" Georgia open records request email",
+            "\"Hancock County (Sparta)\" Georgia records custodian",
+            "\"Hancock County (Sparta)\" Georgia board agenda",
+            "\"Hancock County (Sparta)\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "REFUTED"
+        }
+      }
     },
     "warren-county-warrenton-ga": {
       "name": "Warren County (Warrenton)",
@@ -414,10 +683,10 @@
       "official_website": "https://www.warrencountyga.com",
       "agenda_platform": "custom",
       "agenda_source_url": "https://www.warrencountyga.com/board-of-commissioners.html",
-      "records_custodian_name": null,
-      "records_custodian_title": null,
-      "records_custodian_email": null,
-      "clerk_email_access": "unknown",
+      "records_custodian_name": "Porsha Johnson",
+      "records_custodian_title": "County Clerk",
+      "records_custodian_email": "Info@WarrenCountyGA.gov",
+      "clerk_email_access": "obfuscated",
       "records_intake": "unknown",
       "notable_gaps": [
         "custom static site (.html); agendas posted 'as available'; also a legacy Weebly mirror exists",
@@ -425,7 +694,38 @@
       ],
       "verified": "verified",
       "confidence": "medium",
-      "notes": "Small rural county; custom static HTML -> HIGH agenda cost, low volume."
+      "notes": "Small rural county; custom static HTML -> HIGH agenda cost, low volume. ERRATUM 2026-06-11 (audit): custodian email IS published — Info@WarrenCountyGA.gov. Cloudflare-obfuscated mailto on official directory (raw-HTML regex sweeps miss it); also plaintext on warrencountyga.gov portal. Clerk's direct porsha@warrencountyga.gov only on third-party GCCA directory.",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://warrencountyga.gov/",
+            "https://www.warrencountyga.com/board-of-commissioners.html",
+            "https://www.warrencountyga.com/connect.html"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Warren County\" Georgia Warrenton \"open records\" email clerk custodian",
+            "\"porsha@warrencountyga.gov\"",
+            "site:warrencountyga.gov \"county clerk\"",
+            "\"Warren County (Warrenton)\" Georgia open records request email",
+            "\"Warren County (Warrenton)\" Georgia records custodian",
+            "\"Warren County (Warrenton)\" Georgia board agenda",
+            "\"Warren County (Warrenton)\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "REFUTED"
+        }
+      }
     },
     "glascock-county-gibson-ga": {
       "name": "Glascock County (Gibson)",
@@ -436,10 +736,10 @@
       "official_website": "https://www.glascockcountyga.com",
       "agenda_platform": "custom",
       "agenda_source_url": "https://www.glascockcountyga.com/county-commission",
-      "records_custodian_name": null,
-      "records_custodian_title": null,
-      "records_custodian_email": null,
-      "clerk_email_access": "unknown",
+      "records_custodian_name": "Tracy M. Miller",
+      "records_custodian_title": "County Clerk",
+      "records_custodian_email": "glascockboc@glascockcountyga.com",
+      "clerk_email_access": "obfuscated",
       "records_intake": "unknown",
       "notable_gaps": [
         "smallest GA county by population; custom CMS",
@@ -448,7 +748,37 @@
       ],
       "verified": "verified",
       "confidence": "medium",
-      "notes": "Custom site. Low volume; expect minimal online publication."
+      "notes": "Custom site. Low volume; expect minimal online publication. ERRATUM 2026-06-11 (audit): custodian email IS published — glascockboc@glascockcountyga.com. BOC/clerk office mailbox in site-wide footer (cf-obfuscated; live site bot-walls non-browser fetches — verified via Wayback + GCCA directory).",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://web.archive.org/web/20251228093515/https://www.glascockcountyga.com/county-commission/directory-listing/charles-roberts",
+            "https://www.georgiacca.com/member_directory.cfm?sid=66"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"glascockboc\" email Glascock County clerk",
+            "Glascock County Georgia open records request email",
+            "site:glascockcountyga.com \"open records\"",
+            "\"Glascock County (Gibson)\" Georgia open records request email",
+            "\"Glascock County (Gibson)\" Georgia records custodian",
+            "\"Glascock County (Gibson)\" Georgia board agenda",
+            "\"Glascock County (Gibson)\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "REFUTED"
+        }
+      }
     },
     "taliaferro-county-crawfordville-ga": {
       "name": "Taliaferro County (Crawfordville)",
@@ -459,11 +789,11 @@
       "official_website": "https://taliaferrocountyga.org",
       "agenda_platform": "custom",
       "agenda_source_url": "https://taliaferrocountyga.org/board-of-commissioners/",
-      "records_custodian_name": null,
-      "records_custodian_title": "County Clerk office",
-      "records_custodian_email": null,
-      "clerk_email_access": "unknown",
-      "records_intake": "mail_or_fax",
+      "records_custodian_name": "Ruby Randolph",
+      "records_custodian_title": "Clerk, Board of Commissioners",
+      "records_custodian_email": "Taliaferro@nu-z.net",
+      "clerk_email_access": "plaintext",
+      "records_intake": "email",
       "notable_gaps": [
         "least-populous county east of the Mississippi; custom CMS",
         "minutes/financials/ordinances obtained through the clerk office in person/by request",
@@ -471,7 +801,36 @@
       ],
       "verified": "verified",
       "confidence": "medium",
-      "notes": "Custom site; records office-mediated -> HIGH onboarding cost relative to tiny output."
+      "notes": "Custom site; records office-mediated -> HIGH onboarding cost relative to tiny output. ERRATUM 2026-06-11 (audit): custodian email IS published — Taliaferro@nu-z.net. Plaintext on BOC page ('minutes/financial statements/ordinances available through the clerk'). records_intake 'mail_or_fax' corrected — email channel published.",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://taliaferrocountyga.org/clerk-of-court/",
+            "https://web.archive.org/web/20251106095306/https://taliaferrocountyga.org/board-of-commissioners/"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "Taliaferro County Georgia open records request email",
+            "site:taliaferrocountyga.org \"open records\"",
+            "\"Taliaferro County (Crawfordville)\" Georgia open records request email",
+            "\"Taliaferro County (Crawfordville)\" Georgia records custodian",
+            "\"Taliaferro County (Crawfordville)\" Georgia board agenda",
+            "\"Taliaferro County (Crawfordville)\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "REFUTED"
+        }
+      }
     },
     "fulton-county-ga": {
       "name": "Fulton County",
@@ -483,10 +842,10 @@
       "official_website": "https://www.fultoncountyga.gov",
       "agenda_platform": "granicus_legistar",
       "agenda_source_url": "https://fulton.legistar.com/",
-      "records_custodian_name": null,
-      "records_custodian_title": "Clerk to the Commission",
-      "records_custodian_email": null,
-      "clerk_email_access": "obfuscated",
+      "records_custodian_name": "Shalanda M.J. Miller",
+      "records_custodian_title": "Official Custodian of Records — Office of the County Attorney",
+      "records_custodian_email": "orr@fultoncountyga.gov",
+      "clerk_email_access": "plaintext",
       "records_intake": "web_form",
       "notable_gaps": [
         "Legistar for legislation/agendas (back to 1880) + Granicus for video",
@@ -494,7 +853,35 @@
       ],
       "verified": "verified",
       "confidence": "high",
-      "notes": "Largest GA county. Legistar -> MEDIUM cost (reusable InSite/Legistar API per-tenant)."
+      "notes": "Largest GA county. Legistar -> MEDIUM cost (reusable InSite/Legistar API per-tenant). ERRATUM 2026-06-11 (audit): custodian email IS published — orr@fultoncountyga.gov. Named custodian + mailto on the county's own Open Records Requests page; departmental records emails also published.",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.fultoncountyga.gov/inside-fulton-county/fulton-county-departments/office-of-the-county-attorney/open-records-requests"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "Fulton County Georgia open records request email records custodian",
+            "site:fultoncountyga.gov \"open records\" email",
+            "\"Fulton County\" Georgia open records request email",
+            "\"Fulton County\" Georgia records custodian",
+            "\"Fulton County\" Georgia board agenda",
+            "\"Fulton County\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "REFUTED"
+        }
+      }
     },
     "gwinnett-county-ga": {
       "name": "Gwinnett County",
@@ -531,9 +918,9 @@
       "agenda_platform": "civicclerk",
       "agenda_source_url": "https://cobbcoga.portal.civicclerk.com/",
       "records_custodian_name": null,
-      "records_custodian_title": "County Clerk",
-      "records_custodian_email": null,
-      "clerk_email_access": "unknown",
+      "records_custodian_title": "County Clerk's Office",
+      "records_custodian_email": "information@cobbcounty.gov",
+      "clerk_email_access": "plaintext",
       "records_intake": "unknown",
       "notable_gaps": [
         "BOC + Zoning + Planning agendas; pre-Apr-2018 minutes on county site only",
@@ -541,7 +928,36 @@
       ],
       "verified": "verified",
       "confidence": "high",
-      "notes": "CivicClerk -> LOW agenda cost. Largest CivicClerk tenant in this batch."
+      "notes": "CivicClerk -> LOW agenda cost. Largest CivicClerk tenant in this batch. ERRATUM 2026-06-11 (audit): custodian email IS published — information@cobbcounty.gov. Clerk-office mailto on /location/county-clerk; official open-records page lists OCGA 50-18-71 designated custodians WITH emails (911openrecords@, christine.stinchcomb@, etc.).",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.cobbcounty.gov/board/county-attorney/open-records-requests",
+            "https://www.cobbcounty.gov/location/county-clerk"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "Cobb County Georgia open records request email records custodian",
+            "site:cobbcounty.gov \"open records\" email custodian",
+            "\"Cobb County\" Georgia open records request email",
+            "\"Cobb County\" Georgia records custodian",
+            "\"Cobb County\" Georgia board agenda",
+            "\"Cobb County\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "REFUTED"
+        }
+      }
     },
     "dekalb-county-ga": {
       "name": "DeKalb County",
@@ -576,10 +992,10 @@
       "official_website": "https://www.chathamcountyga.gov",
       "agenda_platform": "granicus_iqm2",
       "agenda_source_url": "http://chathamcountyga.iqm2.com/Citizens/Default.aspx",
-      "records_custodian_name": null,
-      "records_custodian_title": null,
-      "records_custodian_email": null,
-      "clerk_email_access": "unknown",
+      "records_custodian_name": "Janice Bocook",
+      "records_custodian_title": "Clerk of Commission",
+      "records_custodian_email": "jbocook@chathamcounty.org",
+      "clerk_email_access": "plaintext",
       "records_intake": "unknown",
       "notable_gaps": [
         "iQM2 (now Granicus-owned) citizens portal; agenda posted Wed before Fri meeting",
@@ -588,7 +1004,36 @@
       ],
       "verified": "verified",
       "confidence": "high",
-      "notes": "iQM2/Granicus -> MEDIUM cost (distinct from Legistar; has its own API surface)."
+      "notes": "iQM2/Granicus -> MEDIUM cost (distinct from Legistar; has its own API surface). ERRATUM 2026-06-11 (audit): custodian email IS published — jbocook@chathamcounty.org. Plaintext mailto on ClerkOfCommission page (keeper of BOC records/minutes); central intake JustFOIA portal.",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://chathamcountyga.justfoia.com/publicportal",
+            "https://www.chathamcountyga.gov/Commission/ClerkOfCommission"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "Chatham County Georgia \"Clerk of Commission\" email",
+            "site:chathamcountyga.gov open records request",
+            "\"Chatham County\" Georgia open records request email",
+            "\"Chatham County\" Georgia records custodian",
+            "\"Chatham County\" Georgia board agenda",
+            "\"Chatham County\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "REFUTED"
+        }
+      }
     },
     "clayton-county-ga": {
       "name": "Clayton County",
@@ -600,10 +1045,10 @@
       "official_website": "https://www.claytoncountyga.gov",
       "agenda_platform": "custom",
       "agenda_source_url": "https://www.claytoncountyga.gov/government/board-of-commissioners/board-meeting-information/",
-      "records_custodian_name": null,
-      "records_custodian_title": "Clerk",
-      "records_custodian_email": null,
-      "clerk_email_access": "unknown",
+      "records_custodian_name": "Tiki Brown",
+      "records_custodian_title": "Clerk of State Court (court-records custodian)",
+      "records_custodian_email": "tiki.brown@claytoncountyga.gov",
+      "clerk_email_access": "plaintext",
       "records_intake": "unknown",
       "notable_gaps": [
         "agenda prepared/published by Clerk on county site (custom CMS); no named vendor portal surfaced",
@@ -611,7 +1056,36 @@
       ],
       "verified": "verified",
       "confidence": "medium",
-      "notes": "Platform appears custom; needs confirmation of any underlying vendor. Custodian email not surfaced."
+      "notes": "Platform appears custom; needs confirmation of any underlying vendor. Custodian email not surfaced. ERRATUM 2026-06-11 (audit): custodian email IS published — tiki.brown@claytoncountyga.gov. SCOPE: BOC's designated ORO is GovQA-portal-only with no published email; published email is the State Court records custodian.",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://claytoncountyga.govqa.us/WEBAPP/_rs/supporthome.aspx",
+            "https://www.claytoncountyga.gov/government/court-services/clerk-of-state-court/contacts/"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Clayton County\" Georgia \"open records request email\"",
+            "site:claytoncountyga.gov \"open records\"",
+            "\"Clayton County\" Georgia open records request email",
+            "\"Clayton County\" Georgia records custodian",
+            "\"Clayton County\" Georgia board agenda",
+            "\"Clayton County\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "REFUTED"
+        }
+      }
     },
     "cherokee-county-ga": {
       "name": "Cherokee County",
@@ -623,10 +1097,10 @@
       "official_website": "https://www.cherokeecountyga.gov",
       "agenda_platform": "granicus_legistar",
       "agenda_source_url": "https://cherokeega.granicus.com/ViewPublisher.php?view_id=1",
-      "records_custodian_name": null,
-      "records_custodian_title": "County Clerk",
-      "records_custodian_email": null,
-      "clerk_email_access": "unknown",
+      "records_custodian_name": "Todd Hayes",
+      "records_custodian_title": "Solicitor-General",
+      "records_custodian_email": "cthayes@cherokeecountyga.gov",
+      "clerk_email_access": "obfuscated",
       "records_intake": "unknown",
       "notable_gaps": [
         "Granicus ViewPublisher (video + agenda/minutes docs); 'granicus_legistar' tag denotes Granicus family - this is the Granicus media/agenda portal, not necessarily full Legistar",
@@ -634,7 +1108,36 @@
       ],
       "verified": "verified",
       "confidence": "high",
-      "notes": "Granicus portal -> MEDIUM cost. Confirm whether Legistar legislative module is also present."
+      "notes": "Granicus portal -> MEDIUM cost. Confirm whether Legistar legislative module is also present. ERRATUM 2026-06-11 (audit): custodian email IS published — cthayes@cherokeecountyga.gov. Official Solicitor-General OPEN RECORDS REQUEST page: 'All Open Records Request must be addressed to Solicitor-General, Todd Hayes' (cf-obfuscated mailto). BOC/County Clerk routes via NextRequest.",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.cherokeecountyga.gov/county-clerk/",
+            "https://www.cherokeecountyga.gov/solicitor-general/OPEN-RECORDS-REQUEST/"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Cherokee County\" Georgia \"open records request\" email",
+            "site:cherokeecountyga.gov \"open records\"",
+            "\"Cherokee County\" Georgia open records request email",
+            "\"Cherokee County\" Georgia records custodian",
+            "\"Cherokee County\" Georgia board agenda",
+            "\"Cherokee County\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "REFUTED"
+        }
+      }
     },
     "forsyth-county-ga": {
       "name": "Forsyth County",
@@ -647,9 +1150,9 @@
       "agenda_platform": "civicclerk",
       "agenda_source_url": "https://forsythcoga.portal.civicclerk.com/",
       "records_custodian_name": null,
-      "records_custodian_title": null,
-      "records_custodian_email": null,
-      "clerk_email_access": "unknown",
+      "records_custodian_title": "Clerk of Superior, State & Juvenile Courts",
+      "records_custodian_email": "clerkofcourt@forsythco.com",
+      "clerk_email_access": "plaintext",
       "records_intake": "unknown",
       "notable_gaps": [
         "also surfaces a self-hosted /meetings (PNM) document store on forsythco.com alongside CivicClerk",
@@ -658,7 +1161,36 @@
       ],
       "verified": "verified",
       "confidence": "high",
-      "notes": "CivicClerk -> LOW agenda cost (existing client)."
+      "notes": "CivicClerk -> LOW agenda cost (existing client). ERRATUM 2026-06-11 (audit): custodian email IS published — clerkofcourt@forsythco.com. SCOPE: courts custodian email on forsythclerk.com (county domain mailbox); BOC intake is JustFOIA portal only.",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.forsythclerk.com/AboutOurOffice/CopyRequests.aspx",
+            "https://www.forsythco.com/records"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Forsyth County\" Georgia \"open records\" email clerk",
+            "\"openrecords@forsythco.com\" OR \"orr@forsythco.com\"",
+            "\"Forsyth County\" Georgia open records request email",
+            "\"Forsyth County\" Georgia records custodian",
+            "\"Forsyth County\" Georgia board agenda",
+            "\"Forsyth County\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "REFUTED"
+        }
+      }
     },
     "henry-county-ga": {
       "name": "Henry County",
@@ -671,9 +1203,9 @@
       "agenda_platform": "civicclerk",
       "agenda_source_url": "https://henrycoga.portal.civicclerk.com/",
       "records_custodian_name": null,
-      "records_custodian_title": null,
-      "records_custodian_email": null,
-      "clerk_email_access": "unknown",
+      "records_custodian_title": "E-911 records (departmental)",
+      "records_custodian_email": "911openrecords@henrycountyga.gov",
+      "clerk_email_access": "plaintext",
       "records_intake": "unknown",
       "notable_gaps": [
         "CivicClerk current; Granicus (henryga.granicus.com) used for older video archive",
@@ -682,7 +1214,36 @@
       ],
       "verified": "verified",
       "confidence": "high",
-      "notes": "CivicClerk -> LOW agenda cost. Migrated off Granicus video to CivicClerk."
+      "notes": "CivicClerk -> LOW agenda cost. Migrated off Granicus video to CivicClerk. ERRATUM 2026-06-11 (audit): custodian email IS published — 911openrecords@henrycountyga.gov. Records mailbox explicitly offered on /837/E-911-Open-Records. Main ORR page is a JS tab widget — empty shell to raw fetches.",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.henrycountyga.gov/382/Open-Record-Requests",
+            "https://www.henrycountyga.gov/837/E-911-Open-Records"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Henry County\" Georgia \"open records request\" email custodian",
+            "site:henrycountyga.gov \"open records\"",
+            "\"Henry County\" Georgia open records request email",
+            "\"Henry County\" Georgia records custodian",
+            "\"Henry County\" Georgia board agenda",
+            "\"Henry County\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "REFUTED"
+        }
+      }
     },
     "hall-county-ga": {
       "name": "Hall County",
@@ -695,17 +1256,44 @@
       "agenda_platform": "civicplus_civicengage",
       "agenda_source_url": "https://www.hallcounty.org/1099/Board-of-Commissioners-Agenda-Center",
       "records_custodian_name": "Jennifer Rivera",
-      "records_custodian_title": "Commission Clerk",
-      "records_custodian_email": null,
-      "clerk_email_access": "obfuscated",
-      "records_intake": "phone",
+      "records_custodian_title": "Board of County Commissioners ORR mailbox",
+      "records_custodian_email": "orr_bocc@hallcounty.org",
+      "clerk_email_access": "plaintext",
+      "records_intake": "email",
       "notable_gaps": [
-        "CivicPlus AgendaCenter (numeric /XXXX/ paths); video on Vimeo",
-        "Commission Clerk Jennifer Rivera (770) 535-8288 ext.1; email not published in plaintext"
+        "CivicPlus AgendaCenter (numeric /XXXX/ paths); video on Vimeo"
       ],
       "verified": "verified",
       "confidence": "high",
-      "notes": "CivicPlus AgendaCenter -> LOW agenda cost. Named custodian but email obfuscated."
+      "notes": "CivicPlus AgendaCenter -> LOW agenda cost. Named custodian but email obfuscated. ERRATUM 2026-06-11 (audit): custodian email IS published — orr_bocc@hallcounty.org. ORR page publishes 17 departmental custodian mailtos (orr_sheriff@, orr_e911@, …); 'intake: phone' was wrong — email is primary published intake. Page is JS-rendered.",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.hallcounty.org/864/Open-Records-Request"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Hall County\" Georgia \"open records\" email custodian OR clerk",
+            "site:hallcounty.org \"open records\"",
+            "\"Hall County\" Georgia open records request email",
+            "\"Hall County\" Georgia records custodian",
+            "\"Hall County\" Georgia board agenda",
+            "\"Hall County\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "REFUTED"
+        }
+      }
     },
     "atlanta-ga": {
       "name": "Atlanta",
@@ -740,10 +1328,10 @@
       "official_website": "https://www.savannahga.gov",
       "agenda_platform": "civicplus_civicengage",
       "agenda_source_url": "https://www.savannahga.gov/AgendaCenter",
-      "records_custodian_name": null,
-      "records_custodian_title": "Clerk of Council",
-      "records_custodian_email": null,
-      "clerk_email_access": "obfuscated",
+      "records_custodian_name": "Mark Massey",
+      "records_custodian_title": "Clerk of Council / Open Records Officer",
+      "records_custodian_email": "ClerkofCouncil@savannahga.gov",
+      "clerk_email_access": "plaintext",
       "records_intake": "web_form",
       "records_intake_url": "https://www.savannahga.gov/FormCenter/Request-Public-Records-3",
       "notable_gaps": [
@@ -752,7 +1340,36 @@
       ],
       "verified": "verified",
       "confidence": "high",
-      "notes": "CivicPlus AgendaCenter -> LOW agenda cost; intake via CivicPlus FormCenter (standard)."
+      "notes": "CivicPlus AgendaCenter -> LOW agenda cost; intake via CivicPlus FormCenter (standard). ERRATUM 2026-06-11 (audit): custodian email IS published — ClerkofCouncil@savannahga.gov. Clerk page designates the Clerk as official records custodian + Open Records Officer; mmassey@savannahga.gov also published.",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.savannahga.gov/391/Clerk-of-Council",
+            "https://www.savannahga.gov/559/Open-Records-Information"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "City of Savannah Georgia \"records custodian\" email open records",
+            "site:savannahga.gov \"open records\"",
+            "\"Savannah\" Georgia open records request email",
+            "\"Savannah\" Georgia records custodian",
+            "\"Savannah\" Georgia board agenda",
+            "\"Savannah\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "REFUTED"
+        }
+      }
     },
     "marietta-ga": {
       "name": "Marietta",
@@ -763,17 +1380,44 @@
       "official_website": "https://www.mariettaga.gov",
       "agenda_platform": "civicplus_civicengage",
       "agenda_source_url": "https://www.mariettaga.gov/AgendaCenter",
-      "records_custodian_name": null,
+      "records_custodian_name": "Stephanie Guy",
       "records_custodian_title": "City Clerk",
-      "records_custodian_email": null,
-      "clerk_email_access": "unknown",
+      "records_custodian_email": "sguy@mariettaga.gov",
+      "clerk_email_access": "plaintext",
       "records_intake": "unknown",
       "notable_gaps": [
         "City Clerk is records custodian; email + intake not surfaced"
       ],
       "verified": "verified",
       "confidence": "high",
-      "notes": "CivicPlus AgendaCenter -> LOW agenda cost."
+      "notes": "CivicPlus AgendaCenter -> LOW agenda cost. ERRATUM 2026-06-11 (audit): custodian email IS published — sguy@mariettaga.gov. Clerk page: 'designated custodian of all official records'; cc@mariettaga.gov also published.",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.mariettaga.gov/569/City-Clerk"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Marietta\" Georgia \"open records\" \"city clerk\" email",
+            "\"Marietta\" Georgia open records request email",
+            "\"Marietta\" Georgia records custodian",
+            "\"Marietta\" Georgia board agenda",
+            "\"Marietta\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "REFUTED"
+        }
+      }
     },
     "decatur-ga": {
       "name": "Decatur",
@@ -806,10 +1450,10 @@
       "official_website": "https://www.lawrencevillega.org",
       "agenda_platform": "civicplus_civicengage",
       "agenda_source_url": "https://www.lawrencevillega.org/AgendaCenter",
-      "records_custodian_name": null,
+      "records_custodian_name": "Karen Pierce",
       "records_custodian_title": "City Clerk",
-      "records_custodian_email": null,
-      "clerk_email_access": "unknown",
+      "records_custodian_email": "city.clerk@lawrencevillega.org",
+      "clerk_email_access": "obfuscated",
       "records_intake": "unknown",
       "notable_gaps": [
         "CivicPlus AgendaCenter (current) PLUS a Municode Meetings mirror (lawrenceville-ga.municodemeetings.com, 2006-present) -> two sources, pick one",
@@ -817,7 +1461,35 @@
       ],
       "verified": "verified",
       "confidence": "high",
-      "notes": "CivicPlus AgendaCenter -> LOW cost. Dual-platform: dedupe vs Municode mirror."
+      "notes": "CivicPlus AgendaCenter -> LOW cost. Dual-platform: dedupe vs Municode mirror. ERRATUM 2026-06-11 (audit): custodian email IS published — city.clerk@lawrencevillega.org. Cf-obfuscated mailtos on City Clerk page (office housing the Records Officer); customer.service@ on the ORR page itself.",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.lawrencevillega.org/190/City-Clerk",
+            "https://www.lawrencevillega.org/387/Open-Records-Requests"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Lawrenceville\" Georgia \"open records request\" email city clerk",
+            "\"Lawrenceville\" Georgia open records request email",
+            "\"Lawrenceville\" Georgia records custodian",
+            "\"Lawrenceville\" Georgia board agenda",
+            "\"Lawrenceville\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "REFUTED"
+        }
+      }
     },
     "jonesboro-ga": {
       "name": "Jonesboro",
@@ -829,9 +1501,9 @@
       "agenda_platform": "municode_meetings",
       "agenda_source_url": "https://meetings.municode.com/",
       "records_custodian_name": "Shandrella Jewett",
-      "records_custodian_title": "City Clerk",
-      "records_custodian_email": null,
-      "clerk_email_access": "obfuscated",
+      "records_custodian_title": "City Clerk's Office",
+      "records_custodian_email": "openrecords@jonesboroga.com",
+      "clerk_email_access": "plaintext",
       "records_intake": "nextrequest",
       "records_intake_url": "https://cityofjonesboroga.nextrequest.com/",
       "notable_gaps": [
@@ -840,7 +1512,35 @@
       ],
       "verified": "verified",
       "confidence": "high",
-      "notes": "Municode Meetings agendas + NextRequest intake (same combo as Augusta)."
+      "notes": "Municode Meetings agendas + NextRequest intake (same combo as Augusta). ERRATUM 2026-06-11 (audit): custodian email IS published — openrecords@jonesboroga.com. On the city's own fillable ORR form PDF; cityclerk@jonesboroga.gov mailto on clerk page. jonesboroga.com is the city's companion domain.",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.jonesboroga.gov/Assets/Files/CITY%20OF%20JONESBORO%20WEBPAGE%20ORR-%20FILLABLE%20FORM.pdf",
+            "https://www.jonesboroga.gov/CityClerk.aspx"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Jonesboro\" Georgia \"open records\" city clerk email",
+            "\"Jonesboro\" Georgia open records request email",
+            "\"Jonesboro\" Georgia records custodian",
+            "\"Jonesboro\" Georgia board agenda",
+            "\"Jonesboro\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "REFUTED"
+        }
+      }
     },
     "canton-ga": {
       "name": "Canton",
@@ -895,17 +1595,46 @@
       "official_website": "https://www.mcdonoughga.org",
       "agenda_platform": "civicplus_civicengage",
       "agenda_source_url": "https://www.mcdonoughga.org/AgendaCenter",
-      "records_custodian_name": null,
+      "records_custodian_name": "Christy L. Taylor",
       "records_custodian_title": "City Clerk",
-      "records_custodian_email": null,
-      "clerk_email_access": "unknown",
+      "records_custodian_email": "KOwens@mcdonoughga.org",
+      "clerk_email_access": "plaintext",
       "records_intake": "unknown",
       "notable_gaps": [
         "custodian email + intake not surfaced"
       ],
       "verified": "verified",
       "confidence": "high",
-      "notes": "CivicPlus AgendaCenter -> LOW agenda cost."
+      "notes": "CivicPlus AgendaCenter -> LOW agenda cost. ERRATUM 2026-06-11 (audit): custodian email IS published — KOwens@mcdonoughga.org. Non-police ORR form: 'Send your request via email to KOwens@mcdonoughga.org'; policeorr@ on police form; ctaylor@ mailto on clerk page.",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.mcdonoughga.org/186/City-Clerk",
+            "https://www.mcdonoughga.org/195/Open-Records-Request",
+            "https://www.mcdonoughga.org/DocumentCenter/View/194/Open-Records-Request---Non-Police-Records-PDF"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"McDonough\" Georgia \"open records request\" email city clerk",
+            "\"McDonough\" Georgia open records request email",
+            "\"McDonough\" Georgia records custodian",
+            "\"McDonough\" Georgia board agenda",
+            "\"McDonough\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "REFUTED"
+        }
+      }
     },
     "gainesville-ga": {
       "name": "Gainesville",
@@ -926,7 +1655,37 @@
       ],
       "verified": "verified",
       "confidence": "high",
-      "notes": "CivicPlus AgendaCenter -> LOW agenda cost."
+      "notes": "CivicPlus AgendaCenter -> LOW agenda cost. AUDIT 2026-06-11: absence claim(s) CONFIRMED by adversarial refutation (see verification block).",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.gainesville.org/142/Contact",
+            "https://www.gainesville.org/160/Open-Records-Request",
+            "https://www.gainesville.org/directory.aspx?did=55"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"City of Gainesville\" Georgia \"open records request email\"",
+            "site:gainesville.org \"@gainesville.org\"",
+            "\"Gainesville\" Georgia open records request email",
+            "\"Gainesville\" Georgia records custodian",
+            "\"Gainesville\" Georgia board agenda",
+            "\"Gainesville\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "ORR page parses fine; no emails exist sitewide (form-based contact everywhere)",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"CONFIRMED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "CONFIRMED"
+        }
+      }
     },
     "richmond-county-school-system-ga": {
       "name": "Richmond County School System",
@@ -965,7 +1724,36 @@
       },
       "verified": "verified",
       "confidence": "high",
-      "notes": "Board page /about-us12/board-of-education/board links 'Access Meeting Agendas' to https://simbli.eboardsolutions.com/index.aspx?s=4137 (seen in raw HTML); SB_MeetingListing.aspx?S=4137 confirmed live (HTTP 200). Open records page /staff-departments/open-record-requests/open-records-requests states requests 'should be submitted at the following link: richmondcountyschoolsystemga.nextrequest.com' (portal answered with HTTP 204 to curl — JS app, likely bot-gated; flag for automation testing). Site is Finalsite/Blackboard-style, JS-heavy — WebFetch missed content, raw curl required. Onboarding cost: low for agendas (standard Simbli scrape), medium for ORR (NextRequest portal)."
+      "notes": "Board page /about-us12/board-of-education/board links 'Access Meeting Agendas' to https://simbli.eboardsolutions.com/index.aspx?s=4137 (seen in raw HTML); SB_MeetingListing.aspx?S=4137 confirmed live (HTTP 200). Open records page /staff-departments/open-record-requests/open-records-requests states requests 'should be submitted at the following link: richmondcountyschoolsystemga.nextrequest.com' (portal answered with HTTP 204 to curl — JS app, likely bot-gated; flag for automation testing). Site is Finalsite/Blackboard-style, JS-heavy — WebFetch missed content, raw curl required. Onboarding cost: low for agendas (standard Simbli scrape), medium for ORR (NextRequest portal). AUDIT 2026-06-11: absence claim(s) CONFIRMED by adversarial refutation (see verification block).",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://richmondcountyschoolsystemga.nextrequest.com/",
+            "https://www.rcboe.org/staff-departments/open-record-requests/open-records-requests"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Richmond County School System\" Georgia \"open records\" email records custodian",
+            "site:rcboe.org \"open records\"",
+            "\"Richmond County School System\" Georgia open records request email",
+            "\"Richmond County School System\" Georgia records custodian",
+            "\"Richmond County School System\" Georgia board agenda",
+            "\"Richmond County School System\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "adjacent legal-matters email parses on same page; ORA custodian email genuinely absent",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"CONFIRMED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "CONFIRMED"
+        }
+      }
     },
     "mcduffie-county-school-system-ga": {
       "name": "McDuffie County School System",
@@ -1003,7 +1791,36 @@
       },
       "verified": "verified",
       "confidence": "high",
-      "notes": "Site is Edlio (apps/pages/index.jsp fingerprint). Board of Education page links 'Board Meeting Agendas / Minutes' directly to simbli SB_MeetingListing.aspx?S=4112 (seen in raw HTML, HTTP 200). District office 716 North Lee Street, Thomson GA 30824, (706) 986-4000. Onboarding cost: low (standard Simbli scrape + email comment channel); ORR contact will need a phone/email confirmation since no officer is published."
+      "notes": "Site is Edlio (apps/pages/index.jsp fingerprint). Board of Education page links 'Board Meeting Agendas / Minutes' directly to simbli SB_MeetingListing.aspx?S=4112 (seen in raw HTML, HTTP 200). District office 716 North Lee Street, Thomson GA 30824, (706) 986-4000. Onboarding cost: low (standard Simbli scrape + email comment channel); ORR contact will need a phone/email confirmation since no officer is published. AUDIT 2026-06-11: absence claim(s) CONFIRMED by adversarial refutation (see verification block).",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.mcduffie.k12.ga.us/apps/contact/",
+            "https://www.mcduffie.k12.ga.us/apps/staff/"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "McDuffie County Board of Education policy \"open records\" Simbli",
+            "site:mcduffie.k12.ga.us \"open records\"",
+            "\"McDuffie County School System\" Georgia open records request email",
+            "\"McDuffie County School System\" Georgia records custodian",
+            "\"McDuffie County School System\" Georgia board agenda",
+            "\"McDuffie County School System\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "staff emails parse from same Edlio CMS; records designation genuinely absent",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"CONFIRMED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "CONFIRMED"
+        }
+      }
     },
     "burke-county-public-schools-ga": {
       "name": "Burke County Public Schools",
@@ -1080,7 +1897,36 @@
       },
       "verified": "verified",
       "confidence": "medium",
-      "notes": "Site is Finalsite ('Powered by Finalsite' in footer). /about-us/simbli page links directly to simbli SB_MeetingListing.aspx?S=4095 (seen in raw HTML, HTTP 200); /about-us/board-of-education/board-meeting-schedule also links Simbli index s=4095. BOE Staff page has plaintext mailto emails for all central-office staff (Superintendent Dr. Samuel Dasher dashers@jefferson.k12.ga.us; Administrative Assistant Wanda Darisaw darisaww@jefferson.k12.ga.us — likely first ORR contact but not designated, so custodian left null). District: 1001 Peachtree Street, Louisville GA 30434, 478-625-7626. Onboarding cost: low for agendas, medium for comment/ORR (both undocumented)."
+      "notes": "Site is Finalsite ('Powered by Finalsite' in footer). /about-us/simbli page links directly to simbli SB_MeetingListing.aspx?S=4095 (seen in raw HTML, HTTP 200); /about-us/board-of-education/board-meeting-schedule also links Simbli index s=4095. BOE Staff page has plaintext mailto emails for all central-office staff (Superintendent Dr. Samuel Dasher dashers@jefferson.k12.ga.us; Administrative Assistant Wanda Darisaw darisaww@jefferson.k12.ga.us — likely first ORR contact but not designated, so custodian left null). District: 1001 Peachtree Street, Louisville GA 30434, 478-625-7626. Onboarding cost: low for agendas, medium for comment/ORR (both undocumented). AUDIT 2026-06-11: absence claim(s) CONFIRMED by adversarial refutation (see verification block).",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.jefferson.k12.ga.us/about-us/board-of-education",
+            "https://www.jefferson.k12.ga.us/about-us/boe-staff"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Jefferson County Schools\" Georgia \"open records\" request email custodian",
+            "site:jefferson.k12.ga.us \"open records\"",
+            "\"Jefferson County Schools\" Georgia open records request email",
+            "\"Jefferson County Schools\" Georgia records custodian",
+            "\"Jefferson County Schools\" Georgia board agenda",
+            "\"Jefferson County Schools\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "staff emails parse; records designation genuinely absent",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"CONFIRMED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "CONFIRMED"
+        }
+      }
     },
     "lincoln-county-schools-ga": {
       "name": "Lincoln County Schools",
@@ -1118,7 +1964,35 @@
       },
       "verified": "verified",
       "confidence": "medium",
-      "notes": "Site is Apptegy (cmsv2-assets.apptegy.net). Board nav links simbli SB_MeetingListing.aspx?S=36030862 plus Index.aspx and PolicyListing.aspx (S=36030862), all seen in raw HTML and HTTP 200; also /page/minutes and /page/recordings. Staff emails plaintext on @lcboe.us domain (note: differs from website domain): Superintendent Dr. Howie F. Gunby hgunby@lcboe.us; System Secretary Lynn Odum lodum@lcboe.us — likely ORR contact but not designated, so custodian left null. District: 423 Metasville Road, Lincolnton GA 30817, 706-359-3742. Onboarding cost: low for agendas (standard Simbli), medium for comment/ORR (both undocumented)."
+      "notes": "Site is Apptegy (cmsv2-assets.apptegy.net). Board nav links simbli SB_MeetingListing.aspx?S=36030862 plus Index.aspx and PolicyListing.aspx (S=36030862), all seen in raw HTML and HTTP 200; also /page/minutes and /page/recordings. Staff emails plaintext on @lcboe.us domain (note: differs from website domain): Superintendent Dr. Howie F. Gunby hgunby@lcboe.us; System Secretary Lynn Odum lodum@lcboe.us — likely ORR contact but not designated, so custodian left null. District: 423 Metasville Road, Lincolnton GA 30817, 706-359-3742. Onboarding cost: low for agendas (standard Simbli), medium for comment/ORR (both undocumented). AUDIT 2026-06-11: absence claim(s) CONFIRMED by adversarial refutation (see verification block).",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://web.archive.org/web/20260213232646/https://www.lincolncountyschools.org/page/district-staff"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Lincoln County\" Lincolnton Georgia schools \"open records\" email custodian",
+            "site:lincolncountyschools.org \"open records\"",
+            "\"Lincoln County Schools\" Georgia open records request email",
+            "\"Lincoln County Schools\" Georgia records custodian",
+            "\"Lincoln County Schools\" Georgia board agenda",
+            "\"Lincoln County Schools\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "staff emails parse; records designation genuinely absent",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"CONFIRMED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "CONFIRMED"
+        }
+      }
     },
     "wilkes-county-schools-ga": {
       "name": "Wilkes County Schools",
@@ -1157,7 +2031,37 @@
       },
       "verified": "verified",
       "confidence": "high",
-      "notes": "Apptegy-powered site. Official BOE nav links 'Board Meeting Agendas and Minutes' directly to simbli.eboardsolutions.com S=4179; live Simbli listing fetched this session shows regular monthly board meetings with published minutes through 04/2026 (05/2026 pending). Onboarding cost low for agenda ingestion (active Simbli archive), higher for records/comment routing since no emails are published."
+      "notes": "Apptegy-powered site. Official BOE nav links 'Board Meeting Agendas and Minutes' directly to simbli.eboardsolutions.com S=4179; live Simbli listing fetched this session shows regular monthly board meetings with published minutes through 04/2026 (05/2026 pending). Onboarding cost low for agenda ingestion (active Simbli archive), higher for records/comment routing since no emails are published. AUDIT 2026-06-11: absence claim(s) CONFIRMED by adversarial refutation (see verification block).",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.wilkes.k12.ga.us/documents",
+            "https://www.wilkes.k12.ga.us/page/board-of-education",
+            "https://www.wilkes.k12.ga.us/staff"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Wilkes County Schools\" Georgia \"open records request\" email",
+            "site:wilkes.k12.ga.us \"open records\" OR \"records custodian\"",
+            "\"Wilkes County Schools\" Georgia open records request email",
+            "\"Wilkes County Schools\" Georgia records custodian",
+            "\"Wilkes County Schools\" Georgia board agenda",
+            "\"Wilkes County Schools\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "staff emails parse from same CMS; records designation genuinely absent",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"CONFIRMED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "CONFIRMED"
+        }
+      }
     },
     "hancock-county-schools-ga": {
       "name": "Hancock County Schools",
@@ -1231,7 +2135,37 @@
       },
       "verified": "verified",
       "confidence": "high",
-      "notes": "Google Sites site with an 'Eboard' nav item; BOE page links (via google.com/url redirect) to Simbli S=4171. Live Simbli listing fetched this session shows monthly board meetings with published minutes through 05/2026. Staff directory on /boe publishes plaintext emails incl. Superintendent Dr. Christopher D. Harris, Sr. (charris@warren.k12.ga.us) - the natural ORR recipient though no custodian is designated. Low onboarding cost for agendas; comment/records routing inferred."
+      "notes": "Google Sites site with an 'Eboard' nav item; BOE page links (via google.com/url redirect) to Simbli S=4171. Live Simbli listing fetched this session shows monthly board meetings with published minutes through 05/2026. Staff directory on /boe publishes plaintext emails incl. Superintendent Dr. Christopher D. Harris, Sr. (charris@warren.k12.ga.us) - the natural ORR recipient though no custodian is designated. Low onboarding cost for agendas; comment/records routing inferred. AUDIT 2026-06-11: absence claim(s) CONFIRMED by adversarial refutation (see verification block).",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.warren.k12.ga.us/boe",
+            "https://www.warren.k12.ga.us/departments",
+            "https://www.warren.k12.ga.us/forms-bids"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Warren County\" Georgia schools \"records custodian\" email",
+            "site:warren.k12.ga.us \"open records\" OR \"records request\"",
+            "\"Warren County School System\" Georgia open records request email",
+            "\"Warren County School System\" Georgia records custodian",
+            "\"Warren County School System\" Georgia board agenda",
+            "\"Warren County School System\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "staff emails parse from same CMS; records designation genuinely absent",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"CONFIRMED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "CONFIRMED"
+        }
+      }
     },
     "glascock-county-consolidated-schools-ga": {
       "name": "Glascock County Consolidated Schools",
@@ -1271,7 +2205,43 @@
       },
       "verified": "verified",
       "confidence": "high",
-      "notes": "ONBOARDED 2026-06-10 as a documented-absence placeholder (source of truth = jurisdictions/glascock-county-consolidated-schools-ga.json; ORR draft research/ga_recon/orr_drafts/glascock-county-consolidated-schools-ga.md). Finalsite-powered site, checked live this session: BOE page (/about-us/board-of-education) has 2026 meeting dates (all ~7:00 PM, mix of 3rd/4th Thursdays), budget/SPLOST PDFs, and board roster, but no agenda or minutes archive. GSBA/Simbli membership material mentions Glascock but no public Simbli site (S=) is linked from the district site. High onboarding cost: agendas would require ORR or in-person collection. 'Verified' applies to the absence findings; name on site appears as both 'Glascock County Consolidated School' and 'Glascock County School System'. Verification 2026-06-10: agenda/minutes absence and 404 participation link re-confirmed live; staff emails found on department pages (custodian still undesignated)."
+      "notes": "ONBOARDED 2026-06-10 as a documented-absence placeholder (source of truth = jurisdictions/glascock-county-consolidated-schools-ga.json; ORR draft research/ga_recon/orr_drafts/glascock-county-consolidated-schools-ga.md). Finalsite-powered site, checked live this session: BOE page (/about-us/board-of-education) has 2026 meeting dates (all ~7:00 PM, mix of 3rd/4th Thursdays), budget/SPLOST PDFs, and board roster, but no agenda or minutes archive. GSBA/Simbli membership material mentions Glascock but no public Simbli site (S=) is linked from the district site. High onboarding cost: agendas would require ORR or in-person collection. 'Verified' applies to the absence findings; name on site appears as both 'Glascock County Consolidated School' and 'Glascock County School System'. Verification 2026-06-10: agenda/minutes absence and 404 participation link re-confirmed live; staff emails found on department pages (custodian still undesignated). AUDIT 2026-06-11: absence claim(s) CONFIRMED by adversarial refutation (see verification block).",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.glascock.k12.ga.us/about-us/board-of-education",
+            "https://www.glascock.k12.ga.us/about-us/board-of-education/meeting-schedule",
+            "https://www.glascock.k12.ga.us/about-us/superintendent",
+            "https://www.glascock.k12.ga.us/site-map",
+            "https://www.glascock.k12.ga.us/staff/human-resources"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Glascock County Consolidated School\" superintendent email contact",
+            "\"Glascock County\" schools Georgia \"board meeting\" agenda minutes",
+            "\"Glascock\" site:go.boarddocs.com",
+            "site:glascock.k12.ga.us minutes OR agenda",
+            "site:simbli.eboardsolutions.com \"Glascock County\"",
+            "\"Glascock County Consolidated Schools\" Georgia open records request email",
+            "\"Glascock County Consolidated Schools\" Georgia records custodian",
+            "\"Glascock County Consolidated Schools\" Georgia board agenda",
+            "\"Glascock County Consolidated Schools\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "staff/HR emails + news posts parse from same CMS; board docs genuinely absent",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_MEETING_DOCS\": \"CONFIRMED\", \"NO_CUSTODIAN_EMAIL\": \"CONFIRMED\"}"
+        },
+        "audit_verdicts": {
+          "NO_MEETING_DOCS": "CONFIRMED",
+          "NO_CUSTODIAN_EMAIL": "CONFIRMED"
+        }
+      }
     },
     "taliaferro-county-school-district-ga": {
       "name": "Taliaferro County School District",
@@ -1310,7 +2280,38 @@
       },
       "verified": "verified",
       "confidence": "medium",
-      "notes": "ONBOARDED 2026-06-10 as a documented-absence placeholder (source of truth = jurisdictions/taliaferro-county-school-district-ga.json; ORR draft research/ga_recon/orr_drafts/taliaferro-county-school-district-ga.md). SchoolInsites-powered site, checked live this session. /schoolboard publishes board roster with plaintext emails, 2025 meeting schedule, and an 'Open Board Meetings' legal-notice PDF hosted on content.myconnectsuite.com; /governance promises web posting of agendas/minutes that does not exist. Custodian fields are the superintendent as the de facto records contact (named on the official site with plaintext email) - she is not formally designated custodian, hence overall confidence medium. High onboarding cost: agendas likely obtainable only via ORR email to superintendent."
+      "notes": "ONBOARDED 2026-06-10 as a documented-absence placeholder (source of truth = jurisdictions/taliaferro-county-school-district-ga.json; ORR draft research/ga_recon/orr_drafts/taliaferro-county-school-district-ga.md). SchoolInsites-powered site, checked live this session. /schoolboard publishes board roster with plaintext emails, 2025 meeting schedule, and an 'Open Board Meetings' legal-notice PDF hosted on content.myconnectsuite.com; /governance promises web posting of agendas/minutes that does not exist. Custodian fields are the superintendent as the de facto records contact (named on the official site with plaintext email) - she is not formally designated custodian, hence overall confidence medium. High onboarding cost: agendas likely obtainable only via ORR email to superintendent. AUDIT 2026-06-11: absence claim(s) CONFIRMED by adversarial refutation (see verification block).",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.taliaferro.k12.ga.us/governance",
+            "https://www.taliaferro.k12.ga.us/minutes",
+            "https://www.taliaferro.k12.ga.us/schoolboard"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Taliaferro County\" school board meeting minutes agenda",
+            "site:simbli.eboardsolutions.com \"Taliaferro County\"",
+            "site:taliaferro.k12.ga.us minutes OR agenda",
+            "\"Taliaferro County School District\" Georgia open records request email",
+            "\"Taliaferro County School District\" Georgia records custodian",
+            "\"Taliaferro County School District\" Georgia board agenda",
+            "\"Taliaferro County School District\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "charter-governance-board 2018 docs + LT minutes parse from same CMS; elected-BOE docs genuinely absent",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_MEETING_DOCS\": \"CONFIRMED\"}"
+        },
+        "audit_verdicts": {
+          "NO_MEETING_DOCS": "CONFIRMED"
+        }
+      }
     },
     "fulton-county-schools-ga": {
       "name": "Fulton County Schools",
@@ -1466,7 +2467,35 @@
       },
       "verified": "verified",
       "confidence": "high",
-      "notes": "Meeting calendar (dekalbschoolsga.org/board/meeting-calendar) verified live, linking agendas to Simbli listing S=4054. Open records page (dekalbschoolsga.org/divisions/legal-services/open-records) verified live: generic web form to the Office of Legal Affairs - Open Records Department, no named officer or direct email published, phone (678) 676-1200. A jamelia_s_potter@dekalbschoolsga.org address appeared only in link metadata on the calendar page (role unconfirmed, excluded from custodian fields). Onboarding cost: low for agendas (Simbli) and comment routing (plain email); records intake is form-based with weak paper trail."
+      "notes": "Meeting calendar (dekalbschoolsga.org/board/meeting-calendar) verified live, linking agendas to Simbli listing S=4054. Open records page (dekalbschoolsga.org/divisions/legal-services/open-records) verified live: generic web form to the Office of Legal Affairs - Open Records Department, no named officer or direct email published, phone (678) 676-1200. A jamelia_s_potter@dekalbschoolsga.org address appeared only in link metadata on the calendar page (role unconfirmed, excluded from custodian fields). Onboarding cost: low for agendas (Simbli) and comment routing (plain email); records intake is form-based with weak paper trail. AUDIT 2026-06-11: absence claim(s) CONFIRMED by adversarial refutation (see verification block).",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.dekalbschoolsga.org/contact-us",
+            "https://www.dekalbschoolsga.org/divisions/legal-services/open-records"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "DeKalb County School District Georgia \"open records\" request email",
+            "\"DeKalb County School District\" Georgia open records request email",
+            "\"DeKalb County School District\" Georgia records custodian",
+            "\"DeKalb County School District\" Georgia board agenda",
+            "\"DeKalb County School District\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "transcript/SPED emails parse from same site; ORA custodian email genuinely absent",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"CONFIRMED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "CONFIRMED"
+        }
+      }
     },
     "savannah-chatham-county-public-school-system-ga": {
       "name": "Savannah-Chatham County Public School System",
@@ -1779,7 +2808,36 @@
       },
       "verified": "verified",
       "confidence": "high",
-      "notes": "BOE page (atlantapublicschools.us/boe) links directly to Simbli meeting listing S=36031014 — agenda platform verified live. Open records page (atlantapublicschools.us/about/departments/open-records-and-other-requests) routes everything to a GovQA (mycusthelp) portal with no named custodian or email — onboarding cost: records requests require portal accounts. District also runs an 'OpenAPS' transparency portal. Public comment ambiguity noted in comment block."
+      "notes": "BOE page (atlantapublicschools.us/boe) links directly to Simbli meeting listing S=36031014 — agenda platform verified live. Open records page (atlantapublicschools.us/about/departments/open-records-and-other-requests) routes everything to a GovQA (mycusthelp) portal with no named custodian or email — onboarding cost: records requests require portal accounts. District also runs an 'OpenAPS' transparency portal. Public comment ambiguity noted in comment block. AUDIT 2026-06-11: absence claim(s) CONFIRMED by adversarial refutation (see verification block).",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://atlantapublicschools.mycusthelp.com/WEBAPP/_rs/SupportHome.aspx",
+            "https://www.atlantapublicschools.us/about/departments/open-records-and-other-requests"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Atlanta Public Schools\" Georgia \"open records request email\"",
+            "site:atlantapublicschools.us \"open records\"",
+            "\"Atlanta Public Schools\" Georgia open records request email",
+            "\"Atlanta Public Schools\" Georgia records custodian",
+            "\"Atlanta Public Schools\" Georgia board agenda",
+            "\"Atlanta Public Schools\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "transcript/subpoena emails parse from same site; ORA custodian email genuinely absent",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"CONFIRMED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "CONFIRMED"
+        }
+      }
     },
     "marietta-city-schools-ga": {
       "name": "Marietta City Schools",
@@ -1869,8 +2927,8 @@
       "agenda_platform": "simbli_eboard",
       "agenda_source_url": "https://simbli.eboardsolutions.com/SB_Meetings/SB_MeetingListing.aspx?S=4121",
       "records_custodian_name": null,
-      "records_custodian_title": null,
-      "records_custodian_email": null,
+      "records_custodian_title": "Open Records Officer",
+      "records_custodian_email": "openrecords@muscogee.k12.ga.us",
       "clerk_email_access": "plaintext",
       "records_intake": "unknown",
       "notable_gaps": [
@@ -1895,7 +2953,35 @@
       },
       "verified": "verified",
       "confidence": "medium",
-      "notes": "Board page (muscogee.k12.ga.us/about-us-clone/board-of-education-clone) explicitly says 'Simbli (Formerly Board Docs)' and links simbli.eboardsolutions.com/index.aspx?S=4121; Simbli meeting listing fetched live showing 2026 meetings (e.g. 05/18/2026 Regular Board Meeting). Policy Administrator Karen P. Jones (706-748-2019) is the board-business contact but is not identified as GORA custodian. Onboarding cost: agendas are clean Simbli, but records-intake discovery will need a phone/email probe."
+      "notes": "Board page (muscogee.k12.ga.us/about-us-clone/board-of-education-clone) explicitly says 'Simbli (Formerly Board Docs)' and links simbli.eboardsolutions.com/index.aspx?S=4121; Simbli meeting listing fetched live showing 2026 meetings (e.g. 05/18/2026 Regular Board Meeting). Policy Administrator Karen P. Jones (706-748-2019) is the board-business contact but is not identified as GORA custodian. Onboarding cost: agendas are clean Simbli, but records-intake discovery will need a phone/email probe. ERRATUM 2026-06-11 (audit): custodian email IS published — openrecords@muscogee.k12.ga.us. Dedicated mailbox on the district's official ORR page (under /about-us-clone/ path — likely why recon missed it).",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.muscogee.k12.ga.us/about-us-clone/open-records-request"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Muscogee County School District\" \"open records\" email request",
+            "site:muscogee.k12.ga.us \"open records\"",
+            "\"Muscogee County School District\" Georgia open records request email",
+            "\"Muscogee County School District\" Georgia records custodian",
+            "\"Muscogee County School District\" Georgia board agenda",
+            "\"Muscogee County School District\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "REFUTED"
+        }
+      }
     },
     "paulding-county-school-district-ga": {
       "name": "Paulding County School District",
@@ -1957,10 +3043,10 @@
         "Domain confusion hazard: bibbed.org is Bibb County Schools in ALABAMA (Centreville, AL) and outranks the GA district for board queries — do not ingest bibbed.org for this entry"
       ],
       "public_comment": {
-        "channel": "none_found",
+        "channel": "email",
         "comment_service": "none",
         "submit_url": null,
-        "recipient_email": null,
+        "recipient_email": "james.freeman@bcsdk12.net",
         "deadline_rule": null,
         "max_comment_chars": null,
         "accepts_attachment": null,
@@ -1973,7 +3059,36 @@
       },
       "verified": "verified",
       "confidence": "high",
-      "notes": "Homepage links Board of Education to simbli.eboardsolutions.com (S=4013); Simbli meeting listing fetched live (Bibb County School District, meetings incl. 06/18/2026 Board Meeting). Open-records page fetched live: Stephanie Hartley, Chief Communications Officer, email or mail, 484 Mulberry Street Suite 365, Macon GA, (478) 765-8548. Onboarding cost: agendas easy via Simbli; public-comment routing will require direct outreach to establish."
+      "notes": "Homepage links Board of Education to simbli.eboardsolutions.com (S=4013); Simbli meeting listing fetched live (Bibb County School District, meetings incl. 06/18/2026 Board Meeting). Open-records page fetched live: Stephanie Hartley, Chief Communications Officer, email or mail, 484 Mulberry Street Suite 365, Macon GA, (478) 765-8548. Onboarding cost: agendas easy via Simbli; public-comment routing will require direct outreach to establish. ERRATUM 2026-06-11 (audit): remote comment channels exist — all board-member emails on official Simbli portal (S=4013) + 'Let's Talk' form. WARNING: bibbed.org is Centreville ALABAMA; boarddocs ga/maconbibb is the county government.",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://simbli.eboardsolutions.com/AboutUs/AboutUs.aspx?S=4013&TID=1 (Wayback 2024-06/2025-10)",
+            "https://www.bcsdk12.net/about-us/lets-talk"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Bibb County School District\" Macon board \"public comment\"",
+            "Bibb County School District board members \"@bcsdk12.net\" email simbli",
+            "\"Bibb County School District\" Georgia open records request email",
+            "\"Bibb County School District\" Georgia records custodian",
+            "\"Bibb County School District\" Georgia board agenda",
+            "\"Bibb County School District\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_COMMENT_CHANNEL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_COMMENT_CHANNEL": "REFUTED"
+        }
+      }
     },
     "houston-county-schools-ga": {
       "name": "Houston County Schools",
@@ -2143,13 +3258,12 @@
       "agenda_platform": "simbli_eboard",
       "agenda_source_url": "https://simbli.eboardsolutions.com/SB_Meetings/SB_MeetingListing.aspx?S=4067",
       "records_custodian_name": "Yolanda Briggs-Johnson",
-      "records_custodian_title": "Open Records Officer",
-      "records_custodian_email": null,
-      "clerk_email_access": "none_found",
+      "records_custodian_title": "Open Records Officer / Exec. Director of Student Services",
+      "records_custodian_email": "johnson.yolanda@fcboe.org",
+      "clerk_email_access": "plaintext",
       "records_intake": "web_form",
       "records_intake_url": "https://www.fcboe.org/departments/student-services/open-records-request",
       "notable_gaps": [
-        "No email address published for the Open Records Officer — intake is an embedded Google Form only",
         "Public comment is in-person sign-up only; no remote, email, or written-comment channel found",
         "Open records form is an embedded Google Form (Google dependency; submissions leave the district domain)"
       ],
@@ -2170,7 +3284,36 @@
       },
       "verified": "verified",
       "confidence": "high",
-      "notes": "District brands as Fayette County Public Schools / Fayette County Board of Education (fcboe.org). Simbli S=4067 meeting listing and policy listing linked from the board-meeting-schedule page. Open records page (under departments/student-services) verified via raw HTML: names Yolanda Briggs-Johnson, 3-business-day response, embedded Google Form (docs.google.com/forms/d/e/1FAIpQLScpuDCY...). Domain-confusion hazard: fcps.net is Fayette County KY. Onboarding cost moderate: agenda scrape easy, but records intake is form-only and comment channel is in-person only."
+      "notes": "District brands as Fayette County Public Schools / Fayette County Board of Education (fcboe.org). Simbli S=4067 meeting listing and policy listing linked from the board-meeting-schedule page. Open records page (under departments/student-services) verified via raw HTML: names Yolanda Briggs-Johnson, 3-business-day response, embedded Google Form (docs.google.com/forms/d/e/1FAIpQLScpuDCY...). Domain-confusion hazard: fcps.net is Fayette County KY. Onboarding cost moderate: agenda scrape easy, but records intake is form-only and comment channel is in-person only. ERRATUM 2026-06-11 (audit): custodian email IS published — johnson.yolanda@fcboe.org. Named ORO on the ORR page; her mailto on the sibling Office of Student Services page. fcps.net lookalike is Lexington KY.",
+      "verification": {
+        "session_date": "2026-06-11",
+        "method": "adversarial refutation audit (8 independent agents; search-engine pass + structure sweep + portal/lookalike checks)",
+        "structure_sweep": {
+          "sections_enumerated": [
+            "https://www.fcboe.org/departments/student-services/office-of-student-services",
+            "https://www.fcboe.org/departments/student-services/open-records-request"
+          ]
+        },
+        "search_pass": {
+          "engine": "web_search",
+          "queries": [
+            "\"Briggs-Johnson\" fcboe.org email",
+            "\"Fayette County Public Schools\" Georgia \"open records\" request email",
+            "\"Fayette County Public Schools\" Georgia open records request email",
+            "\"Fayette County Public Schools\" Georgia records custodian",
+            "\"Fayette County Public Schools\" Georgia board agenda",
+            "\"Fayette County Public Schools\" Georgia public comment"
+          ],
+          "note": "exact recorded strings plus the mandated audit protocol queries (full transcripts trimmed at persistence)"
+        },
+        "sibling_control": "see audit evidence in notes/changelog",
+        "adversarial": {
+          "votes": "1 independent refuter per claim; verdicts: {\"NO_CUSTODIAN_EMAIL\": \"REFUTED\"}"
+        },
+        "audit_verdicts": {
+          "NO_CUSTODIAN_EMAIL": "REFUTED"
+        }
+      }
     },
     "clarke-county-school-district-ga": {
       "name": "Clarke County School District",
