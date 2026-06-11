@@ -27,8 +27,9 @@ states create a parallel file with that state's statute references.
 - **OCGA § 50-18-71(b)(1)(A)** — agency must respond within 3 business days.
 - **OCGA § 50-18-71(d)** — fees: $0.10/page for copies; no fee for the first 15 minutes of search/redaction time.
 - **OCGA § 50-18-71(b)(1)(B)** — if records don't exist OR aren't in custody, agency must state that in writing within 3 business days.
-- **OCGA § 50-14-1(e)(2)** — minutes of all meetings must be available within "a reasonable period of time" after each meeting.
-- **OCGA § 50-14-1(e)(1)** — a written summary of subjects acted upon must be available within two business days.
+- **OCGA § 50-14-1(e)(1)** — an agenda of all matters expected to come before the body must be made available, posted at minimum during the two-week period before the meeting.
+- **OCGA § 50-14-1(e)(2)(A)** — a written summary of subjects acted on and members present must be available within two business days of adjournment.
+- **OCGA § 50-14-1(e)(2)(B)** — full minutes are open to inspection once approved, and in no case later than immediately following the body's next regular meeting.
 
 If the agency cites an exemption, it must point to the specific OCGA section. Common exemptions (attorney-client privilege, personnel records, security plans) generally do NOT apply to routine meeting minutes.
 

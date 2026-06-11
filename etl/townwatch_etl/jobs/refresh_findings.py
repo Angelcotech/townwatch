@@ -49,12 +49,16 @@ class ObservedFinding:
 # =====================================================================
 
 
-# Approval-lag grace for minutes_missing. Minutes are typically only DUE after
-# the body approves them at its NEXT regular meeting (GA: open to inspection
-# within 2 business days of approval, OCGA § 50-14-1(e)(2)(B)) — so the
-# trailing meeting or two ALWAYS lack minutes at a compliant board. 45 days
-# covers a monthly cycle + approval + posting; meetings younger than this are
-# not yet evidence of anything.
+# Approval-lag grace for minutes_missing. GA splits the recording duty in two
+# tiers (verified against the AG's Open Meetings Act text 2026-06-11): a written
+# SUMMARY of subjects acted on is due within 2 business days of adjournment
+# (OCGA § 50-14-1(e)(2)(A) — not yet observed; would need summary ingestion),
+# while full MINUTES are open once approved, "in no case later than immediately
+# following its next regular meeting" (§ 50-14-1(e)(2)(B)). This observer
+# watches minutes, so the statutory ceiling is one meeting cycle — the trailing
+# meeting or two ALWAYS lack minutes at a compliant board. 45 days covers a
+# monthly cycle + approval + posting; meetings younger than this are not yet
+# evidence of anything.
 _MINUTES_APPROVAL_GRACE_DAYS = 45
 
 

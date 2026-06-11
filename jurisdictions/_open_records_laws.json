@@ -79,12 +79,12 @@
     },
     "finding_categories": {
       "minutes_missing": {
-        "statute_label": "OCGA § 50-14-1(e)(2)",
+        "statute_label": "OCGA § 50-14-1(e)(2)(B)",
         "statute_url": "https://law.justia.com/codes/georgia/title-50/chapter-14/section-50-14-1/",
-        "statute_text": "Minutes of all meetings of public agencies shall be promptly recorded and shall be open to public inspection once approved as official by the agency.",
+        "statute_text": "The regular minutes of a meeting shall be promptly recorded and shall be open to public inspection once approved as official by the agency or its committee, but in no case later than immediately following the agency's next regular meeting.",
         "applies_to_body_types": ["all_agencies"],
         "disclosure_mode": "proactive_post",
-        "verified_at": "2026-06-04",
+        "verified_at": "2026-06-11",
         "confidence": "high"
       },
       "agenda_missing": {
