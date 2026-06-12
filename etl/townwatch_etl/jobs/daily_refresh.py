@@ -115,6 +115,7 @@ _STEP_TIMEOUTS = {
     "extract_minutes": 4 * 3600,
     "extract_agendas": 4 * 3600,
     "backfill_document_text": 2 * 3600,
+    "ingest_campaign_finance": 2 * 3600,   # 60-doc cap × OCR-heavy scans
 }
 
 
@@ -512,7 +513,11 @@ def _per_jurisdiction_args(module: str, slug: str) -> list[str]:
     if module == "extract_embedded_minutes":
         return ["--jurisdiction", slug]
     if module == "ingest_campaign_finance":
-        return ["--jurisdiction", slug]
+        # Bounded per run: a county's FIRST sweep can be hundreds of scanned
+        # CCDRs (OCR-minutes each) — unbounded, it would blow the step budget
+        # on day one. Per-document commits + URL dedupe mean the backlog
+        # drains across weekly runs; steady-state is a handful of new docs.
+        return ["--jurisdiction", slug, "--limit", "60"]
     if module == "extract_budgets":
         return ["--jurisdiction", slug]
     raise ValueError(f"Unknown per-jurisdiction module: {module}")
