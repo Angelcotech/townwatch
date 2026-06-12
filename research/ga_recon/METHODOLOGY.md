@@ -129,6 +129,17 @@ on the live site. When unsure, mark `inferred` + `low` and add a note.
    search pass (4) to agree**, and the config note must say so. Set `verified`/`confidence`
    honestly based on whether you saw it live; a single-page check never justifies
    `confidence: high` on an absence.
+9. **Minutes may be published INSIDE the next meeting's agenda packet.** Grovetown
+   (2026-06-12 findings re-audit): standalone Minutes links stopped (PC 2022, BZA 2023) but
+   every subsequent agenda packet embeds the prior meeting's full formal minutes — a common
+   clerk workflow on CivicPlus. Before recording a minutes absence, open a recent agenda
+   packet and look for a "Minutes of the <date> Meeting" section. (Two HIGH findings stood
+   for three weeks against a city that was publishing minutes on the statutory timeline.)
+10. **HTTP 200 is not existence — content-verify before refuting an absence.** CivicPlus
+    `/AgendaCenter/ViewFile/ArchivedMinutes/_{date}-{id}` resolves by numeric id and IGNORES
+    the date prefix: probing PC-dated URLs returned 200 with real PDFs that were unrelated
+    City Council documents. A URL-probing verifier that treats 200 as "minutes exist" will
+    REFUTE true absences with someone else's records. Open the bytes and check the title.
 
 ## 4. Onboarding cost model (derived)
 

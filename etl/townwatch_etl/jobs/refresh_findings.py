@@ -197,6 +197,40 @@ def observe_campaign_finance_missing(conn, body_id: int, state_abbr: str, body_t
     # campaign_finance_missing → all_elected, incl. board_of_education).
     if not finding_applies(state_abbr, "campaign_finance_missing", body_type):
         return None
+
+    # NO OBSERVER WITHOUT INGESTION (statute-inventory rule, 2026-06-12): an
+    # empty campaign_contribution table measures OUR pipeline, not the
+    # officials. The 2026-06-12 Grovetown re-audit refuted this finding for
+    # all four sitting council members — every one had filings publicly
+    # downloadable from the state ethics record-search (the city's local
+    # filing office has 105 documents there) that we had simply never
+    # ingested. The observer is silent until a campaign-finance source has
+    # actually been ingested for this jurisdiction: either contributions
+    # exist somewhere in the jurisdiction, or the (future) ingestor has
+    # registered its jurisdiction-scoped data_source row — which it must do
+    # even when a sweep finds zero filings, so a true absence stays
+    # observable.
+    gated = conn.execute(
+        """
+        SELECT (
+          EXISTS (
+            SELECT 1 FROM campaign_contribution cc
+            JOIN term t ON t.official_id = cc.official_id
+            JOIN seat s ON s.id = t.seat_id
+            JOIN governing_body gb ON gb.id = s.governing_body_id
+            WHERE gb.jurisdiction_id = (SELECT jurisdiction_id FROM governing_body WHERE id = %s)
+          ) OR EXISTS (
+            SELECT 1 FROM data_source ds
+            WHERE ds.jurisdiction_id = (SELECT jurisdiction_id FROM governing_body WHERE id = %s)
+              AND ds.source_type = 'campaign_finance'
+          )
+        ) AS ingested
+        """,
+        (body_id, body_id),
+    ).fetchone()
+    if not gated["ingested"]:
+        return None
+
     EIGHT_YEARS_AGO = "(CURRENT_DATE - INTERVAL '8 years')"
     row = conn.execute(
         f"""

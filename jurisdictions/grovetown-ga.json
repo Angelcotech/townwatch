@@ -114,6 +114,19 @@
     }
   },
   "data_sources": {
+    "appointed_rosters": {
+      "status": "found",
+      "source": "city_website",
+      "url": "https://cityofgrovetown.com/164/Planning-Commission-and-Board-of-Zoning-",
+      "ingest_method": "scrape",
+      "format": "civicplus_heading_list",
+      "bodies": [
+        {"heading": "Grovetown Planning Commission", "body_name": "Planning Commission"},
+        {"heading": "Grovetown Board of Zoning Appeals", "body_name": "Board of Zoning Appeals"}
+      ],
+      "update_frequency": "as_needed",
+      "notes": "Found by the 2026-06-12 findings re-audit (refuted both member_roster_missing findings): full rosters with roles + term expirations live on this department subpage — no dedicated Boards & Commissions page exists, which is why single-page recon missed it."
+    },
     "officials_roster": {
       "status": "found",
       "source": "city_website",

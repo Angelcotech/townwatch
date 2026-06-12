@@ -62,6 +62,8 @@ PER_JURISDICTION_STEPS = [
                                    # didn't store (cache-hit replays, batch-vision path). Bounded;
                                    # ~free once a jurisdiction's corpus is stored.
     "refresh_council_roster",
+    "civicplus_board_rosters",     # cheap: appointed-board rosters from a config-declared
+                                   # CivicPlus page; clean no-op for towns without the block.
     "extract_budgets",             # WEEKLY (see WEEKLY_STEPS) — budgets are annual, so a daily
                                    # run would needlessly HEAD-probe the TED repository at scale.
 ]
