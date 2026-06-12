@@ -34,30 +34,111 @@ _TITLE_PATTERNS = [
     "Mayor Pro-Tem",
     "Mayor Pro Tem",
     "Vice Mayor",
+    "Vice-Chairman",
+    "Vice Chairman",
+    "Vice Chair",
     "Council Member",
     "Councilmember",
+    "Councilmeber",   # recurring clerk typo (Grovetown minutes)
     "Councilman",
     "Councilwoman",
     "Alderman",
     "Alderwoman",
     "Commissioner",
     "Supervisor",
+    "Chairman",
     "Chair",
-    "Vice Chair",
     "Mayor",
+    # Honorifics — minutes say "Ms. Murray" / "Mr. Dominique Barabino"; the
+    # first-name-agreement guard must see the NAME, not the honorific.
+    "Mr.", "Mr", "Ms.", "Ms", "Mrs.", "Mrs", "Dr.", "Dr", "Hon.", "Hon",
 ]
+
+# Generational suffixes are NOT surnames. Before this existed, "Thomas W.
+# Mercer, Jr" was created with last_name='Jr' and then 'J. Charles Allen, Jr'
+# (a different person, different SURNAME) matched him by "last name" —
+# the 2026-06-12 identity-merge corruption.
+_SUFFIX_TOKENS = {"jr", "jr.", "sr", "sr.", "ii", "iii", "iv", "v"}
+
+# Tight nickname equivalences for first-name agreement. Deliberately small:
+# a missing pair costs one unmatched alias (recoverable); a wrong pair merges
+# two people (the unrecoverable failure this module exists to prevent).
+_NICKNAMES = {
+    "doug": "douglas", "chris": "christopher", "mike": "michael",
+    "bob": "robert", "rob": "robert", "bill": "william", "will": "william",
+    "jim": "james", "jimmy": "james", "tom": "thomas", "tony": "anthony",
+    "rick": "richard", "rich": "richard", "dick": "richard", "ed": "edward",
+    "ted": "edward", "dan": "daniel", "dave": "david", "steve": "steven",
+    "joe": "joseph", "jacqueline": "jackie", "liz": "elizabeth",
+    "beth": "elizabeth", "kate": "katherine", "kathy": "katherine",
+    "sue": "susan", "peggy": "margaret", "jack": "john",
+}
+
+
+def split_person_name(name: str) -> dict:
+    """Split a person name into first/middle/last/suffix, suffix-aware:
+    'Thomas W. Mercer, Jr' → first='Thomas', middle='W.', last='Mercer',
+    suffix='Jr'. Commas are separators, never part of a token."""
+    cleaned = name.replace(",", " ").strip()
+    tokens = [t for t in cleaned.split() if t]
+    suffix = None
+    if len(tokens) > 1 and tokens[-1].lower() in _SUFFIX_TOKENS:
+        suffix = tokens[-1]
+        tokens = tokens[:-1]
+    if not tokens:
+        return {"first": None, "middle": None, "last": None, "suffix": suffix}
+    if len(tokens) == 1:
+        return {"first": None, "middle": None, "last": tokens[0], "suffix": suffix}
+    return {
+        "first": tokens[0],
+        "middle": " ".join(tokens[1:-1]) or None,
+        "last": tokens[-1],
+        "suffix": suffix,
+    }
+
+
+def first_names_agree(a: str | None, b: str | None) -> bool:
+    """Whether two FIRST names can belong to the same person: exact match,
+    initial-vs-full ('J.' agrees with 'James'), or a known nickname pair.
+    Absent names agree with anything (a surname-only reference carries no
+    first-name evidence) — the CALLER decides whether surname-only evidence
+    is sufficient; this function only refuses contradictions."""
+    if not a or not b:
+        return True
+    a, b = a.lower().rstrip("."), b.lower().rstrip(".")
+    if a == b:
+        return True
+    if len(a) == 1 or len(b) == 1:          # initial vs full
+        return a[0] == b[0]
+    return _NICKNAMES.get(a, a) == _NICKNAMES.get(b, b)
+
+
+def looks_unresolvable(name: str) -> bool:
+    """Names that must never create or match an official: extraction
+    annotations ('(... illegible)'), digits, or no alphabetic content.
+    Illegible deed signatories became a phantom official before this guard."""
+    if not name or not any(c.isalpha() for c in name):
+        return True
+    low = name.lower()
+    return ("illegible" in low or "unknown" in low or "(" in name
+            or any(c.isdigit() for c in name))
 
 
 def strip_title(name: str) -> str:
-    """Remove a leading elected-office title from a name string.
-    'Councilmember A. Richard Bowman' → 'A. Richard Bowman'
+    """Remove leading elected-office titles and honorifics from a name string.
+    Iterative, so 'Councilwoman Ms. Sylvia Martin' → 'Sylvia Martin'.
     """
     s = name.strip()
-    s_lower = s.lower()
-    for title in _TITLE_PATTERNS:
-        prefix = title.lower() + " "
-        if s_lower.startswith(prefix):
-            return s[len(title):].strip()
+    changed = True
+    while changed:
+        changed = False
+        s_lower = s.lower()
+        for title in _TITLE_PATTERNS:
+            prefix = title.lower() + " "
+            if s_lower.startswith(prefix):
+                s = s[len(title):].strip()
+                changed = True
+                break
     return s
 
 
@@ -332,11 +413,34 @@ class CachedResolver:
         """Re-load caches from DB. Call after bulk official creation."""
         self._alias_map.clear()
         self._last_name_map.clear()
+        self._first_name_map: dict[int, str | None] = {}
+        self._term_holders: set[int] = set()
 
         for r in self.conn.execute(
             "SELECT alias_name, official_id FROM official_alias"
         ).fetchall():
             self._alias_map[r["alias_name"].lower()] = r["official_id"]
+
+        for r in self.conn.execute(
+            "SELECT id, first_name FROM official"
+        ).fetchall():
+            self._first_name_map[r["id"]] = r["first_name"]
+
+        # Officials who have (ever) held a seat — the only people a bare
+        # surname reference in MINUTES can mean. Staff with a matching
+        # surname must not absorb a council member's votes (the Ceretta
+        # Smith → Bradley Smith corruption, 2026-06-12).
+        holder_sql = "SELECT DISTINCT official_id FROM term"
+        params: tuple = ()
+        if self.jurisdiction_id is not None:
+            holder_sql = """
+                SELECT DISTINCT t.official_id FROM term t
+                JOIN seat s ON s.id = t.seat_id
+                JOIN governing_body gb ON gb.id = s.governing_body_id
+                WHERE gb.jurisdiction_id = %s"""
+            params = (self.jurisdiction_id,)
+        for r in self.conn.execute(holder_sql, params).fetchall():
+            self._term_holders.add(r["official_id"])
 
         if self.jurisdiction_id is None:
             rows = self.conn.execute(
@@ -366,8 +470,14 @@ class CachedResolver:
                 self._last_name_map.setdefault(ln, []).append(r["id"])
 
     def resolve(self, source_name: str) -> int | None:
-        """Return official_id or None. Pure in-memory after initial refresh."""
-        if not source_name:
+        """Return official_id or None. Pure in-memory after initial refresh.
+
+        Surname matching requires FIRST-NAME AGREEMENT when the reference
+        carries one, and a bare surname only resolves to a term-holder —
+        last-name-only matching against the whole officials table merged
+        different people into one row (Ceretta Smith → Bradley Smith,
+        Michael→Beverly Tuttle, three Brazells; fixed 2026-06-12)."""
+        if not source_name or looks_unresolvable(source_name):
             return None
 
         oid = self._alias_map.get(source_name.lower())
@@ -380,13 +490,25 @@ class CachedResolver:
             self._record_alias(oid, source_name)
             return oid
 
-        tokens = stripped.split()
-        if not tokens:
+        parts = split_person_name(stripped)
+        if not parts["last"]:
             return None
-        last_name = tokens[-1].lower()
-        candidates = self._last_name_map.get(last_name, [])
-        if len(candidates) == 1:
-            oid = candidates[0]
+        candidates = self._last_name_map.get(parts["last"].lower(), [])
+
+        if parts["first"]:
+            agreeing = [c for c in candidates
+                        if first_names_agree(parts["first"], self._first_name_map.get(c))]
+            if len(agreeing) == 1:
+                oid = agreeing[0]
+                self._record_alias(oid, source_name)
+                return oid
+            return None
+
+        # Bare surname ("Councilmember Smith"): only a seat-holder can be
+        # meant, and only an unambiguous one.
+        holders = [c for c in candidates if c in self._term_holders]
+        if len(holders) == 1:
+            oid = holders[0]
             self._record_alias(oid, source_name)
             return oid
         return None
@@ -407,6 +529,15 @@ class CachedResolver:
     def _record_alias(self, official_id: int, alias_name: str) -> None:
         key = alias_name.lower()
         if key in self._alias_map:
+            return
+        # Regression guard: never attach an alias whose first name
+        # contradicts the official's. A wrong alias is permanent — every
+        # future resolution of that name inherits the error.
+        parts = split_person_name(strip_title(alias_name))
+        if not first_names_agree(parts["first"], self._first_name_map.get(official_id)):
+            print(f"  ⚠ identity: refusing alias {alias_name!r} for official "
+                  f"#{official_id} (first-name conflict with "
+                  f"{self._first_name_map.get(official_id)!r})")
             return
         if self.data_source_id is None:
             return  # caller hasn't wired provenance yet; cache-only

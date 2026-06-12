@@ -137,41 +137,64 @@ class BackfillHistoricalOfficials(IngestJob):
 
     # -- canonical name discovery -----------------------------------------
 
-    def _collect_canonical_names(self, meeting_rows: list[dict]) -> dict[str, str]:
-        by_surname: dict[str, str] = defaultdict(str)
+    def _collect_canonical_names(self, meeting_rows: list[dict]) -> dict[tuple, str]:
+        """Distinct PEOPLE seen in the historical payloads, keyed by
+        (goes-by-first-name, surname) — NOT by surname alone. The old
+        surname-only keying kept one longest name per surname, collapsing
+        'Amy Brazell', 'James Brazell', and 'Karen R. Brazell' into a single
+        identity (the 2026-06-12 merge corruption)."""
+        by_key: dict[tuple, str] = defaultdict(str)
         for row in meeting_rows:
             payload = row["payload"]
             attendance = payload.get("attendance", {}) or {}
             for name in (attendance.get("present", []) + attendance.get("absent", [])):
-                self._add_candidate(by_surname, name)
+                self._add_candidate(by_key, name)
             for item in (payload.get("agenda_items", []) or []):
                 for v in (item.get("individual_votes", []) or []):
-                    self._add_candidate(by_surname, v.get("name", ""))
+                    self._add_candidate(by_key, v.get("name", ""))
                 for rc in (item.get("recusals", []) or []):
-                    self._add_candidate(by_surname, rc.get("name", ""))
-        return dict(by_surname)
+                    self._add_candidate(by_key, rc.get("name", ""))
+        return dict(by_key)
 
     @staticmethod
-    def _add_candidate(by_surname: dict[str, str], name: str) -> None:
-        if not name:
-            return
+    def _goes_by(parts: dict) -> str | None:
+        """The name a person is addressed by: the first name, or — when the
+        first is a bare initial — the first middle word ('A. Richard Bowman'
+        goes by Richard)."""
+        first = (parts["first"] or "").rstrip(".")
+        if len(first) == 1 and parts["middle"]:
+            return parts["middle"].split()[0].rstrip(".")
+        return parts["first"]
+
+    @classmethod
+    def _add_candidate(cls, by_key: dict[tuple, str], name: str) -> None:
+        if not name or identity.looks_unresolvable(name):
+            return  # illegible/garbage references must never become officials
         stripped = identity.strip_title(name).strip()
-        tokens = stripped.split()
-        if len(tokens) < 2:
+        parts = identity.split_person_name(stripped)
+        if not parts["first"] or not parts["last"]:
+            return  # a bare surname can't define a person, only reference one
+        goes_by = cls._goes_by(parts)
+        if not goes_by:
             return
-        surname = tokens[-1].lower()
-        current = by_surname.get(surname, "")
-        if len(stripped) > len(current):
-            by_surname[surname] = stripped
+        key = (goes_by.lower(), parts["last"].lower())
+        if len(stripped) > len(by_key.get(key, "")):
+            by_key[key] = stripped
 
     # -- historical official creation -------------------------------------
 
-    def _create_historical_officials(self, canonical_by_surname: dict[str, str]) -> int:
+    def _create_historical_officials(self, canonical_by_key: dict[tuple, str]) -> int:
+        """Create (or alias) one official per PERSON. An existing same-surname
+        official only absorbs the name when the first names AGREE — the old
+        unconditional alias-to-any-same-surname is what attached 'Ceretta
+        Smith' to Bradley Smith (staff) and 'Michael D. Tuttle' to Beverly.
+        First-name conflict means a different human: create them."""
         assert self.conn is not None and self.data_source_id is not None
         created = 0
-        for surname, canonical_name in canonical_by_surname.items():
+        for (_goes_by, surname), canonical_name in canonical_by_key.items():
+            parts = identity.split_person_name(identity.strip_title(canonical_name))
             existing = self.conn.execute("""
-                SELECT DISTINCT o.id, o.canonical_name
+                SELECT DISTINCT o.id, o.canonical_name, o.first_name
                 FROM official o
                 LEFT JOIN term t            ON t.official_id = o.id
                 LEFT JOIN seat s            ON s.id = t.seat_id
@@ -179,29 +202,35 @@ class BackfillHistoricalOfficials(IngestJob):
                 WHERE (gb.jurisdiction_id = %s OR gb.id IS NULL)
                   AND LOWER(o.last_name) = LOWER(%s)
             """, (self.jurisdiction_id, surname)).fetchall()
-            if existing:
-                for r in existing:
-                    if r["canonical_name"].strip().lower() != canonical_name.strip().lower():
-                        identity.add_alias(
-                            self.conn,
-                            official_id=r["id"],
-                            alias_name=canonical_name,
-                            source_system=self.source_name,
-                            data_source_id=self.data_source_id,
-                        )
+
+            agreeing = [r for r in existing
+                        if identity.first_names_agree(parts["first"], r["first_name"])
+                        or identity.first_names_agree(self._goes_by(parts), r["first_name"])]
+            if len(agreeing) == 1:
+                r = agreeing[0]
+                if r["canonical_name"].strip().lower() != canonical_name.strip().lower():
+                    identity.add_alias(
+                        self.conn,
+                        official_id=r["id"],
+                        alias_name=canonical_name,
+                        source_system=self.source_name,
+                        data_source_id=self.data_source_id,
+                    )
+                continue
+            if len(agreeing) > 1:
+                # Ambiguous — two plausible matches is a human call, not a
+                # guess. Leave unresolved; the votes pass will report it.
+                print(f"  ⚠ ambiguous identity {canonical_name!r}: "
+                      f"{[r['canonical_name'] for r in agreeing]} — not merging")
                 continue
 
-            parts = canonical_name.split()
-            first = parts[0]
-            last = parts[-1]
-            middle = " ".join(parts[1:-1]) if len(parts) > 2 else None
             oid = identity.create_official(
                 self.conn,
                 data_source_id=self.data_source_id,
                 canonical_name=canonical_name,
-                first_name=first,
-                middle_name=middle,
-                last_name=last,
+                first_name=parts["first"],
+                middle_name=parts["middle"],
+                last_name=parts["last"],
             )
             identity.add_alias(
                 self.conn,
