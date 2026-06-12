@@ -44,6 +44,12 @@ def get(conn, hash_: str) -> dict | None:
 
 
 def put(conn, hash_: str, *, source_url: str | None, method: str, pages: list[str]) -> None:
+    # Postgres cannot represent NUL in text/jsonb at all (UntranslatableCharacter,
+    # not escapable) — and some PDF text layers contain stray \x00 (first seen:
+    # Columbia County CivicClerk packet fileId=10978). Stripping it is lossless
+    # for every legitimate consumer; without this the document can never be
+    # stored and re-fails on every backfill run.
+    pages = [p.replace("\x00", "") for p in pages]
     conn.execute(
         """
         INSERT INTO document_text (content_hash, source_url, method, page_count, pages, char_count)
@@ -63,8 +69,34 @@ def _text_layer_pages(data: bytes) -> list[str]:
     # extracted itself, not pypdf's weaker output. Identity resolution depends on
     # this, so the store must not silently downgrade it.
     import pdfplumber  # lazy import — heavy dep
-    with pdfplumber.open(io.BytesIO(data)) as pdf:
-        return [((p.extract_text() or "").strip()) for p in pdf.pages]
+    # Open in bounded page windows: pdfplumber/pdfminer accumulate document-level
+    # state for every page touched in one open, which balloons to GBs on big
+    # CivicClerk packets and OOM-kills the prod container — a silent non-zero
+    # death with no failure rows (Columbia 38MB/864p packet: 2.4GB peak in one
+    # open vs 356MB chunked, byte-identical output). Each window re-opens from
+    # the in-memory bytes, so the only repeated cost is the (cheap) xref parse.
+    _CHUNK = 50
+    try:
+        from pypdf import PdfReader
+        n = len(PdfReader(io.BytesIO(data)).pages)
+    except Exception:
+        n = None
+    pages: list[str] = []
+    if n is None:
+        # Page count unknowable (odd xref) — single open, pdfplumber's parser
+        # is more forgiving; these are rarely the giant packets.
+        with pdfplumber.open(io.BytesIO(data)) as pdf:
+            for p in pdf.pages:
+                pages.append((p.extract_text() or "").strip())
+                p.flush_cache()
+        return pages
+    for start in range(1, n + 1, _CHUNK):
+        window = list(range(start, min(start + _CHUNK, n + 1)))
+        with pdfplumber.open(io.BytesIO(data), pages=window) as pdf:
+            for p in pdf.pages:
+                pages.append((p.extract_text() or "").strip())
+                p.flush_cache()
+    return pages
 
 
 def _ocr_pages(data: bytes) -> list[str]:

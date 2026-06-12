@@ -39,11 +39,34 @@ def _extract_text_layer(pdf_path: Path) -> tuple[str, int, int]:
     """
     import pdfplumber  # lazy import — heavy dep
 
+    # Bounded page windows, same pattern as document_text._text_layer_pages:
+    # one whole-document open accumulates parser state for every page and
+    # OOM-kills the prod container on giant packets (38MB/864p → 2.4GB peak
+    # vs 356MB chunked, identical text). Windows re-open the file; the only
+    # repeated cost is the cheap xref parse.
+    _CHUNK = 50
+    try:
+        from pypdf import PdfReader
+        page_count = len(PdfReader(str(pdf_path)).pages)
+    except Exception:
+        page_count = None
+
     pages_text: list[str] = []
-    with pdfplumber.open(pdf_path) as pdf:
-        for p in pdf.pages:
-            pages_text.append((p.extract_text() or "").strip())
-        page_count = len(pdf.pages)
+    if page_count is None:
+        # Page count unknowable — pdfplumber's parser is more forgiving;
+        # flush per page bounds the cache growth at least.
+        with pdfplumber.open(pdf_path) as pdf:
+            for p in pdf.pages:
+                pages_text.append((p.extract_text() or "").strip())
+                p.flush_cache()
+            page_count = len(pdf.pages)
+    else:
+        for start in range(1, page_count + 1, _CHUNK):
+            window = list(range(start, min(start + _CHUNK, page_count + 1)))
+            with pdfplumber.open(pdf_path, pages=window) as pdf:
+                for p in pdf.pages:
+                    pages_text.append((p.extract_text() or "").strip())
+                    p.flush_cache()
     content_chars = sum(len(p) for p in pages_text)
     joined = "\n\n--- PAGE BREAK ---\n\n".join(pages_text).strip()
     return joined, page_count, content_chars

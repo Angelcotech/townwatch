@@ -41,6 +41,11 @@ def find_motion_pages(pdf_bytes: bytes, motion_title: str) -> list[int] | None:
                     text = page.extract_text() or ""
                 except Exception:
                     continue
+                finally:
+                    # Bound cache growth on long docs (repair inputs are minutes,
+                    # rarely huge — for the giant-packet case see the chunked
+                    # open in document_text._text_layer_pages).
+                    page.flush_cache()
                 if not text:
                     continue
                 if _fuzzy_contains(_normalize(text), needle):

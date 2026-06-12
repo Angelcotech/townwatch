@@ -40,6 +40,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import json
+import os
 import subprocess
 import sys
 import time
@@ -114,9 +115,15 @@ def _run_step(module: str, args: list[str]) -> tuple[bool, str]:
     print(f"  → {module} {' '.join(args)}")
     started = time.time()
     timeout = _STEP_TIMEOUTS.get(module, _DEFAULT_STEP_TIMEOUT)
+    # Unbuffer the child: with a piped stdout Python block-buffers, so a step
+    # killed by a signal (container OOM) dies with its ENTIRE output still in
+    # the buffer — "✗ (970.6s) (no output), stderr:" was the only trace of the
+    # 2026-06-12 OOM kill. Unbuffered, a killed step at least leaves the log
+    # of how far it got.
+    env = {**os.environ, "PYTHONUNBUFFERED": "1"}
     try:
         result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=timeout,
+            cmd, capture_output=True, text=True, timeout=timeout, env=env,
         )
         elapsed = time.time() - started
         ok = result.returncode == 0
@@ -127,6 +134,24 @@ def _run_step(module: str, args: list[str]) -> tuple[bool, str]:
         if not ok:
             err_tail = "\n".join((result.stderr or "").strip().splitlines()[-5:])
             print(f"     stderr: {err_tail}")
+        if result.returncode < 0:
+            # Killed by a signal — the step itself could record nothing, so
+            # leave the trace here or the death is invisible to triage
+            # (negative returncode = -signum; SIGKILL=-9 is the OOM signature).
+            sig = -result.returncode
+            try:
+                with connect() as conn:
+                    conn.execute(
+                        "INSERT INTO pipeline_failure (job_name, step, message, context) "
+                        "VALUES ('daily_refresh', 'step_killed', %s, %s::jsonb)",
+                        (f"step {module} killed by signal {sig}"
+                         f"{' (SIGKILL — likely container OOM)' if sig == 9 else ''} "
+                         f"after {elapsed:.0f}s",
+                         json.dumps({"module": module, "args": args, "signal": sig,
+                                     "stdout_tail": tail})),
+                    )
+            except Exception as e:
+                print(f"     (could not record kill: {type(e).__name__}: {e})")
         return ok, result.stdout + ("\n" + result.stderr if result.stderr else "")
     except subprocess.TimeoutExpired:
         print(f"     ✗ TIMEOUT after {timeout}s")
