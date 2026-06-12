@@ -47,9 +47,13 @@ def _norm(text: str) -> str:
 def parse_board_list(html: str, heading: str) -> list[dict]:
     """Members of the board introduced by `heading` (case-insensitive
     substring match against h1-h4 text). Returns
-    [{name, role, term_expires, raw}] in page order; role None for plain
-    members; term_expires None when the date doesn't parse (raw preserved
-    so the caller can record the anomaly loudly)."""
+    [{name, role, term_expires, email, raw}] in page order.
+
+    Handles the observed CivicPlus member-list idioms:
+      * Grovetown:  "Ed Connell, Vice Chair (expires December 31, 2028)"
+      * Columbia:   '<a href="mailto:mmoody@...">Email Mark Moody</a>,
+                     Chairman - Countywide'  (no term dates, email present)
+    """
     soup = BeautifulSoup(html, "html.parser")
     want = _norm(heading).lower()
     head = None
@@ -69,19 +73,27 @@ def parse_board_list(html: str, heading: str) -> list[dict]:
             break
         if sib.name != "li":
             continue
+        email = None
+        a = sib.find("a", href=re.compile(r"^mailto:", re.I))
+        if a is not None:
+            email = a["href"].split(":", 1)[1].split("?")[0].strip() or None
         raw = _norm(sib.get_text())
+        raw = re.sub(r"^email\s+", "", raw, flags=re.I)  # "Email Mark Moody" → "Mark Moody"
         if not raw:
             continue
         m = _ITEM_RE.match(raw)
-        if not m:
-            # Not the "(expires ...)" idiom — keep the name if it looks like
-            # one, so a town that lists bare names still yields a roster.
-            members.append({"name": raw, "role": None, "term_expires": None, "raw": raw})
+        if m:
+            members.append({
+                "name": _norm(m.group("name")),
+                "role": _norm(m.group("role")) if m.group("role") else None,
+                "term_expires": _parse_expiry(m.group("date")),
+                "email": email,
+                "raw": raw,
+            })
             continue
-        members.append({
-            "name": _norm(m.group("name")),
-            "role": _norm(m.group("role")) if m.group("role") else None,
-            "term_expires": _parse_expiry(m.group("date")),
-            "raw": raw,
-        })
+        # No "(expires ...)": "Name[, Role]" — role is everything after the
+        # first comma ("Chairman - Countywide", "District 1").
+        name, _, role = raw.partition(",")
+        members.append({"name": _norm(name), "role": _norm(role) or None,
+                        "term_expires": None, "email": email, "raw": raw})
     return members

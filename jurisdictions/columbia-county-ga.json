@@ -66,6 +66,18 @@
     "budget_source": { "provider": "ted", "ted_type": "county", "ted_slug": "columbia" }
   },
   "data_sources": {
+    "appointed_rosters": {
+      "status": "found",
+      "source": "county_website",
+      "url": "https://www.columbiacountyga.gov/306/Planning-Commission",
+      "ingest_method": "scrape",
+      "format": "civicplus_heading_list",
+      "bodies": [
+        {"heading": "Members", "body_name": "Planning Commission"}
+      ],
+      "update_frequency": "as_needed",
+      "notes": "Found by the 2026-06-13 findings re-audit (refuted member_roster_missing): full PC roster with roles, districts, and member emails under the 'Members' heading; cross-confirmed against the 2026-05-07 approved-minutes roll call. Roster also mirrored at /603/Boards-Commissions-and-Authorities."
+    },
     "officials_roster": {
       "status": "found",
       "source": "county_website",

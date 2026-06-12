@@ -80,7 +80,8 @@ class CivicPlusBoardRosters(IngestJob):
 
     def _jurisdiction_id(self) -> int:
         assert self.conn is not None
-        fips = self.config["jurisdiction"]["place_fips"]
+        from ..jurisdiction import jurisdiction_fips
+        fips = jurisdiction_fips(self.config)   # place_fips / county fips per type
         row = self.conn.execute(
             "SELECT id FROM jurisdiction WHERE fips_code = %s", (fips,)).fetchone()
         if not row:
@@ -116,16 +117,21 @@ class CivicPlusBoardRosters(IngestJob):
         name = member["name"]
         existing = identity.find_by_alias(self.conn, name)
         if existing is not None:
+            if member.get("email"):
+                self.conn.execute(
+                    "UPDATE official SET email = %s WHERE id = %s AND email IS NULL",
+                    (member["email"], existing))
             return existing
-        parts = name.split()
+        parts = identity.split_person_name(name)
         assert self.data_source_id is not None
         official_id = identity.create_official(
             self.conn,
             data_source_id=self.data_source_id,
             canonical_name=name,
-            first_name=parts[0],
-            middle_name=" ".join(parts[1:-1]) if len(parts) > 2 else None,
-            last_name=parts[-1],
+            first_name=parts["first"],
+            middle_name=parts["middle"],
+            last_name=parts["last"],
+            email=member.get("email"),
         )
         identity.add_alias(
             self.conn, official_id=official_id, alias_name=name,
