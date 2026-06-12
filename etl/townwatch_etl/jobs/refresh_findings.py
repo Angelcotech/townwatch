@@ -78,8 +78,14 @@ def observe_minutes_missing(conn, body_id: int, state_abbr: str, body_type: str 
     row = conn.execute(
         """
         WITH last_with_minutes AS (
+          -- Minutes count as published whether they have their own URL or
+          -- were extracted from inside another document (meta.minutes_source,
+          -- e.g. embedded in the next meeting's agenda packet — Grovetown
+          -- clerk practice found by the 2026-06-12 re-audit).
           SELECT MAX(meeting_date) AS d FROM meeting
-          WHERE governing_body_id = %s AND minutes_url IS NOT NULL
+          WHERE governing_body_id = %s
+            AND (minutes_url IS NOT NULL
+                 OR COALESCE(meta, '{}'::jsonb) ? 'minutes_source')
         )
         SELECT COUNT(*) AS count, MIN(m.meeting_date) AS since
         FROM meeting m
@@ -87,6 +93,7 @@ def observe_minutes_missing(conn, body_id: int, state_abbr: str, body_type: str 
           AND m.meeting_date < CURRENT_DATE - make_interval(days => %s)
           AND m.minutes_url IS NULL
           AND NOT (COALESCE(m.meta, '{}'::jsonb) ? 'agenda_unavailable')
+          AND NOT (COALESCE(m.meta, '{}'::jsonb) ? 'minutes_source')
           AND m.meeting_date > COALESCE((SELECT d FROM last_with_minutes), DATE '1900-01-01')
         """,
         (body_id, body_id, _MINUTES_APPROVAL_GRACE_DAYS),

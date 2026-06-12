@@ -408,6 +408,16 @@ def extract_text_layer_only(pdf_path: Path) -> str | None:
     return text
 
 
+def extract_from_text(text: str) -> MeetingExtraction:
+    """Single-window extraction of already-recovered TEXT — for minutes that
+    live inside another document (e.g. embedded in the next meeting's agenda
+    packet, a common CivicPlus clerk workflow). The caller is responsible for
+    slicing a reasonable window; embedded minutes sections are short, so one
+    window suffices and no recovery ladder is needed (the text already came
+    out of the document_text store)."""
+    return _extract_text_window(text)
+
+
 def _parse_json_response(response) -> MeetingExtraction:
     """Extract JSON from Claude's text response and validate against the Pydantic schema.
 

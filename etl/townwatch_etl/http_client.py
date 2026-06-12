@@ -252,6 +252,13 @@ def civic_get(url: str, **kwargs) -> httpx.Response:
     return civic_request("GET", url, **kwargs)
 
 
+def civic_post(url: str, **kwargs) -> httpx.Response:
+    """POST through the shared throttled/retrying client — for JSON APIs on
+    civic infrastructure (e.g. the GA ethics record-search PublicFilerDetails
+    endpoints). Pass ``json=`` like with httpx."""
+    return civic_request("POST", url, **kwargs)
+
+
 # ── browser fetch tier ───────────────────────────────────────────────────────
 # Some civic sites front their HTML with bot challenges (Cloudflare/Incapsula/
 # Imperva) or render content entirely client-side, so a raw HTTP fetch sees a

@@ -61,7 +61,7 @@ class MinutesExtract(IngestJob):
     source_type = "scrape"
 
     def __init__(self, meeting_id: int, *, prebuilt_extraction: MeetingExtraction | None = None,
-                 force: bool = False) -> None:
+                 force: bool = False, embedded_from: str | None = None) -> None:
         super().__init__()
         self.meeting_id = meeting_id
         # source_name + source_url are set per-meeting in ingest() so the
@@ -71,6 +71,13 @@ class MinutesExtract(IngestJob):
         # When set, skip the PDF-fetch + Sonnet step and persist this result
         # directly. Used by the batched extraction job.
         self.prebuilt_extraction = prebuilt_extraction
+        # Minutes that have NO minutes_url because they live inside another
+        # document — `embedded_from` is that document's URL (e.g. the next
+        # meeting's agenda packet). Lifts the minutes_url guard, drives
+        # provenance, and stamps meeting.meta.minutes_source so observers
+        # treat the minutes as published. Always paired with
+        # prebuilt_extraction (the caller slices + extracts the text).
+        self.embedded_from = embedded_from
         # force=True re-extracts a meeting that already has motions, replacing
         # the (incomplete, old-pipeline) record. Used by the corpus audit/re-run.
         self.force = force
@@ -88,7 +95,7 @@ class MinutesExtract(IngestJob):
         if meeting is None:
             raise RuntimeError(f"meeting {self.meeting_id} not found")
 
-        if meeting["minutes_url"] is None:
+        if meeting["minutes_url"] is None and self.embedded_from is None:
             print(f"  ⊘ meeting {self.meeting_id} has no minutes_url — nothing to extract")
             return
 
@@ -119,16 +126,18 @@ class MinutesExtract(IngestJob):
             ).rowcount
             print(f"  ↻ meeting {self.meeting_id}: --force, cleared {ndel} prior motion(s) for re-extract")
 
-        # Update provenance from the actual minutes URL for this meeting
+        # Update provenance from the actual document the minutes came from —
+        # the minutes_url, or the packet they were embedded in.
         from urllib.parse import urlparse
-        self.source_url = meeting["minutes_url"]
-        self.source_name = f"{urlparse(meeting['minutes_url']).netloc}/AgendaCenter:claude_extract"
+        self.source_url = meeting["minutes_url"] or self.embedded_from
+        suffix = ":claude_extract_embedded" if meeting["minutes_url"] is None else ":claude_extract"
+        self.source_name = f"{urlparse(self.source_url).netloc}/AgendaCenter{suffix}"
         self.conn.execute(
             "UPDATE data_source SET source_name = %s, source_url = %s WHERE id = %s",
             (self.source_name, self.source_url, self.data_source_id),
         )
 
-        print(f"  → meeting {meeting['meeting_date']} ({meeting['meeting_type']}) | {meeting['minutes_url']}")
+        print(f"  → meeting {meeting['meeting_date']} ({meeting['meeting_type']}) | {self.source_url}")
 
         if self.prebuilt_extraction is not None:
             extraction = self.prebuilt_extraction
@@ -215,6 +224,18 @@ class MinutesExtract(IngestJob):
 
         # Update meeting row with attendance/notes
         self._update_meeting(self.meeting_id, extraction)
+
+        # Embedded minutes: stamp provenance on the meeting so observers and
+        # the web layer know these minutes ARE published — inside another
+        # document — without faking a minutes_url. Transactional with the
+        # motions below: a failed extract never leaves a stamp behind.
+        if self.embedded_from is not None:
+            import json as _json
+            self.conn.execute(
+                "UPDATE meeting SET meta = COALESCE(meta, '{}'::jsonb) || %s::jsonb WHERE id = %s",
+                (_json.dumps({"minutes_source": "embedded_in_next_packet",
+                              "minutes_packet_url": self.embedded_from}), self.meeting_id),
+            )
 
         # Map source-side names → official_id (per the people in this meeting)
         gb_id = meeting["governing_body_id"]

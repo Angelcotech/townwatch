@@ -58,6 +58,10 @@ PER_JURISDICTION_STEPS = [
     "estimate_onboarding",         # cheap: turn the scanned inventory into a $ funding goal
     "extract_agendas",
     "extract_minutes",
+    "extract_embedded_minutes",    # minutes living inside the NEXT meeting's agenda packet
+                                   # (CivicPlus clerk workflow). Runs after extract_minutes
+                                   # and the packet text store; detection by content, so a
+                                   # town without the practice is a cheap no-op.
     "backfill_document_text",      # mop up: store readable text for any doc the extractors
                                    # didn't store (cache-hit replays, batch-vision path). Bounded;
                                    # ~free once a jurisdiction's corpus is stored.
@@ -66,13 +70,16 @@ PER_JURISDICTION_STEPS = [
                                    # CivicPlus page; clean no-op for towns without the block.
     "extract_budgets",             # WEEKLY (see WEEKLY_STEPS) — budgets are annual, so a daily
                                    # run would needlessly HEAD-probe the TED repository at scale.
+    "ingest_campaign_finance",     # WEEKLY — filings change slowly; sweeps the GA ethics
+                                   # record-search local-filing office (and writes the
+                                   # observer's gate marker even on a zero-doc sweep).
 ]
 
 # Steps that run on a WEEKLY cadence, not every day — their data changes slowly, so a
 # daily run is wasted work / needless probing. On the full cron they run only on
 # _WEEKLY_WEEKDAY; a scoped/manual run (e.g. a deposit-triggered onboarding) always runs
 # them so a newly-funded town catches up immediately. A missed week self-corrects next week.
-WEEKLY_STEPS = {"extract_budgets"}
+WEEKLY_STEPS = {"extract_budgets", "ingest_campaign_finance"}
 _WEEKLY_WEEKDAY = 0   # Monday (UTC)
 
 # Steps that spend money (model / OCR). Skipped for a jurisdiction whose fund is
@@ -82,8 +89,9 @@ _WEEKLY_WEEKDAY = 0   # Monday (UTC)
 # clears a pause, so the next run resumes these automatically. Includes the
 # global backfill_summaries, which is gated when a run is scoped to one
 # jurisdiction (so a deposit for town A never buys summaries for town B).
-SPENDING_STEPS = {"extract_agendas", "extract_minutes", "refresh_council_roster",
-                  "backfill_document_text", "extract_budgets", "backfill_summaries"}
+SPENDING_STEPS = {"extract_agendas", "extract_minutes", "extract_embedded_minutes",
+                  "refresh_council_roster", "backfill_document_text", "extract_budgets",
+                  "backfill_summaries", "ingest_campaign_finance"}
 
 JURISDICTION_AGNOSTIC_STEPS = [
     "refresh_findings",
@@ -499,6 +507,12 @@ def _per_jurisdiction_args(module: str, slug: str) -> list[str]:
         return ["--jurisdiction", slug, "--limit", "100", "--max-seconds", "5400"]
     if module == "refresh_council_roster":
         return ["--slug", slug]
+    if module == "civicplus_board_rosters":
+        return ["--jurisdiction", slug]
+    if module == "extract_embedded_minutes":
+        return ["--jurisdiction", slug]
+    if module == "ingest_campaign_finance":
+        return ["--jurisdiction", slug]
     if module == "extract_budgets":
         return ["--jurisdiction", slug]
     raise ValueError(f"Unknown per-jurisdiction module: {module}")
