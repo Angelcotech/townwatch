@@ -216,16 +216,20 @@
   "SC": {
     "state_name": "South Carolina",
     "_provenance": {
-      "phase": "Tier 1 / Phase A — statute inventory (FOIA core)",
+      "phase": "Tier 1 / Phase A — statute inventory (FOIA core + finance layer COMPLETE)",
       "session_verified_at": "2026-06-13",
       "primary_sources": [
         "https://www.scstatehouse.gov/code/t30c004.php (FOIA — Title 30, Ch. 4)",
         "https://www.scstatehouse.gov/code/t08c013.php (Ethics & Campaign Reform — Title 8, Ch. 13)",
+        "https://www.scstatehouse.gov/code/t06c001.php (Finance — Title 6, Ch. 1: §§ 6-1-50/-80/-320)",
+        "https://www.scstatehouse.gov/code/t04c009.php (County audit — § 4-9-150)",
+        "https://www.scstatehouse.gov/code/t05c007.php (Municipal audit — § 5-7-240)",
         "https://ethics.sc.gov/campaigns/election-material",
-        "https://ethicsfiling.sc.gov/public/home"
+        "https://ethicsfiling.sc.gov/public/home",
+        "https://ed.sc.gov/finance/financial-data/ + https://rfa.sc.gov/education-funding-dashboard (school finance, state-published)"
       ],
-      "verification": "Adversarial 3-of-3 (independent agents prompted to refute; all upheld) on: requester-residency posture, § 30-4-30(C) deadlines, § 30-4-80 agenda/notice, § 30-4-90 minutes, centralized campaign-finance filing. Corroborated by SC Press Association + RCFP SC guide.",
-      "scope_note": "FOIA core (open records + open meetings) + campaign-finance pointer are COMPLETE and verified. The finance-transparency layer (county/municipal budget-adoption hearings, millage / property-tax advertisement, annual-audit publication — SC Titles 4/5/6/59) is NOT yet inventoried; see _sc_finance_layer_todo. No observer for those exists or is activated (statute-inventory + ingestion both required per STATE_PLAYBOOK Phase-A rule 4)."
+      "verification": "Adversarial 3-of-3 (independent agents prompted to refute; all upheld) on: requester-residency posture, § 30-4-30(C) deadlines, § 30-4-80 agenda/notice, § 30-4-90 minutes, centralized campaign-finance filing (FOIA core); AND § 6-1-80 budget/millage hearing notice, § 6-1-320 millage cap, § 6-1-50 RFA report, § 4-9-150 county audit, § 5-7-240 municipal audit, SC DOE/RFA school finance (finance layer). Two finance corrections encoded from the refuters: municipal audits (§ 5-7-240) are public-inspection only (NOT state-collected, unlike county § 4-9-150 → State Treasurer); § 6-1-50 is gated on 'receiving state aid'. Corroborated by SC Press Association + RCFP + MASC.",
+      "scope_note": "FOIA core (open records + open meetings) + campaign-finance pointer + finance-transparency layer are ALL COMPLETE and verified (2026-06-13). Finance categories: budget_hearing_notice_missing (§ 6-1-80, +§ 6-1-320 cap), county_annual_audit (§ 4-9-150, state-collected), municipal_annual_audit (§ 5-7-240, public-inspection), state_financial_report (§ 6-1-50 RFA), school_financial_report (SC DOE/RFA). Deliberate EXCLUSIONS (confirmed absent 3/3 — do not add): no GA-style rollback-rate advertisement (no § 48-5-32.1 analog), no uniform local public-works-bid advertisement (Title 11 Ch.35 binds STATE bodies; subdivisions self-ordinance), no county council self-compensation triple-publication (§ 4-9-100 sets pay by ordinance). No observer is activated — no finance ingestion exists (STATE_PLAYBOOK Phase-A rule 4); these are catalog/state-published entries until finance ingestion lands."
     },
     "body_type_classes": {
       "all_agencies": ["city_council", "county_commission", "board_of_education", "planning_commission", "board_of_zoning_appeals", "other"],
@@ -328,17 +332,73 @@
         "observer_note": "Filings are CENTRALIZED at the State Ethics Commission (§ 8-13-100(2)), so — unlike Georgia's pre-2027 City-Clerk model — this is never a per-jurisdiction website gap. We link to the state portal; a candidate-level non-filing finding is detectable from the single state source once elections/candidate ingestion exists.",
         "verified_at": "2026-06-13",
         "confidence": "high"
+      },
+      "budget_hearing_notice_missing": {
+        "statute_label": "S.C. Code § 6-1-80 (+ § 6-1-320 millage cap)",
+        "statute_url": "https://www.scstatehouse.gov/code/t06c001.php",
+        "statute_text": "A county, municipality, special purpose or public service district, and a school district must advertise the public hearing on its next-fiscal-year budget in at least one South Carolina newspaper of general circulation, not less than fifteen days before the hearing. The notice must state the entity's name; the hearing's time, date, and location; the current-year total revenues and expenditures; the proposed next-year revenue and operating expenditures; the projected percentage change; the current-year millage; and the estimated next-year millage. A general-operating millage increase above the prior year is capped at the average prior-year CPI plus the entity's population growth (§ 6-1-320), exceedable only by a two-thirds vote of the governing body's membership for enumerated circumstances.",
+        "applies_to_body_types": ["all_levying_authorities"],
+        "disclosure_mode": "proactive_post",
+        "observer_note": "CATALOG REFERENCE — no observer yet (no finance ingestion). Verifiable signals: the newspaper advertisement (NOT observable from our agenda sources, same as GA's millage ad) plus the public hearing and the budget adoption itself (observable in minutes/agenda). A future budget observer may assert ONLY the verifiable absence — a body that adopted an annual budget in prior years and has none in the current cycle despite continued meetings — never the ad-timing or hearing-notice elements. SC has NO Georgia-style rollback-rate advertisement (no § 48-5-32.1 analog, confirmed 3/3); § 6-1-80 is the sole budget-related ad, so a 'missing rollback ad' is a non-finding in SC.",
+        "verified_at": "2026-06-13",
+        "confidence": "high"
+      },
+      "county_annual_audit": {
+        "statute_label": "S.C. Code § 4-9-150",
+        "statute_url": "https://www.scstatehouse.gov/code/t04c009.php",
+        "statute_text": "The county council shall provide for an independent annual audit of all financial records and transactions of the county by a certified public accountant or public accountant. A copy of the audit report must be submitted to the State Treasurer no later than January first; if not timely filed, funds the State Treasurer would distribute to the county in the current fiscal year are withheld pending receipt. (2023 Act 71 moved this collection and withholding from the Comptroller General to the State Treasurer.)",
+        "applies_to_body_types": ["county_commission"],
+        "disclosure_mode": "state_published",
+        "observer_note": "State-collected: county audits are filed with and withholding-enforced by the SC State Treasurer, so absence is never a per-jurisdiction website finding — link to the state source. Contrast municipal_annual_audit (§ 5-7-240), which is public-inspection only.",
+        "verified_at": "2026-06-13",
+        "confidence": "high"
+      },
+      "municipal_annual_audit": {
+        "statute_label": "S.C. Code § 5-7-240",
+        "statute_url": "https://www.scstatehouse.gov/code/t05c007.php",
+        "statute_text": "A municipality with total recurring general-fund revenue of $500,000 or more (for fiscal years beginning after January 1, 2024) shall provide for an independent annual audit of its financial statements by a certified public accountant; smaller municipalities may instead obtain a compilation. The report of the audit or compilation shall be made available for public inspection.",
+        "applies_to_body_types": ["city_council"],
+        "disclosure_mode": "on_request",
+        "observer_note": "Public-inspection ONLY — § 5-7-240 names no state recipient (confirmed 3/3; unlike the county audit it is NOT filed with the State Treasurer or RFA). Absence from a municipal website is therefore not a violation; surface the records-request path, not a gap finding.",
+        "verified_at": "2026-06-13",
+        "confidence": "high"
+      },
+      "state_financial_report": {
+        "statute_label": "S.C. Code § 6-1-50",
+        "statute_url": "https://www.scstatehouse.gov/code/t06c001.php",
+        "statute_text": "Counties and municipalities receiving revenues from state aid (Aid to Subdivisions) shall submit annually, by March fifteenth, a financial report to the SC Revenue and Fiscal Affairs Office detailing sources of revenue, expenditures by category, indebtedness, and other information; failure to file within thirty days of written notice withholds ten percent of subsequent state-aid payments until filed. RFA is the state publisher of local-government financial data.",
+        "applies_to_body_types": ["general_purpose_local_governments"],
+        "disclosure_mode": "state_published",
+        "observer_note": "State-published: filed with and published by RFA — link to the state source, never a per-jurisdiction gap. Duty is gated on 'receiving state aid' (effectively universal). 'Financial report' is the statutory term; the proper noun 'Local Government Finance Report' is RFA/MASC usage, not statutory.",
+        "verified_at": "2026-06-13",
+        "confidence": "high"
+      },
+      "school_financial_report": {
+        "statute_label": "S.C. Code Title 59 (district financial reporting to SC DOE)",
+        "statute_url": "https://ed.sc.gov/finance/financial-data/",
+        "statute_text": "South Carolina school districts report financial data — revenues, expenditures, and audited Statements of Expenditures — upward to the SC Department of Education, which publishes district-level financial data at the state level (ESSA per-pupil expenditures, In$ite financial data, salary schedules, assessed valuation and millage). The SC Revenue and Fiscal Affairs Office additionally runs an Education Funding Dashboard built from districts' reported data.",
+        "applies_to_body_types": ["board_of_education"],
+        "disclosure_mode": "state_published",
+        "observer_note": "State-published: per-district financial data is centralized at SC DOE (+ the RFA Education Funding Dashboard) — render as links, never a per-district website finding. The reporting DUTY runs upward to SC DOE; the public-facing publication is state-level. Cite is general (Title 59 / the DOE reporting framework) rather than a single pinned section — hence medium confidence on the statutory pin, though the state publication itself is verified live.",
+        "verified_at": "2026-06-13",
+        "confidence": "medium"
       }
     },
-    "_sc_finance_layer_todo": {
-      "_doc": "Remaining Phase-A statute-inventory work for SC, deferred (no finance ingestion or observer exists, so no category is activated by deferring — STATE_PLAYBOOK Phase-A rule 4). Do NOT port Georgia's OCGA budget/millage/audit citations; SC's analogs live in different titles and must be read from primary sources before any category is added.",
-      "items": [
-        "County budget adoption & public-hearing requirements — S.C. Code Title 4 (county government) / Title 6 (local-government finance); confirm hearing-notice + ordinance-reading duties.",
-        "Municipal budget adoption & hearing — S.C. Code Title 5 (municipal government).",
-        "Property-tax / millage advertisement & rollback — S.C. Code Title 12 (taxation) / Title 6; SC has no verified TABOR-style millage-advertisement analog to OCGA § 48-5-32.1 — research before asserting one.",
-        "School district budget & finance transparency — S.C. Code Title 59; many SC districts are fiscally dependent (county council sets the levy) — structure affects who the levying authority is (resolve in Phase C bundle map).",
-        "Annual independent audit publication — confirm SC statute + whether a state dashboard (e.g. SC Revenue & Fiscal Affairs / Comptroller General) publishes it (state_published, like GA's DOAA)."
-      ]
+    "_sc_finance_layer_done": {
+      "_doc": "Phase-A finance-transparency statute inventory COMPLETE, verified 2026-06-13 from primary sources (adversarial 3/3). Replaces the prior _sc_finance_layer_todo. SC's analogs were read from SC titles directly — none of Georgia's OCGA citations were ported.",
+      "categories_added": [
+        "budget_hearing_notice_missing (§ 6-1-80 budget + millage hearing notice; § 6-1-320 millage cap) — all levying authorities; proactive_post, catalog-reference observer.",
+        "county_annual_audit (§ 4-9-150) — county; state_published (State Treasurer collects, withholding; 2023 Act 71 moved it from the Comptroller General).",
+        "municipal_annual_audit (§ 5-7-240) — municipality; on_request (public-inspection only, ≥$500k recurring revenue; NOT state-collected — the key SC vs county distinction).",
+        "state_financial_report (§ 6-1-50) — county + municipal; state_published (RFA, by March 15, gated on receiving state aid).",
+        "school_financial_report (Title 59 / SC DOE) — board of education; state_published (SC DOE financial-data portal + RFA Education Funding Dashboard); medium confidence on the statutory pin."
+      ],
+      "deliberate_exclusions": [
+        "NO rollback-rate newspaper advertisement — SC has no analog to GA OCGA § 48-5-32.1; § 6-1-80 is the sole budget ad. A 'missing rollback ad' is a non-finding (confirmed 3/3).",
+        "NO uniform local public-works-bid advertisement — no analog to GA OCGA § 36-91-20. The Consolidated Procurement Code (Title 11 Ch. 35) binds STATE bodies; political subdivisions adopt their own procurement ordinances (§ 11-35-5320), unenforceable as a state mandate (confirmed 3/3).",
+        "NO county council self-compensation triple-publication — no analog to GA OCGA § 36-5-24. § 4-9-100 sets council pay by ordinance, effective only at the next general election, with no special advance-publication rule (confirmed 3/3)."
+      ],
+      "residual": "No finance observer is activated — no finance ingestion exists yet (STATE_PLAYBOOK Phase-A rule 4). When finance ingestion lands, the Phase-C fiscal-dependency split decides the levying-authority target: for the ~22 fiscally dependent districts a millage/budget finding attaches to County Council, not the board (see research/sc_recon/STRUCTURE.md)."
     }
   }
 }

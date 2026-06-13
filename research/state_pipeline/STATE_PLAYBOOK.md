@@ -121,10 +121,11 @@ Per state, the inventory requires:
    `etl/townwatch_etl/jobs/refresh_findings.py`).
 
 Inventory status: **GA complete** (`_open_records_laws.json`, citations
-re-verified against the AG's Act text 2026-06-11). **SC FOIA core complete**
-(`_open_records_laws.json` `SC` block + `_state_defaults/sc.json`, verified
-2026-06-13 against scstatehouse.gov Title 30 Ch. 4 / Title 8 Ch. 13;
-adversarial 3-of-3, all upheld). Finding categories derived: `agenda_missing`
+re-verified against the AG's Act text 2026-06-11). **SC complete** (FOIA core +
+finance layer; `_open_records_laws.json` `SC` block + `_state_defaults/sc.json`,
+verified 2026-06-13 against scstatehouse.gov Title 30 Ch. 4 / Title 8 Ch. 13 /
+Title 6 Ch. 1 / §§ 4-9-150 / 5-7-240; adversarial 3-of-3, all upheld). FOIA
+finding categories: `agenda_missing`
 (SC's sharpest signal — pre-meeting 24h website posting, § 30-4-80),
 `minutes_missing` (§ 30-4-90 — NO numeric deadline, NO summary tier; GA's
 hard-clock observer does NOT transfer), `meeting_notice_missing`,
@@ -134,11 +135,21 @@ needs agenda-vs-minutes diff ingestion), `member_roster_missing`,
 State Ethics Commission, not a local clerk). Residency posture: **no
 requester restriction** (§ 30-4-30 "a person") → direct-send lane; but
 enforcement standing is "citizen of the State" (§ 30-4-100), so ORR-to-suit
-escalation needs a SC-citizen requester of record. **Remaining Phase-A work:**
-the finance-transparency layer (budget / millage / audit — SC Titles 4/5/6/12/59)
-is inventoried as TODO in the `SC._sc_finance_layer_todo` block, deferred (no
-finance ingestion exists, so nothing is activated by deferring); do NOT port
-GA's OCGA finance citations.
+escalation needs a SC-citizen requester of record. **Finance layer COMPLETE**
+(5 categories, verified 2026-06-13): `budget_hearing_notice_missing` (§ 6-1-80 —
+SC's UNIFIED budget+millage hearing notice across counties/municipalities/special
+districts/school districts, the one-statute analog to GA's scattered budget+TABOR
+duties; § 6-1-320 millage cap), `county_annual_audit` (§ 4-9-150, state-collected
+by the State Treasurer post-2023), `municipal_annual_audit` (§ 5-7-240, **public-
+inspection only — NOT state-collected**, the key SC vs county split), and the
+state-published `state_financial_report` (§ 6-1-50 RFA) + `school_financial_report`
+(SC DOE/RFA). Deliberate EXCLUSIONS confirmed absent 3/3 (do NOT add): no rollback-
+rate advertisement (no GA § 48-5-32.1 analog), no uniform local public-works-bid
+advertisement (no § 36-91-20 analog — subdivisions self-ordinance), no council
+self-comp triple-publication (no § 36-5-24 analog). SC's lesson vs GA: the finance
+duties differ in SHAPE — SC unifies the budget+millage hearing in ONE statute
+(§ 6-1-80) and centralizes audit/financial publishing at the state (Treasurer/RFA/
+DOE), where GA scatters them across many OCGA titles. Do NOT port GA's OCGA cites.
 
 ### Phase B — Universe verification
 What: reconcile Tier-0 counts against state authorities; enumerate

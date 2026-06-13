@@ -1326,7 +1326,7 @@
       "fips": "45",
       "phases": {
         "tier0_universe_seeded": "done",
-        "A_law_dossier": "in_progress",
+        "A_law_dossier": "done",
         "B_universe_verified": "done",
         "C_structure_bundles": "done",
         "D_platform_census": "done",
@@ -1424,7 +1424,7 @@
         "platform_census": "research/sc_recon/PLATFORM_CENSUS.md",
         "pipeline_delta": "research/sc_recon/PIPELINE_DELTA.md"
       },
-      "notes": "SC Tier-1 dossier COMPLETE — Phase E human gate CLEARED (founder sign-off 2026-06-13); readiness=ready_for_tier2. Phases: A FOIA core done (finance layer deferred TODO) · Tier-0 · B · C · D · E all done. Universe 46/271/72 verified; bundle map clean; platform census = 46 jurisdictions (registry.json + PLATFORM_CENSUS.md); pipeline-delta memo PIPELINE_DELTA.md. Build math: one new must-build (BoardDocs = SC school-board unlock, Simbli-analog/different vendor) + a generic PDF-directory crawler + reuse of existing CivicEngage/CivicClerk clients; big-county custom systems funded per-onboarding. NEXT: Tier-2 (demand-gated). First batch has a running start — Dorchester bundle already reconned (recon session); CSRA (Aiken/Edgefield/North Augusta) is the standing adjacency queue logic. Residual: Phase A finance-transparency layer (non-blocking). WATCH: Bill 3470 forces ~46 countywide districts by 2027/2032."
+      "notes": "SC Tier-1 dossier COMPLETE — ALL phases done (2026-06-13), readiness=ready_for_tier2. A law dossier FULLY done: FOIA core + campaign finance + finance-transparency layer (§ 6-1-80 budget/millage hearing, § 4-9-150 county audit [state-collected], § 5-7-240 municipal audit [public-inspection], § 6-1-50 RFA report, SC DOE/RFA school finance) — 11 finding categories, adversarial 3/3; deliberate exclusions recorded (no rollback/public-works/council-comp advertisement analogs to GA). Tier-0 + B + C + D + E done. Universe 46/271/72; bundle map clean; platform census 46 jurisdictions; pipeline-delta memo done. NEXT: Tier-2 (demand-gated) — recon session; Dorchester bundle reconned; CSRA adjacency is standing queue logic. No finance OBSERVER active (no finance ingestion — catalog/state-published only); fiscal-dependency split (~22 county-levy districts) sets the levying-authority target when finance ingestion lands. WATCH: Bill 3470 forces ~46 countywide districts by 2027/2032."
     },
     "SD": {
       "name": "South Dakota",
