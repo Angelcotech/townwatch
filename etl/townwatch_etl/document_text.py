@@ -61,6 +61,9 @@ def put(conn, hash_: str, *, source_url: str | None, method: str, pages: list[st
         """,
         (hash_, source_url, method, len(pages), json.dumps(pages), sum(len(p) for p in pages)),
     )
+    # Maintain the URL→content index so backfill skips byte-duplicate docs under
+    # other URLs (defined below; resolved at call time, so the forward ref is fine).
+    _record_url(conn, source_url, hash_)
 
 
 def _text_layer_pages(data: bytes) -> list[str]:
@@ -110,6 +113,19 @@ def _ocr_pages(data: bytes) -> list[str]:
     return [p.strip() for p in text.split(PAGE_BREAK)]
 
 
+def _record_url(conn, source_url: str | None, content_hash_: str) -> None:
+    """Record that source_url resolved to this content (many URLs → one hash).
+    Lets backfill_document_text skip a URL whose BYTES are already stored under
+    a different URL — without it, byte-duplicate docs re-process every run."""
+    if not source_url:
+        return
+    conn.execute(
+        "INSERT INTO document_text_url (source_url, content_hash) VALUES (%s, %s) "
+        "ON CONFLICT (source_url) DO UPDATE SET content_hash = EXCLUDED.content_hash",
+        (source_url, content_hash_),
+    )
+
+
 def get_or_recover(conn, data: bytes, *, source_url: str | None = None) -> tuple[list[str], str]:
     """Return (pages, method). Hits the store if we've seen these bytes before;
     otherwise recovers via text-layer → OCR, persists, and returns. The recovered
@@ -117,6 +133,9 @@ def get_or_recover(conn, data: bytes, *, source_url: str | None = None) -> tuple
     h = content_hash(data)
     cached = get(conn, h)
     if cached is not None:
+        # Record THIS url even on a content cache hit, so a byte-identical doc
+        # under a new URL is marked seen (the queue-stuck bug, fixed 2026-06-13).
+        _record_url(conn, source_url, h)
         return list(cached["pages"]), cached["method"]
 
     if data[:5] != b"%PDF-":

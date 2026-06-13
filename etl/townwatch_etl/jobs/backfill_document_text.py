@@ -115,12 +115,12 @@ def _candidate_urls(conn, kinds: list[str], *, fips: str | None = None) -> list[
 
 
 def _already_stored(conn) -> set[str]:
-    """source_urls already in the store — cheap pre-filter so re-runs skip them
-    without paying a fetch. (source_url is informational; identical bytes under a
-    different URL still dedupe by hash inside get_or_recover.)"""
-    rows = conn.execute(
-        "SELECT DISTINCT source_url FROM document_text WHERE source_url IS NOT NULL"
-    ).fetchall()
+    """Every source_url ever resolved to stored content — read from the
+    URL→content index (document_text_url), which records ALL processed URLs,
+    not just the one that won document_text.source_url. Without this, a doc
+    whose bytes are already stored under a different URL re-fetched and
+    re-extracted every run (the queue-stuck bug, fixed 2026-06-13)."""
+    rows = conn.execute("SELECT source_url FROM document_text_url").fetchall()
     return {r["source_url"] for r in rows}
 
 
