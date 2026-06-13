@@ -1330,14 +1330,14 @@
         "B_universe_verified": "done",
         "C_structure_bundles": "done",
         "D_platform_census": "done",
-        "E_pipeline_delta": "not_started"
+        "E_pipeline_delta": "done"
       },
       "tier2_recon": {
         "batches": 1,
         "registry_entries": 3,
         "onboarded": 0
       },
-      "readiness": "dossier_in_progress",
+      "readiness": "ready_for_tier2",
       "queue_position": 1,
       "priority_reason": "Adjacency-first: the Augusta metro spills into Aiken and Edgefield counties (North Augusta) — the existing CSRA footprint already wants it.",
       "quirks": [
@@ -1421,9 +1421,10 @@
         "universe_roster": "research/sc_recon/universe_roster.json",
         "universe_sources": "research/sc_recon/UNIVERSE_SOURCES.md",
         "structure": "research/sc_recon/STRUCTURE.md",
-        "platform_census": "research/sc_recon/PLATFORM_CENSUS.md"
+        "platform_census": "research/sc_recon/PLATFORM_CENSUS.md",
+        "pipeline_delta": "research/sc_recon/PIPELINE_DELTA.md"
       },
-      "notes": "Phase A FOIA core COMPLETE; Tier-0 + Phase B + Phase C + Phase D DONE (2026-06-13). Universe 46/271/72 verified; bundle map clean; platform census = 46 jurisdictions fingerprinted (recon session, registry.json + PLATFORM_CENSUS.md, 46/46 validate). Platform headline: big counties run BESPOKE agenda systems (per-county extractors); school boards are Diligent-dominant (BoardDocs+Diligent Community = 72% of sampled) -> one BoardDocs client unlocks the SC board layer (SC's Simbli-analog). tier2_recon.registry_entries stays 3 (onboarding track); the 43 census entries are tracked via the platform_census artifact. REMAINING: Phase E pipeline-delta memo (NEXT dossier step; inputs drafted in PLATFORM_CENSUS.md 'hands forward' — BoardDocs build + generic PDF-directory scraper + browser-fetch tier for ~4 walled counties + IQM2-sunset watch) -> human gate before ready_for_tier2. Also pending: Phase A finance-transparency layer (TODO). WATCH: Bill 3470 forces ~46 countywide districts by 2027/2032."
+      "notes": "SC Tier-1 dossier COMPLETE — Phase E human gate CLEARED (founder sign-off 2026-06-13); readiness=ready_for_tier2. Phases: A FOIA core done (finance layer deferred TODO) · Tier-0 · B · C · D · E all done. Universe 46/271/72 verified; bundle map clean; platform census = 46 jurisdictions (registry.json + PLATFORM_CENSUS.md); pipeline-delta memo PIPELINE_DELTA.md. Build math: one new must-build (BoardDocs = SC school-board unlock, Simbli-analog/different vendor) + a generic PDF-directory crawler + reuse of existing CivicEngage/CivicClerk clients; big-county custom systems funded per-onboarding. NEXT: Tier-2 (demand-gated). First batch has a running start — Dorchester bundle already reconned (recon session); CSRA (Aiken/Edgefield/North Augusta) is the standing adjacency queue logic. Residual: Phase A finance-transparency layer (non-blocking). WATCH: Bill 3470 forces ~46 countywide districts by 2027/2032."
     },
     "SD": {
       "name": "South Dakota",
