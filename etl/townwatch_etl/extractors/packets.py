@@ -146,13 +146,30 @@ def _call_segmenter(prompt: str) -> list[dict[str, Any]]:
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
     resp = client.messages.create(
         model=SEGMENT_MODEL,
-        max_tokens=2000,
+        # A window with several items' supporting docs produces more than the
+        # old 2000-token cap allowed → the JSON truncated mid-object and the
+        # whole meeting failed (Columbia BoC 29-item packet, 2026-06-13). 8000
+        # comfortably fits any single window's item list; no streaming needed.
+        max_tokens=8000,
         messages=[{"role": "user", "content": prompt}],
     )
     record_anthropic(SEGMENT_MODEL, resp.usage)
     text = "".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
     s, e = text.find("{"), text.rfind("}")
-    data = json.loads(text[s:e + 1]) if s >= 0 and e > s else {"items": []}
+    if s < 0 or e <= s:
+        return []
+    try:
+        data = json.loads(text[s:e + 1])
+    except json.JSONDecodeError:
+        # Truncated/garbled JSON for THIS window — salvage the rest of the
+        # packet rather than failing the whole meeting. The merge step still
+        # produces ranges from the windows that parsed; a re-run can re-attempt.
+        if resp.stop_reason == "max_tokens":
+            print(f"     ⚠ segmenter window hit max_tokens — skipping window "
+                  f"(consider fewer pages/items per window)")
+        else:
+            print(f"     ⚠ segmenter window returned unparseable JSON — skipping window")
+        return []
     return data.get("items", []) or []
 
 

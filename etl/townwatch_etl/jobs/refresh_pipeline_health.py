@@ -269,6 +269,78 @@ def _rollup_failures(conn, fips: str | None, dry_run: bool) -> tuple[int, int]:
     return opened, closed
 
 
+def _check_forum_unenriched(conn, fips: str | None, dry_run: bool) -> tuple[int, int]:
+    """Open a forum_unenriched issue for any LIVE forum whose agenda items have
+    no proposal context yet — and close it once segmentation runs.
+
+    The live forum is the site's centerpiece, and its whole value is showing
+    citizens WHAT is being proposed, not just an agenda link. An item gets that
+    context (per-item page deep-links + an AI proposal summary) from
+    extract_packets, which stamps packet_segmented_at when it runs. An OPEN
+    forum (upcoming meeting, agenda published, items extracted) with any
+    still-unsegmented item means extract_packets hasn't run for it — exactly the
+    silent degradation that left Columbia/CCSD forums showing bare agenda links
+    (2026-06-13). Resolution: run extract_packets for the jurisdiction (it's the
+    daily safety net + hourly forum_tick). A genuinely bare agenda (no bundled
+    proposals) clears the flag too — extract_packets stamps it segmented, and
+    the UI honestly shows agenda-only.
+    """
+    sql = (
+        "SELECT m.id AS meeting_id, gb.name AS body_name, j.id AS jid, "
+        "       j.display_name, j.fips_code, m.meeting_date, "
+        "       count(*) FILTER (WHERE ai.packet_segmented_at IS NULL) AS unsegmented, "
+        "       count(*) AS items "
+        "FROM meeting m "
+        "JOIN governing_body gb ON gb.id = m.governing_body_id "
+        "JOIN jurisdiction j ON j.id = gb.jurisdiction_id "
+        "JOIN agenda_item ai ON ai.meeting_id = m.id AND ai.data_status = 'clean' "
+        "WHERE m.meeting_date >= CURRENT_DATE AND m.agenda_url IS NOT NULL "
+        + ("AND j.fips_code = %s " if fips else "")
+        + "GROUP BY m.id, gb.name, j.id, j.display_name, j.fips_code, m.meeting_date"
+    )
+    rows = conn.execute(sql, (fips,) if fips else ()).fetchall()
+
+    opened = closed = 0
+    observed: set[tuple[int, str]] = set()
+    for r in rows:
+        key = f"forum_unenriched:{r['meeting_id']}"
+        if r["unsegmented"] > 0:
+            opened += 1
+            observed.add((r["jid"], key))
+            if not dry_run:
+                pipeline_health.observe_issue(
+                    conn, r["jid"], issue_type="forum_unenriched", dedupe_key=key,
+                    severity="medium",
+                    title=f"Live forum lacks proposal context — {r['display_name']} "
+                          f"{r['body_name']} {r['meeting_date']:%b %d}",
+                    detail=(f"{r['unsegmented']} of {r['items']} agenda items on this OPEN "
+                            f"forum have no proposal summary or packet page-link yet — citizens "
+                            f"see only an agenda link, which is the forum's core function "
+                            f"missing. Run extract_packets for this jurisdiction "
+                            f"(daily_refresh includes it; the hourly forum_tick cron is the "
+                            f"low-latency path). A genuinely bare agenda clears this once "
+                            f"segmentation stamps it."),
+                    context={"meeting_id": r["meeting_id"], "governing_body": r["body_name"],
+                             "unsegmented": int(r["unsegmented"]), "items": int(r["items"])},
+                )
+            print(f"  ⚠ forum unenriched: {r['display_name']} {r['body_name']} "
+                  f"({r['unsegmented']}/{r['items']} items)")
+
+    # Close forum issues whose items are now all segmented (or the meeting passed).
+    open_rows = conn.execute(
+        "SELECT id, jurisdiction_id, dedupe_key FROM pipeline_issue "
+        "WHERE status = 'open' AND issue_type = 'forum_unenriched' AND dedupe_key LIKE %s"
+        + (" AND jurisdiction_id IN (SELECT id FROM jurisdiction WHERE fips_code = %s)" if fips else ""),
+        (("forum_unenriched:%", fips) if fips else ("forum_unenriched:%",)),
+    ).fetchall()
+    for row in open_rows:
+        if (row["jurisdiction_id"], row["dedupe_key"]) not in observed:
+            if not dry_run and pipeline_health.close_issue(
+                conn, row["jurisdiction_id"], row["dedupe_key"], reason="forum enriched or meeting passed"):
+                closed += 1
+    return opened, closed
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Derive pipeline-health issues from run/failure state.")
     ap.add_argument("--jurisdiction", help="restrict to one slug (per-jurisdiction pipeline use)")
@@ -280,9 +352,11 @@ def main() -> int:
         s_open, s_closed = _check_stale(conn, fips, args.dry_run)
         f_open, f_closed = _rollup_failures(conn, fips, args.dry_run)
         d_open, d_closed = _check_source_drift(conn, fips, args.dry_run)
+        u_open, u_closed = _check_forum_unenriched(conn, fips, args.dry_run)
     print(f"pipeline-health: stale(open={s_open} closed={s_closed}) "
           f"failures(observed={f_open} closed={f_closed}) "
-          f"drift(observed={d_open} closed={d_closed})"
+          f"drift(observed={d_open} closed={d_closed}) "
+          f"forum(observed={u_open} closed={u_closed})"
           + ("  [dry-run]" if args.dry_run else ""))
     return 0
 

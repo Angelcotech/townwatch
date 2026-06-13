@@ -70,7 +70,8 @@ def _stamp_segmented(meeting_id: int) -> None:
         )
 
 
-def _candidates(conn, *, upcoming: bool, meeting_id: int | None) -> list[dict[str, Any]]:
+def _candidates(conn, *, upcoming: bool, meeting_id: int | None,
+                fips: str | None = None) -> list[dict[str, Any]]:
     # A meeting is a candidate if it has a dedicated packet OR an agenda we can
     # fall back to (a multi-page agenda doubles as the packet — see _process).
     where = ["(m.packet_url IS NOT NULL OR m.agenda_url IS NOT NULL)"]
@@ -86,9 +87,13 @@ def _candidates(conn, *, upcoming: bool, meeting_id: int | None) -> list[dict[st
         )
         if upcoming:
             where.append("m.meeting_date >= CURRENT_DATE")
+        if fips is not None:
+            where.append("j.fips_code = %s")
+            params.append(fips)
     sql = (
         "SELECT m.id AS meeting_id, m.packet_url, m.agenda_url, gb.jurisdiction_id "
         "FROM meeting m JOIN governing_body gb ON gb.id = m.governing_body_id "
+        "JOIN jurisdiction j ON j.id = gb.jurisdiction_id "
         f"WHERE {' AND '.join(where)} ORDER BY m.meeting_date"
     )
     return [dict(r) for r in conn.execute(sql, params).fetchall()]
@@ -182,13 +187,20 @@ def main() -> int:
     p = argparse.ArgumentParser(description="Segment agenda packets into per-item proposals")
     p.add_argument("--all", action="store_true")
     p.add_argument("--upcoming", action="store_true", help="with --all, only future meetings")
+    p.add_argument("--jurisdiction", help="with --all, restrict to one jurisdiction slug "
+                                          "(per-jurisdiction daily-refresh use)")
     p.add_argument("--meeting-id", type=int)
     args = p.parse_args()
     if not args.all and not args.meeting_id:
         p.error("specify --all or --meeting-id")
 
+    fips = None
+    if args.jurisdiction:
+        from ..jurisdiction import load_config, jurisdiction_fips
+        fips = jurisdiction_fips(load_config(args.jurisdiction))
+
     with connect() as conn:
-        rows = _candidates(conn, upcoming=args.upcoming, meeting_id=args.meeting_id)
+        rows = _candidates(conn, upcoming=args.upcoming, meeting_id=args.meeting_id, fips=fips)
     print(f"Packets to segment: {len(rows)}")
     tally: dict[str, int] = {}
     for m in rows:

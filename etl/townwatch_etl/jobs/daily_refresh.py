@@ -57,6 +57,11 @@ PER_JURISDICTION_STEPS = [
     "scan_document_availability",  # before extract, so dead-URL meetings get skipped by extractors
     "estimate_onboarding",         # cheap: turn the scanned inventory into a $ funding goal
     "extract_agendas",
+    "extract_packets",             # segment upcoming agenda packets into per-item proposal
+                                   # summaries + page deep-links — what makes a live forum
+                                   # INFORMED (without it a forum is just bare agenda titles).
+                                   # Runs daily here as the safety net; the hourly forum_tick
+                                   # cron is the low-latency path. Self-gates per meeting.
     "extract_minutes",
     "extract_embedded_minutes",    # minutes living inside the NEXT meeting's agenda packet
                                    # (CivicPlus clerk workflow). Runs after extract_minutes
@@ -89,9 +94,10 @@ _WEEKLY_WEEKDAY = 0   # Monday (UTC)
 # clears a pause, so the next run resumes these automatically. Includes the
 # global backfill_summaries, which is gated when a run is scoped to one
 # jurisdiction (so a deposit for town A never buys summaries for town B).
-SPENDING_STEPS = {"extract_agendas", "extract_minutes", "extract_embedded_minutes",
-                  "refresh_council_roster", "backfill_document_text", "extract_budgets",
-                  "backfill_summaries", "ingest_campaign_finance"}
+SPENDING_STEPS = {"extract_agendas", "extract_packets", "extract_minutes",
+                  "extract_embedded_minutes", "refresh_council_roster",
+                  "backfill_document_text", "extract_budgets", "backfill_summaries",
+                  "ingest_campaign_finance"}
 
 JURISDICTION_AGNOSTIC_STEPS = [
     "refresh_findings",
@@ -498,6 +504,9 @@ def _per_jurisdiction_args(module: str, slug: str) -> list[str]:
         return ["--jurisdiction", slug]
     if module == "extract_agendas":
         return ["--all", "--jurisdiction", slug]
+    if module == "extract_packets":
+        # Upcoming meetings only — forum-relevant; self-gates per meeting.
+        return ["--all", "--upcoming", "--jurisdiction", slug]
     if module == "extract_minutes":
         return ["--all", "--jurisdiction", slug]
     if module == "backfill_document_text":
