@@ -96,6 +96,24 @@
    {
     "version": "0.2 (2026-06-13)",
     "change": "Phase D platform census added — 43 new entries (46 total). Batches: top10_population (10 counties), seats_and_cities (13 munis), largest_districts (12), rural_sample (4 counties + 4 districts). 7 parallel recon agents, controlled vocab reused from GA. Findings: counties — 4 largest run CUSTOM/bespoke agenda systems (Greenville .aspx, Charleston CCMIMS, Richland GovAccess, Horry Revize); districts — BoardDocs dominant (10/18), Diligent family (BoardDocs+Diligent Community) = 72%, the SC analog of GA's Simbli=27/33 but a different vendor (Simbli appears once); same-county numbered districts do NOT share a platform; Diligent migrating BoardDocs->Diligent One Platform (Lexington1, Beaufort SD, DD4). 9 entries capped high->medium (unrefuted absence + no per-entry adversarial in a census). All 46 pass `recon validate`. See PLATFORM_CENSUS.md."
+   },
+   {
+    "date": "2026-06-13",
+    "change": "Added CSRA Tier-2 recon batch (csra_tier2): aiken-county-sc, aiken-county-public-schools-sc, north-augusta-sc. Aiken County=CivicEngage (FOIA role alias foiarequests@aikencountysc.gov); ACPSD=eBOARD schoolboard.net agenda platform, fiscally independent operating-millage, records contact SHinson-Toole@acpsd.net; North Augusta=CivicEngage Central HCMS (browser fetch tier), City Clerk jpaul@northaugustasc.gov + Online FOIA form + Public Power Hour comment slot. Identity disambiguated: aikencountysc.gov vs cityofaikensc.gov; North Augusta SC vs Augusta GA.",
+    "version": "0.3 (2026-06-13)"
+   },
+   {
+    "date": "2026-06-13",
+    "change": "Added CSRA spillover Tier-2 recon entries: edgefield-county-sc (wordpress_pdf; live agendas/minutes under wp-content, stale archive page) and edgefield-county-school-district-sc (finalsite; 24h-prior printable Citizen Participation Form; custodian email obfuscated site-wide, confidence=medium). Corrected supplied ECSD domain ecsdsc.org → edgefield.k12.sc.us (supplied domain dead).",
+    "version": "0.3.1 (2026-06-13)"
+   },
+   {
+    "version": "0.4 (2026-06-13)",
+    "change": "Independent re-audit of the original (out-of-order) Dorchester Tier-2 recon against the now-complete dossier. CORRECTIONS: DorchesterCo — dcfoia@ uncorroborated (-> recorded custodian switched to SCAC-confirmed lconrad@; flagged inferred), Granicus body count 9->13, rotating St.George/Summerville venues, archive default-view nuance, confidence high->medium. DD2 — 'no custodian email' absence REFUTED (PIO jpassmore@dorchester2.k12.sc.us published on /community-relations; conflicts with initial refuter -> verified=inferred), records_intake email, live FOIA page /fs/pages/710 (old path 404s). DD4 — Diligent migration complete (canonical host now diligentoneplatform.com), FOIA-custodian designation inferred, confidence high->medium. CSRA batch normalized (fetch_tier, batch tag)."
+   },
+   {
+    "version": "0.5 (2026-06-13)",
+    "change": "Erratum — edgefield-county-school-district-sc: operator-directed verification of two custodian-email leads. CONFIRMED LIVE: PIO alias ecsdpio@edgefieldcountyschools.org (plaintext on ECSD news-post boilerplate; domain corroborated by trustees on /school-board) -> recorded as records_custodian_email, clerk_email_access role_alias, records_intake email, confidence medium->high (custodian-email absence refuted; remaining in-person-only public-comment absence stands, verified). NOT CONFIRMED: Supt. O'Gorman plaintext email (superintendent page shows only PO Box + phone; ZoomInfo mask unconfirmable) — recorded as a negative."
    }
   ]
  },
@@ -110,9 +128,9 @@
    "official_website": "https://www.dorchestercountysc.gov",
    "agenda_platform": "granicus_legistar",
    "agenda_source_url": "https://dorchester.granicus.com/ViewPublisher.php?view_id=1",
-   "records_custodian_name": "Dorchester County FOIA Coordinator (County Attorney's Office)",
-   "records_custodian_title": "FOIA Coordinator, County Attorney's Office",
-   "records_custodian_email": "dcfoia@dorchestercountysc.gov",
+   "records_custodian_name": "Lona Conrad",
+   "records_custodian_title": "Clerk to Council",
+   "records_custodian_email": "lconrad@dorchestercountysc.gov",
    "clerk_email_access": "plaintext",
    "records_intake": "nextrequest",
    "records_intake_url": "https://dorchestercountysc.nextrequest.com/",
@@ -136,7 +154,7 @@
     "notes": "Meetings at Willie R. Davis County Council Chambers, 201 Johnston Street, St. George, SC 29477. Live-streamed/archived on Granicus (dorchester.granicus.com) and the Dorchester County Council YouTube channel. Written contact to council also reachable via Clerk LConrad@dorchestercountysc.gov and the 7 published councilmember mailboxes (e.g. PSmith@, DChinnis@, RMRanck@, SFriddle@, ECrosby@, FStaropoli@, JByars2@ dorchestercountysc.gov). The exact Request-to-Address form URL lives behind the bot wall; not captured this session (submit_url left null)."
    },
    "verified": "verified",
-   "confidence": "high",
+   "confidence": "medium",
    "verification": {
     "session_date": "2026-06-13",
     "method": "web-search structure sweep + search-engine pass + adversarial refuter (reader-proxy used to read the bot-walled .gov FOIA/council pages; Granicus + NextRequest read directly)",
@@ -165,7 +183,7 @@
      "votes": "1 refuter, both email-absence claims REFUTED — FOIA email dcfoia@dorchestercountysc.gov (mailto on the FOIA page) and Clerk LConrad@dorchestercountysc.gov (council + agendas pages, corroborated by SC Assoc. of Counties live directory) are published in plaintext; entry corrected before write."
     }
    },
-   "notes": "Granicus platform: agendas at dorchester.granicus.com/AgendaViewer.php?view_id=1&event_id=<id>; minutes at /services/minutes/reports/<uuid>/attachment; packet PDFs on granicus_production_attachments.s3.amazonaws.com/dorchester/. Archives to 2017. 9 bodies: County Council + Water & Sewer, Planning Development & Building, Budget Finance & Purchasing, Public Safety Health & Human Services, Public Works Property & Utilities, Agenda & Rules, Administrative & Intergovernmental Affairs, Audit committees. FOIA: Coordinator in County Attorney's Office, mail to 500 N. Main St., Summerville SC 29483, phone 843-563-0100; SC Code 30-4-30(C) response min 10 business days (records <=2yr) / 20 (>2yr); per-page copy fees published. Population 161,540 (2020). DATA CAVEAT: a stale SC Assoc. of Counties clerks PDF lists lconrad@dorchestercounty.sc.gov (wrong domain) / 843-563-0196 — the county's own site domain dorchestercountysc.gov and 843-832-0196 are authoritative."
+   "notes": "Granicus platform: agendas at dorchester.granicus.com/AgendaViewer.php?view_id=1&event_id=<id>; minutes at /services/minutes/reports/<uuid>/attachment; packet PDFs on granicus_production_attachments.s3.amazonaws.com/dorchester/. Archives to 2017. 9 bodies: County Council + Water & Sewer, Planning Development & Building, Budget Finance & Purchasing, Public Safety Health & Human Services, Public Works Property & Utilities, Agenda & Rules, Administrative & Intergovernmental Affairs, Audit committees. FOIA: Coordinator in County Attorney's Office, mail to 500 N. Main St., Summerville SC 29483, phone 843-563-0100; SC Code 30-4-30(C) response min 10 business days (records <=2yr) / 20 (>2yr); per-page copy fees published. Population 161,540 (2020). DATA CAVEAT: a stale SC Assoc. of Counties clerks PDF lists lconrad@dorchestercounty.sc.gov (wrong domain) / 843-563-0196 — the county's own site domain dorchestercountysc.gov and 843-832-0196 are authoritative. | ERRATUM 2026-06-13 (re-audit): (1) the FOIA email 'dcfoia@dorchestercountysc.gov' was seen once via a reader-proxy of the bot-walled FOIA page but is NOT corroborated by any independent source (SCAC directory, search snippets) — the consistently-published FOIA intake is the NextRequest portal + mail to FOIA Coordinator, County Attorney's Office, 500 N Main St Summerville; treat dcfoia@ as INFERRED pending a live browser read. Recorded custodian email switched to the SCAC-confirmed Clerk lconrad@dorchestercountysc.gov. (2) Granicus lists 13 meeting bodies, not 9 (adds Special Called / Emergency Council variants + a Joint Informational Meeting) — a per-body scraper keyed to 9 would skip four. (3) Council meetings ROTATE venues: St. George (Willie R. Davis Chambers, 201 Johnston St) AND Summerville (500 N Main St) — single-address automation is wrong. (4) Granicus default landing view starts at Dec 2019; 2017-2018 are reachable only via the 'Available Archives' dropdown. Confidence high->medium."
   },
   "dorchester-school-district-two-sc": {
    "name": "Dorchester School District Two",
@@ -176,15 +194,15 @@
    "official_website": "https://www.ddtwo.org",
    "agenda_platform": "boarddocs",
    "agenda_source_url": "https://go.boarddocs.com/sc/ddtw/Board.nsf/Public",
-   "records_custodian_name": "Public Information Officer (Jennifer Passmore)",
+   "records_custodian_name": "Jennifer Passmore",
    "records_custodian_title": "Public Information Officer",
-   "records_custodian_email": null,
-   "clerk_email_access": "none_found",
-   "records_intake": "web_form",
-   "records_intake_url": "https://www.ddtwo.org/district/departments/community-relations",
+   "records_custodian_email": "jpassmore@dorchester2.k12.sc.us",
+   "clerk_email_access": "plaintext",
+   "records_intake": "email",
+   "records_intake_url": "https://www.ddtwo.org/fs/pages/710",
    "fetch_tier": "browser",
    "notable_gaps": [
-    "No plaintext records-custodian/FOIA email is published; FOIA intake is an online FOIA form or a written request mailed to the Public Information Officer at 815 South Main Street, Summerville SC 29483.",
+    "Records-custodian email IS published (PIO jpassmore@dorchester2.k12.sc.us on the Community Relations dept page) — corrected 2026-06-13; the dedicated FOIA page itself routes to an online form + mail, which is what the initial recon saw.",
     "SITE RESTRUCTURE: the search-indexed FOIA page (/district/departments/community-engagement/freedom-of-information-act-requests) and the /community-relations/public-information leaf now return HTTP 404 even to a browser UA — DD2 reorganized its Finalsite site and Google has not re-crawled. FOIA procedure is governed by Board Policy KDB (https://boardpolicyonline.com/?b=dorchester); intake is in writing / online FOIA Request Form via the Community Relations department. Locate the current FOIA-form URL at onboarding.",
     "No written/email public-comment channel — board public comment is an in-person sign-in card only.",
     "Email mailbox domain is @dorchester2.k12.sc.us (ddtwo.org is web hosting only). The address jpassmore@dorchester2.k12.sc.us is an UNVERIFIED naming-convention inference — NOT published; do not use as a records channel."
@@ -203,7 +221,7 @@
     "confidence": "high",
     "notes": "Board meets 2nd & 4th Mondays 6:00 PM at the DD2 Administrative Offices, 815 South Main Street, Summerville SC 29483; live-streamed at ddtwo.org/live; agendas on BoardDocs. Trustee emails ARE published in plaintext (chair Ashley Wimberly awimberly@dorchester2.k12.sc.us; secretary Justin Farnsworth jufarnsworth@dorchester2.k12.sc.us) but none is presented as a public-comment intake channel. No bot can file written comment of record."
    },
-   "verified": "verified",
+   "verified": "inferred",
    "confidence": "medium",
    "verification": {
     "session_date": "2026-06-13",
@@ -231,7 +249,7 @@
      "votes": "1 refuter, both absence claims COULD-NOT-REFUTE (survived) — no published FOIA/PIO email; in-person sign-in card only. Capped entry confidence at medium (single refuter + live FOIA page not directly loadable)."
     }
    },
-   "notes": "Superintendent Chad Daugherty. PIO Jennifer Passmore (named 2024-03-13). Regular meetings 2nd & 4th Mondays 6PM. Wikipedia/Census: largest district in the county (Summerville, Ladson, North Charleston portions). CONSOLIDATION WATCH: SC bills 3154 (2023-24) and 3470 (2025-26) study merging DD2 + DD4; barred without approval by registered electors of each district — track for jurisdiction-structure changes."
+   "notes": "Superintendent Chad Daugherty. PIO Jennifer Passmore (named 2024-03-13). Regular meetings 2nd & 4th Mondays 6PM. Wikipedia/Census: largest district in the county (Summerville, Ladson, North Charleston portions). CONSOLIDATION WATCH: SC bills 3154 (2023-24) and 3470 (2025-26) study merging DD2 + DD4; barred without approval by registered electors of each district — track for jurisdiction-structure changes. | ERRATUM 2026-06-13 (re-audit): the prior ABSENCE CLAIM 'no plaintext records-custodian email' is REFUTED — the live Community Relations dept page (https://www.ddtwo.org/district/departments/community-relations) publishes PIO Jennifer Passmore's plaintext email jpassmore@dorchester2.k12.sc.us (plus bbohannon@/kcaughell@/jaslybrand@dorchester2.k12.sc.us). NOTE THE CONFLICT: the original recon's adversarial refuter had flagged jpassmore@ as an unconfirmed naming-convention guess; the re-audit found it actually published. Marked verified=inferred — confirm on a live read before auto-send. Current live FOIA page is https://www.ddtwo.org/fs/pages/710 (the old /community-engagement/* path 404s entirely). The in-person-only public-comment absence (B3) was re-confirmed, no contrary evidence."
   },
   "dorchester-school-district-four-sc": {
    "name": "Dorchester School District Four",
@@ -241,7 +259,7 @@
    "fips": "45035",
    "official_website": "https://www.dorchester4.k12.sc.us",
    "agenda_platform": "diligent_community",
-   "agenda_source_url": "https://dorchester4-k12-sc.community.highbond.com/Portal/MeetingTypeList.aspx",
+   "agenda_source_url": "https://dorchester4-k12-sc.community.diligentoneplatform.com/Portal/MeetingTypeList.aspx",
    "records_custodian_name": "Dr. April Sanders",
    "records_custodian_title": "Chief Human Resources Officer (FOIA coordinator)",
    "records_custodian_email": "asanders@dd4.k12.sc.us",
@@ -269,7 +287,7 @@
     "notes": "Board meets monthly (~7:30 PM) at the SGMS Administrative Office Board Room, 600 Minus Street, St. George SC 29477. Board-member emails are published in plaintext (phughes@, tfolk@, jhodges@, einfinger@, vinfinger@, info@dd4.k12.sc.us) but none is presented as a comment-of-record channel."
    },
    "verified": "verified",
-   "confidence": "high",
+   "confidence": "medium",
    "verification": {
     "session_date": "2026-06-13",
     "method": "web-search structure sweep + search-engine pass + 1 adversarial refuter (refuter verified custodian/platform/board emails from raw page HTML; main site is Apptegy/Thrillshare and inlines content as escaped JSON that truncates summarizers)",
@@ -295,7 +313,7 @@
      "votes": "1 refuter: Claim A (no FOIA custodian email) PARTIALLY REFUTED — named custodian Dr. April Sanders asanders@dd4.k12.sc.us found on HR page (entry corrected to populate it); Claim B (in-person-only comment) COULD-NOT-REFUTE — survived, confirmed by positive 'Public Forum' evidence + notification-only portal sign-up."
     }
    },
-   "notes": "Superintendent Jeffrey Beckwith (selected 2023-04). Board chair Mrs. Phyllis Hughes. District office 500 Ridge Street, St. George SC 29477; phone 843-563-4535; fax 843-563-9269; general info@dd4.k12.sc.us. Successor district to former Dorchester District 1 + District 3 (consolidated into DD4 by SC Act, 1985-86). Smaller, rural (St. George, Harleyville, Reevesville, Grover; Woodland High). Main website is Apptegy/Thrillshare (org 25123). CONSOLIDATION WATCH: SC bills 3154 (2023-24) and 3470 (2025-26) study merging DD2 + DD4 (voter approval required in each district)."
+   "notes": "Superintendent Jeffrey Beckwith (selected 2023-04). Board chair Mrs. Phyllis Hughes. District office 500 Ridge Street, St. George SC 29477; phone 843-563-4535; fax 843-563-9269; general info@dd4.k12.sc.us. Successor district to former Dorchester District 1 + District 3 (consolidated into DD4 by SC Act, 1985-86). Smaller, rural (St. George, Harleyville, Reevesville, Grover; Woodland High). Main website is Apptegy/Thrillshare (org 25123). CONSOLIDATION WATCH: SC bills 3154 (2023-24) and 3470 (2025-26) study merging DD2 + DD4 (voter approval required in each district). | ERRATUM 2026-06-13 (re-audit): (1) the BoardDocs->Diligent migration is COMPLETE/live on BOTH hosts — the forward-canonical host is now community.diligentoneplatform.com (agenda_source_url updated; legacy community.highbond.com still serves 200 as fallback). (2) Dr. April Sanders + asanders@dd4.k12.sc.us CONFIRMED as Chief HR Officer, but the FOIA-CUSTODIAN designation could not be independently re-confirmed (HR page Finalsite-walled) — treat the 'FOIA coordinator' framing as INFERRED from the initial raw-HTML read. (3) The in-person-only 'Public Forum' comment absence was not refuted but also not freshly re-confirmable (board page JS-walled). Confidence high->medium."
   },
   "greenville-county-sc": {
    "name": "Greenville County",
@@ -2251,6 +2269,291 @@
    },
    "notes": "Edlio CMS (apps/pages/index.jsp?uREC_ID) publishing board agendas/minutes as archived PDF sections by school year — agenda_platform=edlio, NOT BoardDocs (search result conflated it with FL's leeschools.net). Board secretary Mattie Mack identified but no email surfaced; no digital public-comment channel -> confidence medium.",
    "batch": "rural_sample"
+  },
+  "aiken-county-sc": {
+   "name": "Aiken County",
+   "type": "county",
+   "county": "Aiken County",
+   "county_seat": "Aiken",
+   "official_website": "https://www.aikencountysc.gov",
+   "agenda_platform": "civicplus_civicengage",
+   "agenda_source_url": "https://www.aikencountysc.gov/129/Agendas-Minutes",
+   "records_custodian_name": null,
+   "records_custodian_title": "Office of the Administrator (FOIA intake)",
+   "records_custodian_email": "foiarequests@aikencountysc.gov",
+   "clerk_email_access": "role_alias",
+   "records_intake": "mail_or_fax",
+   "records_intake_url": "https://www.aikencountysc.gov/DocumentCenter/View/818/Freedom-of-Information-Act-Request-PDF",
+   "public_comment": {
+    "channel": "sign_up_card",
+    "comment_service": "custom_form",
+    "recipient_email": null,
+    "deadline_rule": "Public Presentation Request Form (County Council); sign up via the form to address Council at a regular meeting (no online comment channel found)"
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.aikencountysc.gov/129/Agendas-Minutes",
+      "https://www.aikencountysc.gov/528/County-Council",
+      "https://www.aikencountysc.gov/AgendaCenter/ViewFile/Agenda/_03032026-78",
+      "https://www.aikencountysc.gov/DocumentCenter/View/818/Freedom-of-Information-Act-Request-PDF"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Aiken County SC county council agenda minutes civicclerk granicus boarddocs portal site:aikencountysc.gov",
+      "Aiken County SC FOIA freedom of information records request form custodian clerk to council email",
+      "Aiken County SC council clerk OR clerk to council contact email aikencountysc.gov staff directory phone"
+     ]
+    },
+    "sibling_control": "CivicEngage AgendaCenter lists 10 bodies (County Council, Work Session, Committees, Planning & Development, Recreation, Voter Registration & Elections, ARTS, etc.); agendas AND minutes both parse with 'Posted' timestamps, so neither record type is a recon-gap.",
+    "adversarial": {
+     "votes": "Tried to refute 'no custodian email': County publishes NO individually-named Clerk to Council with email; FOIA form (loaded live) routes to role alias foiarequests@aikencountysc.gov via Office of the Administrator (803-642-2012). Refutation of a *named* custodian failed, so name left null; the role-alias email IS positive evidence of an intake channel. Confirmed distinct from City of Aiken (cityofaikensc.gov, separate justfoia portal aikensc.justfoia.com)."
+    }
+   },
+   "notes": "CivicPlus CivicEngage (legacy /AgendaCenter/ + /DocumentCenter/) — reuses the existing SC CivicEngage scraper (same family as North Myrtle Beach, many SC munis); agendas carry 'Posted' timestamps (good for the 30-4-80 24h pre-meeting agenda-posting check). FOIA intake is a downloadable PDF form returned to the Administrator's Office (mail/fax/email/in-person) routed to role alias foiarequests@aikencountysc.gov; no NextRequest/JustFOIA portal for the COUNTY (the justfoia portal is the separate City of Aiken). Custodian is an office, not a named clerk — name null, confidence medium. IDENTITY: aikencountysc.gov (County) is distinct from cityofaikensc.gov (City of Aiken); do not conflate.",
+   "batch": "csra_spillover_tier2"
+  },
+  "aiken-county-public-schools-sc": {
+   "name": "Aiken County Public School District",
+   "type": "school_district",
+   "county": "Aiken",
+   "official_website": "https://www.acpsd.net",
+   "agenda_platform": "simbli_eboard",
+   "agenda_source_url": "https://aiken.schoolboard.net/",
+   "records_custodian_name": "Sheila Toole-Hinson",
+   "records_custodian_title": "Records contact, Office of the Superintendent (general records requests)",
+   "records_custodian_email": "SHinson-Toole@acpsd.net",
+   "clerk_email_access": "plaintext",
+   "records_intake": "email",
+   "records_intake_url": "https://www.acpsd.net/page/records-requests",
+   "public_comment": {
+    "channel": "sign_up_card",
+    "comment_service": "custom_form",
+    "recipient_email": null,
+    "deadline_rule": "Public Participation request to address the Board (Board Policy BEDH); 30-minute block, request-based sign-up (agenda lists 'Public Participation' with named requests or 'No Requests for This Meeting')"
+   },
+   "fetch_tier": "browser",
+   "verified": "inferred",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://aiken.schoolboard.net/",
+      "https://aiken.schoolboard.net/node/4623",
+      "https://www.acpsd.net/page/school-board",
+      "https://www.acpsd.net/page/records-requests",
+      "https://acpsd.new.swagit.com/videos/281128"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Aiken County Public Schools acpsd.net board of education boarddocs agenda minutes",
+      "Aiken County Public School District FOIA freedom of information records request custodian email acpsd.net",
+      "Aiken County Public Schools FOIA officer OR records custodian board secretary contact freedom of information request submit",
+      "Aiken County Public Schools who sets school tax millage levy Aiken County Council district budget approval"
+     ]
+    },
+    "sibling_control": "Agenda platform (aiken.schoolboard.net / eBOARDsolutions schoolboard.net) parses agendas with posting timestamps (e.g. agenda for 2025-04-22 posted 2025-04-02 09:21) and a 'Public Participation' special-order; the acpsd.net Finalsite/Blackboard site is only the CMS wrapper + Swagit video archive, NOT the agenda source. Both record types present on the eBOARD portal — no gap.",
+    "adversarial": {
+     "votes": "Tried to refute 'no records contact': district DOES publish a Records Requests page (acpsd.net/page/records-requests) and a general-records contact Sheila Toole-Hinson, SHinson-Toole@acpsd.net, 803-641-2428 (distinct from SPED records SPEDrecords@acpsd.net). Refutation SUCCEEDED — absence claim withdrawn, custodian recorded. Live load of the records page was WAF/Finalsite-truncated, so verified=partial pending a browser-tier confirm of that exact email on-page."
+    }
+   },
+   "notes": "Single unified countywide district. AGENDA PLATFORM = eBOARDsolutions 'schoolboard.net' (Simbli/eBOARD family) at aiken.schoolboard.net — reuses the SC eBOARD scraper; the public-facing acpsd.net is a separate Finalsite/Blackboard CMS (legacy /Page/NNNN [UA-gated] + /site/default.aspx and newer /page/ and /o/district/page/) with a Swagit video archive (acpsd.new.swagit.com), not the agenda source. FISCAL DEPENDENCY: the Board of Education sets/raises its OWN operating millage and adopts its own budget (2026 $306M budget + millage increase was a Board vote, not a County Council vote) — fiscally INDEPENDENT for operating levy; County Council does not approve the school budget. Records contact found via adversarial pass (Sheila Toole-Hinson, SHinson-Toole@acpsd.net); verified=partial because the records page load was truncated. Public participation governed by Board Policy BEDH (30-min block, request-based).",
+   "batch": "csra_spillover_tier2"
+  },
+  "north-augusta-sc": {
+   "name": "City of North Augusta",
+   "type": "municipality",
+   "county": "Aiken",
+   "county_seat": "Aiken",
+   "official_website": "https://www.northaugustasc.gov",
+   "agenda_platform": "civicplus_civicengage",
+   "agenda_source_url": "https://www.northaugustasc.gov/government/council-meetings-agendas",
+   "records_custodian_name": "Jamie Paul",
+   "records_custodian_title": "City Clerk",
+   "records_custodian_email": "jpaul@northaugustasc.gov",
+   "clerk_email_access": "plaintext",
+   "records_intake": "web_form",
+   "records_intake_url": "https://www.northaugustasc.gov/government/freedom-of-information-act",
+   "public_comment": {
+    "channel": "sign_up_card",
+    "comment_service": "custom_form",
+    "recipient_email": "jpaul@northaugustasc.gov",
+    "deadline_rule": "In-person comment at regular meetings (Mayor calls for comment before each agenda item; non-agenda matters at end). 'Public Power Hour' (5:30 PM before first meeting of the month) requires contacting the City Clerk before Noon the Monday of that meeting via (803) 441-4202 or jpaul@northaugustasc.gov"
+   },
+   "fetch_tier": "browser",
+   "verified": "inferred",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.northaugustasc.gov/government/council-meetings-agendas",
+      "https://www.northaugustasc.gov/government/calendar-meeting-list",
+      "https://www.northaugustasc.gov/Home/Components/Calendar/Event/4499/1512",
+      "https://www.northaugustasc.gov/government/freedom-of-information-act",
+      "https://www.northaugustasc.gov/government/mayor-city-council/mayor"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "City of North Augusta SC city council agenda minutes civicplus civicclerk granicus",
+      "North Augusta SC city council public comment OR address council OR sign up to speak FOIA records request city clerk email",
+      "North Augusta SC FOIA freedom of information records request submit city clerk OR justfoia OR nextrequest form"
+     ]
+    },
+    "sibling_control": "northaugustasc.gov uses CivicPlus CivicEngage 'Central' HCMS URL signatures (/government/..., /Home/Components/Calendar/Event/{id}/{cal}, /-folder-NNN, /-toggle-all) with Granicus/Swagit video (swagit-attachments.granicus.com); agendas reachable via Council Meetings & Agendas and the calendar. Whole site is WAF-walled to server fetch (403) — platform fingerprinted from URL structure + search snippets, not a publishing gap.",
+    "adversarial": {
+     "votes": "Tried to refute 'no FOIA channel / no custodian email': City DOES publish a FOIA page (/government/freedom-of-information-act) with an Online FOIA Request Form and names City Clerk Jamie Paul, jpaul@northaugustasc.gov, (803) 441-4202; accepts in person/mail/email/fax/online form. Public-comment channel also positively confirmed (in-meeting comment + Public Power Hour sign-up). Both refutations SUCCEEDED — channels recorded. verified=partial because the live pages 403 to server fetch; facts sourced from search snippets quoting the official pages."
+    }
+   },
+   "notes": "IDENTITY TRAP CLEARED: City of North Augusta SC (Aiken County, 100 Georgia Ave, 29841, 803 area code) — across the Savannah River from Augusta GA, NOT Augusta GA. Platform = CivicPlus CivicEngage Central HCMS (newer design, /government/ paths, not legacy /AgendaCenter/) — reuses the SC CivicEngage scraper family but needs the Central/HCMS URL pattern + a browser fetch tier (site WAF-blocks server fetches, 403). Video via Granicus/Swagit. STRONG channels: plaintext City Clerk email jpaul@northaugustasc.gov, Online FOIA Request Form (web_form), and a 'Public Power Hour' public-comment slot with a sign-up deadline (Noon Monday of first meeting). verified=partial pending a browser-tier load of the 403-walled pages.",
+   "batch": "csra_spillover_tier2"
+  },
+  "edgefield-county-sc": {
+   "name": "Edgefield County",
+   "type": "county",
+   "batch": "csra_spillover_tier2",
+   "county": "Edgefield County",
+   "county_seat": "Edgefield",
+   "fips": "45037",
+   "official_website": "https://edgefieldcounty.sc.gov",
+   "agenda_platform": "wordpress_pdf",
+   "agenda_source_url": "https://edgefieldcounty.sc.gov/meetings-and-archived-minutes/",
+   "records_custodian_name": "Aretha Eubanks",
+   "records_custodian_title": "Clerk to Council",
+   "records_custodian_email": "aeubanks@edgefieldcounty.sc.gov",
+   "clerk_email_access": "plaintext",
+   "records_intake": "email",
+   "records_intake_url": "https://edgefieldcounty.sc.gov/county-council/",
+   "fetch_tier": "default",
+   "notable_gaps": [
+    "The dedicated 'Meetings & Archived Minutes' page is STALE: it renders empty Agenda/Exhibits headers and lists only 2018 minutes, with a 'older minutes available upon request, contact Jennifer Gilley' note. This is NOT a publishing stop — current agendas AND minutes are published as dated PDFs under /wp-content/uploads/{YYYY}/{MM}/ (verified 2025 & 2026 regular-meeting agendas and minutes). Scraper must enumerate wp-content uploads / sitemap, not just the archive page.",
+    "No central FOIA portal or dedicated records-request page; SC FOIA requests route to the Clerk to Council by email/mail (no statutory custodian-designation page published).",
+    "Constitutional officers (Sheriff, Tax Assessor, Tax Collector, Voter Registration) run separate office pages; not modeled as council bodies."
+   ],
+   "public_comment": {
+    "channel": "sign_up_card",
+    "comment_service": "email",
+    "submit_url": null,
+    "recipient_email": "aeubanks@edgefieldcounty.sc.gov",
+    "deadline_rule": "Citizens may sign an agenda sign-up list maintained by the Clerk to Council prior to each regular meeting; 5-minute limit per speaker; matters limited to county services/operations, no personnel matters. Council meets 1st Tuesday monthly 6:00 PM at 225 Jeter St (Council Chambers). No statutory pre-deadline beyond signing the list before the meeting is called to order.",
+    "max_comment_chars": null,
+    "accepts_attachment": null,
+    "automatable": true,
+    "captcha_or_tos": null,
+    "verified": "verified",
+    "confidence": "high",
+    "notes": "Meeting videos archived on a YouTube playlist linked from the site; no Granicus/Swagit. A 'join the County Council meeting distribution list' web form exists for notifications (not a comment-submission channel). Council member mailboxes published in plaintext: atalbert@, tireland@, dcampbell@, jkennion@, wmoody@ edgefieldcounty.sc.gov."
+   },
+   "verified": "verified",
+   "confidence": "high",
+   "verification": {
+    "session_date": "2026-06-13",
+    "method": "Direct raw fetch of edgefieldcounty.sc.gov homepage, county-council, and meetings-and-archived-minutes pages; web_search structure sweep + site: query; sibling-control on the stale archive page vs. live wp-content PDFs; adversarial refuter on the apparent agenda absence.",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://edgefieldcounty.sc.gov/",
+      "https://edgefieldcounty.sc.gov/county-council/",
+      "https://edgefieldcounty.sc.gov/meetings-and-archived-minutes/",
+      "https://edgefieldcounty.sc.gov/wp-content/uploads/2026/01/1-6-2026-Regular-Meetimg-Agenda.pdf",
+      "https://edgefieldcounty.sc.gov/wp-content/uploads/2025/11/10-07-2025-Regular-Meeting-Minutes.pdf",
+      "https://edgefieldcounty.sc.gov/wp-content/uploads/2026/02/Meeting-Minutes-December-11-2025.pdf"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Edgefield County South Carolina council agenda minutes meetings",
+      "Edgefield County South Carolina FOIA records request custodian email",
+      "site:edgefieldcounty.sc.gov agenda OR FOIA OR records request"
+     ]
+    },
+    "sibling_control": "Same WordPress source: the curated archive page shows only 2018 minutes and empty Agenda/Exhibits headers, but the search pass surfaced live 2025 & 2026 regular-meeting AGENDA and MINUTES PDFs under /wp-content/uploads/. Treated the 'no agendas' appearance as a recon/staleness artifact, not a publishing gap — confirmed both record types ARE published.",
+    "adversarial": {
+     "votes": "Refuter tasked to prove agendas ARE published: SUCCEEDED — found dated regular-meeting agenda PDFs for 2025/2026 plus PC minutes; the 'agenda absent' hypothesis was REFUTED, so no absence claimed. Custodian-email absence also refuted: Clerk aeubanks@edgefieldcounty.sc.gov published in plaintext on the county-council page."
+    }
+   },
+   "notes": "Platform cost: $0 — self-hosted WordPress serving dated PDF agendas/minutes from /wp-content/uploads/; no SaaS agenda platform, no per-seat license. Scraper reuse: this is the generic wordpress_pdf pattern — reuse the WP uploads/sitemap PDF-enumerator (same as other rural SC WP sites); the named 'archive' page is a decoy and should be deprioritized. Quirk: agenda PDFs do NOT carry machine-readable post timestamps in-document (SC 30-4-80 requires website posting >=24h pre-meeting; compliance must be inferred from upload/mtime, not document content). Filename dates are inconsistent ('Meetimg' typo, mixed MM-DD vs MM_DD). Rural CSRA county (Strom Thurmond's home county), FIPS 45037."
+  },
+  "edgefield-county-school-district-sc": {
+   "name": "Edgefield County School District",
+   "type": "school_district",
+   "batch": "csra_spillover_tier2",
+   "county": "Edgefield County",
+   "county_seat": "Edgefield",
+   "fips": "4502070",
+   "official_website": "https://edgefield.k12.sc.us",
+   "agenda_platform": "finalsite",
+   "agenda_source_url": "https://edgefield.k12.sc.us/school-board/agendas-minutes",
+   "records_custodian_name": null,
+   "records_custodian_title": "Public Information Office (PIO)",
+   "records_custodian_email": "ecsdpio@edgefieldcountyschools.org",
+   "clerk_email_access": "role_alias",
+   "records_intake": "email",
+   "records_intake_url": "https://edgefield.k12.sc.us/our-district/contact-us",
+   "fetch_tier": "default",
+   "notable_gaps": [
+    "No dedicated FOIA / public-records page on the district site, but records intake IS available: the published PIO email ecsdpio@edgefieldcountyschools.org (verified live 2026-06-13), or mail to the Office of the Superintendent (3 Par Drive, Johnston SC 29832 / P.O. Box 608, Edgefield SC 29824 / 803-275-4601).",
+    "Staff Directory renders email fields blank site-wide; Superintendent O'Gorman's plaintext email was NOT found this session (superintendent page shows only P.O. Box + phone; the ZoomInfo mask k***@edgefield.k12.sc.us was not confirmable on any live district page).",
+    "Two email domains coexist: trustees AND the PIO publish @edgefieldcountyschools.org in plaintext (board page + news boilerplate); staff/admin use @edgefield.k12.sc.us. The PIO alias ecsdpio@edgefieldcountyschools.org is now the recorded records-custodian email (verified live 2026-06-13)."
+   ],
+   "public_comment": {
+    "channel": "sign_up_card",
+    "comment_service": "custom_form",
+    "submit_url": "https://resources.finalsite.net/images/v1708477351/edgefieldk12scus/tnuvhaaabpv0i5jkihey/Citizen_Participation_Form.pdf",
+    "recipient_email": null,
+    "deadline_rule": "Per the 'Citizen Participation Request Form' (board policy file BEDH-E): complete and submit to the superintendent or his/her designee >=24 HOURS PRIOR to the time the board meeting is called to order at 7:00 p.m. Form captures name, address, telephone, self-vs-organization representation, purpose, and topic. Submitted to the Office of the Superintendent (no online submission endpoint; printable PDF).",
+    "max_comment_chars": null,
+    "accepts_attachment": null,
+    "automatable": false,
+    "captcha_or_tos": null,
+    "verified": "verified",
+    "confidence": "high",
+    "notes": "Form is a scanned image PDF (CCITT fax-encoded, no embedded text) rendered and read this session. Linked from /school-board/forms/citizen-participation-form. This is the formal pre-registration channel; routes to superintendent's office, not a per-meeting ecomment portal."
+   },
+   "verified": "verified",
+   "confidence": "high",
+   "verification": {
+    "session_date": "2026-06-13",
+    "method": "Identity correction (prompt's ecsdsc.org domain is WRONG — ECONNREFUSED x2; real site is edgefield.k12.sc.us, confirmed via search + live fetch). Raw fetch of school-board, agendas-minutes, board, contact-us, superintendent pages + staff directory; rendered the Citizen Participation Form PDF to image and read it; web_search structure + FOIA + public-comment passes; adversarial refuter on the custodian-email absence.",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://edgefield.k12.sc.us/school-board/agendas-minutes",
+      "https://edgefield.k12.sc.us/school-board",
+      "https://edgefield.k12.sc.us/our-district/contact-us",
+      "https://edgefield.k12.sc.us/our-district/leadership/our-superintendent",
+      "https://edgefield.k12.sc.us/our-district/contact-us/staff-directory",
+      "https://edgefield.k12.sc.us/school-board/forms/citizen-participation-form",
+      "https://resources.finalsite.net/images/v1708477351/edgefieldk12scus/tnuvhaaabpv0i5jkihey/Citizen_Participation_Form.pdf"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Edgefield County School District South Carolina board of trustees agenda minutes BoardDocs",
+      "\"Edgefield County School District\" South Carolina official website board meetings",
+      "Edgefield County School District South Carolina FOIA records request public comment board meeting",
+      "\"Edgefield County School District\" public participation address the board sign up speak meeting",
+      "edgefield.k12.sc.us FOIA freedom of information request",
+      "Edgefield County School District board policy KDB OR GBL public records FOIA request superintendent"
+     ]
+    },
+    "sibling_control": "Same Finalsite source hosts the Agendas & Minutes section with year tabs 2019–2026 ('Load More' for older); both record types titled together. No empty-sibling anomaly — agendas/minutes coverage parses; absence claimed ONLY for the custodian email, which is a site-wide obfuscation pattern (staff directory blanks all emails), not a missing-page artifact.",
+    "adversarial": {
+     "votes": "Re-verification 2026-06-13 (operator-directed lead check): refutation of 'no plaintext custodian email' now SUCCEEDS — ecsdpio@edgefieldcountyschools.org confirmed LIVE as plaintext PIO-contact boilerplate on ECSD news pages (e.g. /our-district/the-ecsd-update/.../post/2024-25-ecsd-first-nine-weeks-honor-roll: 'Contact the ECSD Public Information Office (PIO) by email at ecsdpio@edgefieldcountyschools.org'), domain corroborated by 7 trustees publishing @edgefieldcountyschools.org in plaintext on /school-board. The prior session's snippet-only sighting is now a live verification. Lead #2 (Supt. O'Gorman plaintext email) NOT found — the superintendent page shows only P.O. Box + phone; the masked k***@edgefield.k12.sc.us (ZoomInfo) was not confirmable. Remaining absence (no emailable public-comment recipient — BEDH-E form routes in-person to the superintendent's office) stands, verified live."
+    }
+   },
+   "notes": "Platform: Finalsite (district web CMS; agendas/minutes hosted natively in a year-tabbed list, NOT an external BoardDocs/Simbli portal) — vendor-hosted CMS, no separate agenda-platform license to TownWatch; scraping cost is the Finalsite list/tab pagination pattern (reusable across Finalsite districts; same family as finalsite entries elsewhere in this registry). Public comment is a printable scanned-image PDF form (BEDH-E) with a real 24h-prior deadline — not automatable as an online submission. FISCAL DEPENDENCY: SC school district levy/millage is set by COUNTY COUNCIL, not the school board (SC districts are fiscally dependent on the county unless granted fiscal autonomy by special legislation) — the board sets the budget request, Edgefield County Council sets the levy. Quirks: prompt domain ecsdsc.org is dead/wrong; two email domains (@edgefieldcountyschools.org trustees vs @edgefield.k12.sc.us staff); all staff emails obfuscated site-wide. NCES LEA 4502070, county FIPS 45037. | ERRATUM 2026-06-13 (operator-directed lead verification): records_custodian_email set to ecsdpio@edgefieldcountyschools.org (PIO role alias) — VERIFIED LIVE on ECSD news-post PIO-contact boilerplate; the prior recon had this snippet-only and left it null/medium. clerk_email_access obfuscated->role_alias, records_intake mail_or_fax->email, confidence medium->high. Superintendent O'Gorman plaintext email remains unverified (not published live)."
   }
  }
 }
