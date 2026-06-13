@@ -1329,7 +1329,7 @@
         "A_law_dossier": "in_progress",
         "B_universe_verified": "done",
         "C_structure_bundles": "done",
-        "D_platform_census": "not_started",
+        "D_platform_census": "done",
         "E_pipeline_delta": "not_started"
       },
       "tier2_recon": {
@@ -1395,6 +1395,16 @@
           "tag": "school_district_fiscal_dependency_split",
           "status": "verified",
           "note": "SC districts split on who sets the property-tax levy: ~22 of 72 are FISCALLY DEPENDENT (County Council sets/approves millage — Dorchester 2 named) and ~50 FISCALLY INDEPENDENT (board of trustees certifies the levy to the county auditor, capped ~2 mills/yr). Audit consequence: a millage/budget finding attaches to County Council for the 22, the school board for the rest. Per-district roster of the 22 deferred to finance-ingestion time (each district's Title 59 enabling act). Source: Post & Courier 2025-26 + SC Encyclopedia. See STRUCTURE.md."
+        },
+        {
+          "tag": "large_counties_custom_agendas",
+          "status": "verified",
+          "note": "Phase D (2026-06-13): SC's 4 largest counties run bespoke/custom agenda systems — Greenville (.aspx app), Charleston (in-house CCMIMS), Richland (Granicus GovAccess CMS), Horry (Revize). Off-the-shelf vendors (CivicClerk/Granicus/CivicPlus) appear only in the rank 5-10 tier. Onboarding the biggest counties needs per-county custom extractors; the highest-population audit targets are the highest scraper cost."
+        },
+        {
+          "tag": "school_boards_diligent_dominant",
+          "status": "verified",
+          "note": "Phase D (2026-06-13): BoardDocs is the dominant SC school-board agenda platform (10/18 sampled); BoardDocs + Diligent Community are both Diligent -> 13/18 = 72%. SC analog of GA's Simbli=27/33 but a DIFFERENT vendor (Simbli appears once, Rock Hill). One BoardDocs client unlocks the school-board layer. Numbered same-county districts do NOT share a platform — fingerprint each independently. Diligent migrating BoardDocs->Diligent One Platform (Lexington1, Beaufort SD, DD4)."
         }
       ],
       "demand_signals": [
@@ -1410,9 +1420,10 @@
         "recon_registry": "research/sc_recon/registry.json",
         "universe_roster": "research/sc_recon/universe_roster.json",
         "universe_sources": "research/sc_recon/UNIVERSE_SOURCES.md",
-        "structure": "research/sc_recon/STRUCTURE.md"
+        "structure": "research/sc_recon/STRUCTURE.md",
+        "platform_census": "research/sc_recon/PLATFORM_CENSUS.md"
       },
-      "notes": "Phase A FOIA core COMPLETE; Tier-0 seeded + Phase B universe VERIFIED + Phase C structure/bundle map COMPLETE (2026-06-13). 46 counties / 271 municipalities / 72 school districts; bundle map clean (0 orphan counties, 0 unresolved warnings, no consolidations/county-equivalents/townships). Numbered sub-county districts bundle to their county (county fund covers county + all its districts). Fiscal split documented (~22 fiscally dependent on County Council). Seed/backfill tooling generalized off the GA-only roster onto Census SUB-EST + a sub-county-district bundler — UNCOMMITTED, pending operator commit gate (live SC seed depends on the fix). REMAINING: Phase A finance-transparency layer (TODO); Phase D platform census (stratified sample — Dorchester already done by Tier-2 recon; coordinate with recon session, which owns registry.json); Phase E pipeline-delta memo → human gate before ready_for_tier2. Artifacts in research/sc_recon/: universe_roster.json, UNIVERSE_SOURCES.md, STRUCTURE.md (dossier) + registry.json (recon)."
+      "notes": "Phase A FOIA core COMPLETE; Tier-0 + Phase B + Phase C + Phase D DONE (2026-06-13). Universe 46/271/72 verified; bundle map clean; platform census = 46 jurisdictions fingerprinted (recon session, registry.json + PLATFORM_CENSUS.md, 46/46 validate). Platform headline: big counties run BESPOKE agenda systems (per-county extractors); school boards are Diligent-dominant (BoardDocs+Diligent Community = 72% of sampled) -> one BoardDocs client unlocks the SC board layer (SC's Simbli-analog). tier2_recon.registry_entries stays 3 (onboarding track); the 43 census entries are tracked via the platform_census artifact. REMAINING: Phase E pipeline-delta memo (NEXT dossier step; inputs drafted in PLATFORM_CENSUS.md 'hands forward' — BoardDocs build + generic PDF-directory scraper + browser-fetch tier for ~4 walled counties + IQM2-sunset watch) -> human gate before ready_for_tier2. Also pending: Phase A finance-transparency layer (TODO). WATCH: Bill 3470 forces ~46 countywide districts by 2027/2032."
     },
     "SD": {
       "name": "South Dakota",
