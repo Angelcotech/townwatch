@@ -1325,10 +1325,10 @@
       "name": "South Carolina",
       "fips": "45",
       "phases": {
-        "tier0_universe_seeded": "not_started",
+        "tier0_universe_seeded": "done",
         "A_law_dossier": "in_progress",
-        "B_universe_verified": "not_started",
-        "C_structure_bundles": "not_started",
+        "B_universe_verified": "done",
+        "C_structure_bundles": "done",
         "D_platform_census": "not_started",
         "E_pipeline_delta": "not_started"
       },
@@ -1368,8 +1368,8 @@
         },
         {
           "tag": "sub_county_school_districts",
-          "status": "prior",
-          "note": "School districts are sub-county in places (multiple districts per county); some districts fiscally dependent (county council sets the levy). Confirm structure against CCD in Phase B/C — affects bundle map + who the levying authority is."
+          "status": "verified",
+          "note": "VERIFIED statewide 2026-06-13 (Phase B, adversarial 3/3): SC uses numbered sub-county districts — multiple independent districts per county (72 districts across 46 counties; Anderson 1-5, Spartanburg 1-7, Lexington 1-5, York 1-4, etc.). All bundle to their county via the seed derivation fix (_SD_COUNTY_RE): county fund covers the county + ALL its districts. CORRECTION to the prior fiscal clause: SC districts are INDEPENDENT (fiscally independent) governments per Census classification with NO municipally-run systems; only a SUBSET are fiscally dependent on county council for the levy (district-specific — resolve in Phase C, not statewide). WATCH: Bill 3470 mandates ~46 countywide districts by 2027/2032 (see dd2_dd4_consolidation_watch)."
         },
         {
           "tag": "multi_district_counties",
@@ -1390,6 +1390,11 @@
           "tag": "gov_site_botwall",
           "status": "verified",
           "note": "Dorchester County's official .gov (Granicus govAccess CMS) is bot-walled (HTTP 403) — needs the browser fetch tier for nav/listing pages. Mitigations confirmed: Granicus agenda/minutes platform, NextRequest FOIA portal, and granicus S3 document attachments all sit OUTSIDE the wall."
+        },
+        {
+          "tag": "school_district_fiscal_dependency_split",
+          "status": "verified",
+          "note": "SC districts split on who sets the property-tax levy: ~22 of 72 are FISCALLY DEPENDENT (County Council sets/approves millage — Dorchester 2 named) and ~50 FISCALLY INDEPENDENT (board of trustees certifies the levy to the county auditor, capped ~2 mills/yr). Audit consequence: a millage/budget finding attaches to County Council for the 22, the school board for the rest. Per-district roster of the 22 deferred to finance-ingestion time (each district's Title 59 enabling act). Source: Post & Courier 2025-26 + SC Encyclopedia. See STRUCTURE.md."
         }
       ],
       "demand_signals": [
@@ -1402,9 +1407,12 @@
         "law_block": "jurisdictions/_open_records_laws.json#SC",
         "state_defaults": "jurisdictions/_state_defaults/sc.json",
         "finance_layer_todo": "jurisdictions/_open_records_laws.json#SC._sc_finance_layer_todo",
-        "recon_registry": "research/sc_recon/registry.json"
+        "recon_registry": "research/sc_recon/registry.json",
+        "universe_roster": "research/sc_recon/universe_roster.json",
+        "universe_sources": "research/sc_recon/UNIVERSE_SOURCES.md",
+        "structure": "research/sc_recon/STRUCTURE.md"
       },
-      "notes": "Phase A statute inventory: FOIA CORE COMPLETE & verified 2026-06-13 (primary sources scstatehouse.gov Title 30 Ch.4 + Title 8 Ch.13; adversarial 3-of-3 all upheld). 6 finding categories derived. REMAINING Phase-A: finance-transparency layer (budget/millage/audit, SC Titles 4/5/6/12/59) deferred as TODO in the SC._sc_finance_layer_todo block — no finance ingestion exists so nothing activated by deferring; do NOT port GA OCGA finance cites. EXECUTION NOTE: Tier-2 recon went DEMAND-FIRST (Dorchester County / Lowcountry — see demand_signals + artifacts.recon_registry) AHEAD of the Tier-1 dossier; priority_reason (Augusta/CSRA adjacency) remains the standing structural rationale and the eventual dossier batch still starts there. Phase B universe verification (statewide CCD reconciliation of sub-county district structure + the fiscal-dependency clause, neither yet verified) still pending before broad Tier-2."
+      "notes": "Phase A FOIA core COMPLETE; Tier-0 seeded + Phase B universe VERIFIED + Phase C structure/bundle map COMPLETE (2026-06-13). 46 counties / 271 municipalities / 72 school districts; bundle map clean (0 orphan counties, 0 unresolved warnings, no consolidations/county-equivalents/townships). Numbered sub-county districts bundle to their county (county fund covers county + all its districts). Fiscal split documented (~22 fiscally dependent on County Council). Seed/backfill tooling generalized off the GA-only roster onto Census SUB-EST + a sub-county-district bundler — UNCOMMITTED, pending operator commit gate (live SC seed depends on the fix). REMAINING: Phase A finance-transparency layer (TODO); Phase D platform census (stratified sample — Dorchester already done by Tier-2 recon; coordinate with recon session, which owns registry.json); Phase E pipeline-delta memo → human gate before ready_for_tier2. Artifacts in research/sc_recon/: universe_roster.json, UNIVERSE_SOURCES.md, STRUCTURE.md (dossier) + registry.json (recon)."
     },
     "SD": {
       "name": "South Dakota",

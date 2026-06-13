@@ -72,6 +72,17 @@ _SUFFIX_RE = re.compile(
     re.I,
 )
 
+# Extracts the county base name from a numbered or consolidated sub-county school
+# district — "<County> School District <N>" (SC: Anderson 1-5, Spartanburg 1-7,
+# Lexington 1-5, York 1-4, …) and "<County> County Consolidated School District"
+# (SC: Sumter). Several independent districts ride one county; this pulls the
+# county name so each bundles to it. The "(?:County )?(?:Consolidated )?" tail
+# tolerates both shapes; an optional trailing number handles the numbering.
+_SD_COUNTY_RE = re.compile(
+    r"^(?P<base>.+?)\s+(?:County\s+)?(?:Consolidated\s+)?School District(?:\s+\d+)?\s*$",
+    re.I,
+)
+
 
 def _fetch_rows(filename: str) -> list[dict]:
     """Download a gazetteer zip and yield header-mapped rows.
@@ -106,10 +117,14 @@ def _derive_bundles(rows: list[tuple[str, str, str, str]]) -> dict[tuple[str, st
     """Map (jurisdiction_type, fips) → bundle_fips for rows that onboard as part
     of another government's bundle.
 
-    Rules (from Census naming conventions, verified against the GA universe):
+    Rules (from Census naming conventions, verified against the GA + SC universes):
     - "X County School District" → its county. ("Dougherty School District"-style
       names fall back to trying "<base> County".)
     - "Y City School District" → the city named Y (independent city systems).
+    - Numbered / consolidated sub-county districts ("Anderson School District 1",
+      "Sumter County Consolidated School District") → the county named in the title
+      (via _SD_COUNTY_RE). SC runs several independent districts per county; all of
+      them ride that county's bundle (county fund covers the county + its districts).
     - A *city*-typed row named "X County" or "...-X County" is a consolidated
       city-county government → its county (one government, one onboarding).
       Marker-less consolidations (Columbus) come from CONSOLIDATED_PLACE_TO_COUNTY.
@@ -128,6 +143,8 @@ def _derive_bundles(rows: list[tuple[str, str, str, str]]) -> dict[tuple[str, st
                 bundles[(t, fips)] = city_by_name[base.removesuffix(" City")]
             elif f"{base} County" in county_by_name:
                 bundles[(t, fips)] = county_by_name[f"{base} County"]
+            elif (m := _SD_COUNTY_RE.match(name)) and f"{m.group('base').strip()} County" in county_by_name:
+                bundles[(t, fips)] = county_by_name[f"{m.group('base').strip()} County"]
             else:
                 print(f"  ⚠ no bundle target for school district: {name}", file=sys.stderr)
         elif t == "city":

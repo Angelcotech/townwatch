@@ -1,0 +1,3349 @@
+{
+  "_meta": {
+    "state": "South Carolina",
+    "state_fips": "45",
+    "generated": "2026-06-13",
+    "generated_by": "export of seeded jurisdiction_directory (DB) + SUB-EST 2024 population",
+    "canonical_source": "This roster is a GENERATED snapshot. The authoritative SC universe is the seeded jurisdiction_directory, reproducible via: seed_jurisdiction_directory --state SC (Census 2025 gazetteer) then backfill_directory_nav --state SC (Census SUB-EST 2024 place->county). Do not hand-edit; regenerate.",
+    "verification": "Phase B adversarial 3-agent pass 2026-06-13, all layers UPHELD vs >=2 authorities (see UNIVERSE_SOURCES.md).",
+    "counts": {
+      "counties": 46,
+      "municipalities": 271,
+      "school_districts": 72
+    }
+  },
+  "counties": [
+    {
+      "fips": "45045",
+      "name": "Greenville County",
+      "pop2024": 570745
+    },
+    {
+      "fips": "45019",
+      "name": "Charleston County",
+      "pop2024": 431001
+    },
+    {
+      "fips": "45079",
+      "name": "Richland County",
+      "pop2024": 430651
+    },
+    {
+      "fips": "45051",
+      "name": "Horry County",
+      "pop2024": 413391
+    },
+    {
+      "fips": "45083",
+      "name": "Spartanburg County",
+      "pop2024": 369256
+    },
+    {
+      "fips": "45063",
+      "name": "Lexington County",
+      "pop2024": 313774
+    },
+    {
+      "fips": "45091",
+      "name": "York County",
+      "pop2024": 303001
+    },
+    {
+      "fips": "45015",
+      "name": "Berkeley County",
+      "pop2024": 264276
+    },
+    {
+      "fips": "45007",
+      "name": "Anderson County",
+      "pop2024": 217183
+    },
+    {
+      "fips": "45013",
+      "name": "Beaufort County",
+      "pop2024": 201775
+    },
+    {
+      "fips": "45003",
+      "name": "Aiken County",
+      "pop2024": 179245
+    },
+    {
+      "fips": "45035",
+      "name": "Dorchester County",
+      "pop2024": 174663
+    },
+    {
+      "fips": "45077",
+      "name": "Pickens County",
+      "pop2024": 138207
+    },
+    {
+      "fips": "45041",
+      "name": "Florence County",
+      "pop2024": 138049
+    },
+    {
+      "fips": "45057",
+      "name": "Lancaster County",
+      "pop2024": 111652
+    },
+    {
+      "fips": "45085",
+      "name": "Sumter County",
+      "pop2024": 104776
+    },
+    {
+      "fips": "45075",
+      "name": "Orangeburg County",
+      "pop2024": 83129
+    },
+    {
+      "fips": "45073",
+      "name": "Oconee County",
+      "pop2024": 82475
+    },
+    {
+      "fips": "45055",
+      "name": "Kershaw County",
+      "pop2024": 71698
+    },
+    {
+      "fips": "45059",
+      "name": "Laurens County",
+      "pop2024": 70545
+    },
+    {
+      "fips": "45047",
+      "name": "Greenwood County",
+      "pop2024": 70041
+    },
+    {
+      "fips": "45043",
+      "name": "Georgetown County",
+      "pop2024": 66035
+    },
+    {
+      "fips": "45031",
+      "name": "Darlington County",
+      "pop2024": 62425
+    },
+    {
+      "fips": "45021",
+      "name": "Cherokee County",
+      "pop2024": 57770
+    },
+    {
+      "fips": "45025",
+      "name": "Chesterfield County",
+      "pop2024": 44488
+    },
+    {
+      "fips": "45029",
+      "name": "Colleton County",
+      "pop2024": 39259
+    },
+    {
+      "fips": "45071",
+      "name": "Newberry County",
+      "pop2024": 39203
+    },
+    {
+      "fips": "45053",
+      "name": "Jasper County",
+      "pop2024": 35618
+    },
+    {
+      "fips": "45023",
+      "name": "Chester County",
+      "pop2024": 32323
+    },
+    {
+      "fips": "45027",
+      "name": "Clarendon County",
+      "pop2024": 31030
+    },
+    {
+      "fips": "45089",
+      "name": "Williamsburg County",
+      "pop2024": 29865
+    },
+    {
+      "fips": "45037",
+      "name": "Edgefield County",
+      "pop2024": 29455
+    },
+    {
+      "fips": "45067",
+      "name": "Marion County",
+      "pop2024": 28368
+    },
+    {
+      "fips": "45033",
+      "name": "Dillon County",
+      "pop2024": 27577
+    },
+    {
+      "fips": "45087",
+      "name": "Union County",
+      "pop2024": 26678
+    },
+    {
+      "fips": "45069",
+      "name": "Marlboro County",
+      "pop2024": 25498
+    },
+    {
+      "fips": "45001",
+      "name": "Abbeville County",
+      "pop2024": 24607
+    },
+    {
+      "fips": "45011",
+      "name": "Barnwell County",
+      "pop2024": 20495
+    },
+    {
+      "fips": "45039",
+      "name": "Fairfield County",
+      "pop2024": 20369
+    },
+    {
+      "fips": "45081",
+      "name": "Saluda County",
+      "pop2024": 19452
+    },
+    {
+      "fips": "45049",
+      "name": "Hampton County",
+      "pop2024": 18172
+    },
+    {
+      "fips": "45061",
+      "name": "Lee County",
+      "pop2024": 15958
+    },
+    {
+      "fips": "45017",
+      "name": "Calhoun County",
+      "pop2024": 14249
+    },
+    {
+      "fips": "45009",
+      "name": "Bamberg County",
+      "pop2024": 12870
+    },
+    {
+      "fips": "45065",
+      "name": "McCormick County",
+      "pop2024": 9983
+    },
+    {
+      "fips": "45005",
+      "name": "Allendale County",
+      "pop2024": 7551
+    }
+  ],
+  "municipalities": [
+    {
+      "fips": "4513330",
+      "name": "Charleston",
+      "primary_county_fips": "45019",
+      "nav_county_fips": [
+        "45019",
+        "45015"
+      ],
+      "bundle_fips": null,
+      "pop2024": 157665
+    },
+    {
+      "fips": "4516000",
+      "name": "Columbia",
+      "primary_county_fips": "45079",
+      "nav_county_fips": [
+        "45079",
+        "45063"
+      ],
+      "bundle_fips": null,
+      "pop2024": 144788
+    },
+    {
+      "fips": "4550875",
+      "name": "North Charleston",
+      "primary_county_fips": "45019",
+      "nav_county_fips": [
+        "45019",
+        "45035",
+        "45015"
+      ],
+      "bundle_fips": null,
+      "pop2024": 126005
+    },
+    {
+      "fips": "4548535",
+      "name": "Mount Pleasant",
+      "primary_county_fips": "45019",
+      "nav_county_fips": [
+        "45019"
+      ],
+      "bundle_fips": null,
+      "pop2024": 95604
+    },
+    {
+      "fips": "4561405",
+      "name": "Rock Hill",
+      "primary_county_fips": "45091",
+      "nav_county_fips": [
+        "45091"
+      ],
+      "bundle_fips": null,
+      "pop2024": 75798
+    },
+    {
+      "fips": "4530850",
+      "name": "Greenville",
+      "primary_county_fips": "45045",
+      "nav_county_fips": [
+        "45045"
+      ],
+      "bundle_fips": null,
+      "pop2024": 74371
+    },
+    {
+      "fips": "4570270",
+      "name": "Summerville",
+      "primary_county_fips": "45035",
+      "nav_county_fips": [
+        "45035",
+        "45015",
+        "45019"
+      ],
+      "bundle_fips": null,
+      "pop2024": 52625
+    },
+    {
+      "fips": "4529815",
+      "name": "Goose Creek",
+      "primary_county_fips": "45015",
+      "nav_county_fips": [
+        "45015"
+      ],
+      "bundle_fips": null,
+      "pop2024": 50352
+    },
+    {
+      "fips": "4530985",
+      "name": "Greer",
+      "primary_county_fips": "45045",
+      "nav_county_fips": [
+        "45045",
+        "45083"
+      ],
+      "bundle_fips": null,
+      "pop2024": 46316
+    },
+    {
+      "fips": "4570405",
+      "name": "Sumter",
+      "primary_county_fips": "45085",
+      "nav_county_fips": [
+        "45085"
+      ],
+      "bundle_fips": null,
+      "pop2024": 42958
+    },
+    {
+      "fips": "4525810",
+      "name": "Florence",
+      "primary_county_fips": "45041",
+      "nav_county_fips": [
+        "45041",
+        "45031"
+      ],
+      "bundle_fips": null,
+      "pop2024": 40923
+    },
+    {
+      "fips": "4549075",
+      "name": "Myrtle Beach",
+      "primary_county_fips": "45051",
+      "nav_county_fips": [
+        "45051"
+      ],
+      "bundle_fips": null,
+      "pop2024": 40535
+    },
+    {
+      "fips": "4568290",
+      "name": "Spartanburg",
+      "primary_county_fips": "45083",
+      "nav_county_fips": [
+        "45083"
+      ],
+      "bundle_fips": null,
+      "pop2024": 39606
+    },
+    {
+      "fips": "4534045",
+      "name": "Hilton Head Island",
+      "primary_county_fips": "45013",
+      "nav_county_fips": [
+        "45013"
+      ],
+      "bundle_fips": null,
+      "pop2024": 38158
+    },
+    {
+      "fips": "4526890",
+      "name": "Fort Mill",
+      "primary_county_fips": "45091",
+      "nav_county_fips": [
+        "45091"
+      ],
+      "bundle_fips": null,
+      "pop2024": 36244
+    },
+    {
+      "fips": "4507210",
+      "name": "Bluffton",
+      "primary_county_fips": "45013",
+      "nav_county_fips": [
+        "45013"
+      ],
+      "bundle_fips": null,
+      "pop2024": 36146
+    },
+    {
+      "fips": "4500550",
+      "name": "Aiken",
+      "primary_county_fips": "45003",
+      "nav_county_fips": [
+        "45003"
+      ],
+      "bundle_fips": null,
+      "pop2024": 32694
+    },
+    {
+      "fips": "4501360",
+      "name": "Anderson",
+      "primary_county_fips": "45007",
+      "nav_county_fips": [
+        "45007"
+      ],
+      "bundle_fips": null,
+      "pop2024": 30937
+    },
+    {
+      "fips": "4545115",
+      "name": "Mauldin",
+      "primary_county_fips": "45045",
+      "nav_county_fips": [
+        "45045"
+      ],
+      "bundle_fips": null,
+      "pop2024": 29746
+    },
+    {
+      "fips": "4516405",
+      "name": "Conway",
+      "primary_county_fips": "45051",
+      "nav_county_fips": [
+        "45051"
+      ],
+      "bundle_fips": null,
+      "pop2024": 29656
+    },
+    {
+      "fips": "4566580",
+      "name": "Simpsonville",
+      "primary_county_fips": "45045",
+      "nav_county_fips": [
+        "45045"
+      ],
+      "bundle_fips": null,
+      "pop2024": 28078
+    },
+    {
+      "fips": "4521985",
+      "name": "Easley",
+      "primary_county_fips": "45077",
+      "nav_county_fips": [
+        "45077",
+        "45007"
+      ],
+      "bundle_fips": null,
+      "pop2024": 27001
+    },
+    {
+      "fips": "4550695",
+      "name": "North Augusta",
+      "primary_county_fips": "45003",
+      "nav_county_fips": [
+        "45003",
+        "45037"
+      ],
+      "bundle_fips": null,
+      "pop2024": 26395
+    },
+    {
+      "fips": "4541335",
+      "name": "Lexington",
+      "primary_county_fips": "45063",
+      "nav_county_fips": [
+        "45063"
+      ],
+      "bundle_fips": null,
+      "pop2024": 25354
+    },
+    {
+      "fips": "4530895",
+      "name": "Greenwood",
+      "primary_county_fips": "45047",
+      "nav_county_fips": [
+        "45047"
+      ],
+      "bundle_fips": null,
+      "pop2024": 22667
+    },
+    {
+      "fips": "4532065",
+      "name": "Hanahan",
+      "primary_county_fips": "45015",
+      "nav_county_fips": [
+        "45015"
+      ],
+      "bundle_fips": null,
+      "pop2024": 21983
+    },
+    {
+      "fips": "4551280",
+      "name": "North Myrtle Beach",
+      "primary_county_fips": "45051",
+      "nav_county_fips": [
+        "45051"
+      ],
+      "bundle_fips": null,
+      "pop2024": 20798
+    },
+    {
+      "fips": "4514950",
+      "name": "Clemson",
+      "primary_county_fips": "45077",
+      "nav_county_fips": [
+        "45077",
+        "45007"
+      ],
+      "bundle_fips": null,
+      "pop2024": 18610
+    },
+    {
+      "fips": "4575850",
+      "name": "West Columbia",
+      "primary_county_fips": "45063",
+      "nav_county_fips": [
+        "45063",
+        "45079"
+      ],
+      "bundle_fips": null,
+      "pop2024": 18418
+    },
+    {
+      "fips": "4547275",
+      "name": "Moncks Corner",
+      "primary_county_fips": "45015",
+      "nav_county_fips": [
+        "45015"
+      ],
+      "bundle_fips": null,
+      "pop2024": 18359
+    },
+    {
+      "fips": "4558030",
+      "name": "Port Royal",
+      "primary_county_fips": "45013",
+      "nav_county_fips": [
+        "45013"
+      ],
+      "bundle_fips": null,
+      "pop2024": 16507
+    },
+    {
+      "fips": "4504690",
+      "name": "Beaufort",
+      "primary_county_fips": "45013",
+      "nav_county_fips": [
+        "45013"
+      ],
+      "bundle_fips": null,
+      "pop2024": 14334
+    },
+    {
+      "fips": "4571417",
+      "name": "Tega Cay",
+      "primary_county_fips": "45091",
+      "nav_county_fips": [
+        "45091"
+      ],
+      "bundle_fips": null,
+      "pop2024": 14294
+    },
+    {
+      "fips": "4532245",
+      "name": "Hardeeville",
+      "primary_county_fips": "45053",
+      "nav_county_fips": [
+        "45053",
+        "45013"
+      ],
+      "bundle_fips": null,
+      "pop2024": 13862
+    },
+    {
+      "fips": "4527070",
+      "name": "Fountain Inn",
+      "primary_county_fips": "45045",
+      "nav_county_fips": [
+        "45045",
+        "45059"
+      ],
+      "bundle_fips": null,
+      "pop2024": 13786
+    },
+    {
+      "fips": "4512655",
+      "name": "Cayce",
+      "primary_county_fips": "45063",
+      "nav_county_fips": [
+        "45063",
+        "45079"
+      ],
+      "bundle_fips": null,
+      "pop2024": 13645
+    },
+    {
+      "fips": "4553080",
+      "name": "Orangeburg",
+      "primary_county_fips": "45075",
+      "nav_county_fips": [
+        "45075"
+      ],
+      "bundle_fips": null,
+      "pop2024": 13378
+    },
+    {
+      "fips": "4528060",
+      "name": "Gaffney",
+      "primary_county_fips": "45021",
+      "nav_county_fips": [
+        "45021"
+      ],
+      "bundle_fips": null,
+      "pop2024": 12546
+    },
+    {
+      "fips": "4536430",
+      "name": "James Island",
+      "primary_county_fips": "45019",
+      "nav_county_fips": [
+        "45019"
+      ],
+      "bundle_fips": null,
+      "pop2024": 12451
+    },
+    {
+      "fips": "4535890",
+      "name": "Irmo",
+      "primary_county_fips": "45079",
+      "nav_county_fips": [
+        "45079",
+        "45063"
+      ],
+      "bundle_fips": null,
+      "pop2024": 12086
+    },
+    {
+      "fips": "4549570",
+      "name": "Newberry",
+      "primary_county_fips": "45071",
+      "nav_county_fips": [
+        "45071"
+      ],
+      "bundle_fips": null,
+      "pop2024": 10874
+    },
+    {
+      "fips": "4526305",
+      "name": "Forest Acres",
+      "primary_county_fips": "45079",
+      "nav_county_fips": [
+        "45079"
+      ],
+      "bundle_fips": null,
+      "pop2024": 10438
+    },
+    {
+      "fips": "4579630",
+      "name": "York",
+      "primary_county_fips": "45091",
+      "nav_county_fips": [
+        "45091"
+      ],
+      "bundle_fips": null,
+      "pop2024": 9830
+    },
+    {
+      "fips": "4539895",
+      "name": "Lancaster",
+      "primary_county_fips": "45057",
+      "nav_county_fips": [
+        "45057"
+      ],
+      "bundle_fips": null,
+      "pop2024": 9396
+    },
+    {
+      "fips": "4540615",
+      "name": "Laurens",
+      "primary_county_fips": "45059",
+      "nav_county_fips": [
+        "45059"
+      ],
+      "bundle_fips": null,
+      "pop2024": 9352
+    },
+    {
+      "fips": "4565095",
+      "name": "Seneca",
+      "primary_county_fips": "45073",
+      "nav_county_fips": [
+        "45073"
+      ],
+      "bundle_fips": null,
+      "pop2024": 9202
+    },
+    {
+      "fips": "4572430",
+      "name": "Travelers Rest",
+      "primary_county_fips": "45045",
+      "nav_county_fips": [
+        "45045"
+      ],
+      "bundle_fips": null,
+      "pop2024": 8960
+    },
+    {
+      "fips": "4510855",
+      "name": "Camden",
+      "primary_county_fips": "45055",
+      "nav_county_fips": [
+        "45055"
+      ],
+      "bundle_fips": null,
+      "pop2024": 8899
+    },
+    {
+      "fips": "4528870",
+      "name": "Georgetown",
+      "primary_county_fips": "45043",
+      "nav_county_fips": [
+        "45043"
+      ],
+      "bundle_fips": null,
+      "pop2024": 8821
+    },
+    {
+      "fips": "4573105",
+      "name": "Union",
+      "primary_county_fips": "45087",
+      "nav_county_fips": [
+        "45087"
+      ],
+      "bundle_fips": null,
+      "pop2024": 7988
+    },
+    {
+      "fips": "4515295",
+      "name": "Clinton",
+      "primary_county_fips": "45059",
+      "nav_county_fips": [
+        "45059"
+      ],
+      "bundle_fips": null,
+      "pop2024": 7852
+    },
+    {
+      "fips": "4505680",
+      "name": "Bennettsville",
+      "primary_county_fips": "45069",
+      "nav_county_fips": [
+        "45069"
+      ],
+      "bundle_fips": null,
+      "pop2024": 7595
+    },
+    {
+      "fips": "4515355",
+      "name": "Clover",
+      "primary_county_fips": "45091",
+      "nav_county_fips": [
+        "45091"
+      ],
+      "bundle_fips": null,
+      "pop2024": 7558
+    },
+    {
+      "fips": "4532560",
+      "name": "Hartsville",
+      "primary_county_fips": "45031",
+      "nav_county_fips": [
+        "45031"
+      ],
+      "bundle_fips": null,
+      "pop2024": 7360
+    },
+    {
+      "fips": "4543315",
+      "name": "Lyman",
+      "primary_county_fips": "45083",
+      "nav_county_fips": [
+        "45083"
+      ],
+      "bundle_fips": null,
+      "pop2024": 6939
+    },
+    {
+      "fips": "4507255",
+      "name": "Blythewood",
+      "primary_county_fips": "45079",
+      "nav_county_fips": [
+        "45079",
+        "45039"
+      ],
+      "bundle_fips": null,
+      "pop2024": 6733
+    },
+    {
+      "fips": "4519420",
+      "name": "Dillon",
+      "primary_county_fips": "45033",
+      "nav_county_fips": [
+        "45033"
+      ],
+      "bundle_fips": null,
+      "pop2024": 6244
+    },
+    {
+      "fips": "4544575",
+      "name": "Marion",
+      "primary_county_fips": "45067",
+      "nav_county_fips": [
+        "45067"
+      ],
+      "bundle_fips": null,
+      "pop2024": 6068
+    },
+    {
+      "fips": "4518565",
+      "name": "Darlington",
+      "primary_county_fips": "45031",
+      "nav_county_fips": [
+        "45031"
+      ],
+      "bundle_fips": null,
+      "pop2024": 6045
+    },
+    {
+      "fips": "4539310",
+      "name": "Lake City",
+      "primary_county_fips": "45041",
+      "nav_county_fips": [
+        "45041"
+      ],
+      "bundle_fips": null,
+      "pop2024": 5916
+    },
+    {
+      "fips": "4534495",
+      "name": "Hollywood",
+      "primary_county_fips": "45019",
+      "nav_county_fips": [
+        "45019"
+      ],
+      "bundle_fips": null,
+      "pop2024": 5503
+    },
+    {
+      "fips": "4574275",
+      "name": "Walterboro",
+      "primary_county_fips": "45029",
+      "nav_county_fips": [
+        "45029"
+      ],
+      "bundle_fips": null,
+      "pop2024": 5488
+    },
+    {
+      "fips": "4513015",
+      "name": "Central",
+      "primary_county_fips": "45077",
+      "nav_county_fips": [
+        "45077"
+      ],
+      "bundle_fips": null,
+      "pop2024": 5339
+    },
+    {
+      "fips": "4504300",
+      "name": "Batesburg-Leesville",
+      "primary_county_fips": "45063",
+      "nav_county_fips": [
+        "45063",
+        "45081"
+      ],
+      "bundle_fips": null,
+      "pop2024": 5321
+    },
+    {
+      "fips": "4514095",
+      "name": "Chester",
+      "primary_county_fips": "45023",
+      "nav_county_fips": [
+        "45023"
+      ],
+      "bundle_fips": null,
+      "pop2024": 5230
+    },
+    {
+      "fips": "4579090",
+      "name": "Woodruff",
+      "primary_county_fips": "45083",
+      "nav_county_fips": [
+        "45083"
+      ],
+      "bundle_fips": null,
+      "pop2024": 5072
+    },
+    {
+      "fips": "4513600",
+      "name": "Cheraw",
+      "primary_county_fips": "45025",
+      "nav_county_fips": [
+        "45025"
+      ],
+      "bundle_fips": null,
+      "pop2024": 4946
+    },
+    {
+      "fips": "4500100",
+      "name": "Abbeville",
+      "primary_county_fips": "45001",
+      "nav_county_fips": [
+        "45001"
+      ],
+      "bundle_fips": null,
+      "pop2024": 4870
+    },
+    {
+      "fips": "4521265",
+      "name": "Duncan",
+      "primary_county_fips": "45083",
+      "nav_county_fips": [
+        "45083"
+      ],
+      "bundle_fips": null,
+      "pop2024": 4594
+    },
+    {
+      "fips": "4504060",
+      "name": "Barnwell",
+      "primary_county_fips": "45011",
+      "nav_county_fips": [
+        "45011"
+      ],
+      "bundle_fips": null,
+      "pop2024": 4589
+    },
+    {
+      "fips": "4505365",
+      "name": "Belton",
+      "primary_county_fips": "45007",
+      "nav_county_fips": [
+        "45007"
+      ],
+      "bundle_fips": null,
+      "pop2024": 4573
+    },
+    {
+      "fips": "4536115",
+      "name": "Isle of Palms",
+      "primary_county_fips": "45019",
+      "nav_county_fips": [
+        "45019"
+      ],
+      "bundle_fips": null,
+      "pop2024": 4377
+    },
+    {
+      "fips": "4570585",
+      "name": "Surfside Beach",
+      "primary_county_fips": "45051",
+      "nav_county_fips": [
+        "45051"
+      ],
+      "bundle_fips": null,
+      "pop2024": 4368
+    },
+    {
+      "fips": "4577875",
+      "name": "Williamston",
+      "primary_county_fips": "45007",
+      "nav_county_fips": [
+        "45007"
+      ],
+      "bundle_fips": null,
+      "pop2024": 4285
+    },
+    {
+      "fips": "4574095",
+      "name": "Walhalla",
+      "primary_county_fips": "45073",
+      "nav_county_fips": [
+        "45073"
+      ],
+      "bundle_fips": null,
+      "pop2024": 4249
+    },
+    {
+      "fips": "4522795",
+      "name": "Edgefield",
+      "primary_county_fips": "45037",
+      "nav_county_fips": [
+        "45037"
+      ],
+      "bundle_fips": null,
+      "pop2024": 4147
+    },
+    {
+      "fips": "4534810",
+      "name": "Honea Path",
+      "primary_county_fips": "45007",
+      "nav_county_fips": [
+        "45007",
+        "45001"
+      ],
+      "bundle_fips": null,
+      "pop2024": 3885
+    },
+    {
+      "fips": "4548805",
+      "name": "Mullins",
+      "primary_county_fips": "45067",
+      "nav_county_fips": [
+        "45067"
+      ],
+      "bundle_fips": null,
+      "pop2024": 3846
+    },
+    {
+      "fips": "4544350",
+      "name": "Manning",
+      "primary_county_fips": "45027",
+      "nav_county_fips": [
+        "45027"
+      ],
+      "bundle_fips": null,
+      "pop2024": 3832
+    },
+    {
+      "fips": "4560280",
+      "name": "Ridgeland",
+      "primary_county_fips": "45053",
+      "nav_county_fips": [
+        "45053",
+        "45013"
+      ],
+      "bundle_fips": null,
+      "pop2024": 3744
+    },
+    {
+      "fips": "4575580",
+      "name": "Wellford",
+      "primary_county_fips": "45083",
+      "nav_county_fips": [
+        "45083"
+      ],
+      "bundle_fips": null,
+      "pop2024": 3733
+    },
+    {
+      "fips": "4555645",
+      "name": "Pendleton",
+      "primary_county_fips": "45007",
+      "nav_county_fips": [
+        "45007",
+        "45077"
+      ],
+      "bundle_fips": null,
+      "pop2024": 3697
+    },
+    {
+      "fips": "4535755",
+      "name": "Inman",
+      "primary_county_fips": "45083",
+      "nav_county_fips": [
+        "45083"
+      ],
+      "bundle_fips": null,
+      "pop2024": 3354
+    },
+    {
+      "fips": "4541380",
+      "name": "Liberty",
+      "primary_county_fips": "45077",
+      "nav_county_fips": [
+        "45077"
+      ],
+      "bundle_fips": null,
+      "pop2024": 3352
+    },
+    {
+      "fips": "4578460",
+      "name": "Winnsboro",
+      "primary_county_fips": "45039",
+      "nav_county_fips": [
+        "45039"
+      ],
+      "bundle_fips": null,
+      "pop2024": 3279
+    },
+    {
+      "fips": "4510270",
+      "name": "Burnettown",
+      "primary_county_fips": "45003",
+      "nav_county_fips": [
+        "45003"
+      ],
+      "bundle_fips": null,
+      "pop2024": 3226
+    },
+    {
+      "fips": "4556140",
+      "name": "Pickens",
+      "primary_county_fips": "45077",
+      "nav_county_fips": [
+        "45077"
+      ],
+      "bundle_fips": null,
+      "pop2024": 3188
+    },
+    {
+      "fips": "4519105",
+      "name": "Denmark",
+      "primary_county_fips": "45009",
+      "nav_county_fips": [
+        "45009"
+      ],
+      "bundle_fips": null,
+      "pop2024": 3072
+    },
+    {
+      "fips": "4563250",
+      "name": "Saluda",
+      "primary_county_fips": "45081",
+      "nav_county_fips": [
+        "45081"
+      ],
+      "bundle_fips": null,
+      "pop2024": 3061
+    },
+    {
+      "fips": "4538590",
+      "name": "Kingstree",
+      "primary_county_fips": "45089",
+      "nav_county_fips": [
+        "45089"
+      ],
+      "bundle_fips": null,
+      "pop2024": 3055
+    },
+    {
+      "fips": "4503790",
+      "name": "Bamberg",
+      "primary_county_fips": "45009",
+      "nav_county_fips": [
+        "45009"
+      ],
+      "bundle_fips": null,
+      "pop2024": 2943
+    },
+    {
+      "fips": "4506310",
+      "name": "Bishopville",
+      "primary_county_fips": "45061",
+      "nav_county_fips": [
+        "45061"
+      ],
+      "bundle_fips": null,
+      "pop2024": 2880
+    },
+    {
+      "fips": "4577965",
+      "name": "Williston",
+      "primary_county_fips": "45011",
+      "nav_county_fips": [
+        "45011"
+      ],
+      "bundle_fips": null,
+      "pop2024": 2879
+    },
+    {
+      "fips": "4542730",
+      "name": "Loris",
+      "primary_county_fips": "45051",
+      "nav_county_fips": [
+        "45051"
+      ],
+      "bundle_fips": null,
+      "pop2024": 2825
+    },
+    {
+      "fips": "4540075",
+      "name": "Landrum",
+      "primary_county_fips": "45083",
+      "nav_county_fips": [
+        "45083"
+      ],
+      "bundle_fips": null,
+      "pop2024": 2792
+    },
+    {
+      "fips": "4568425",
+      "name": "Springdale",
+      "primary_county_fips": "45063",
+      "nav_county_fips": [
+        "45063"
+      ],
+      "bundle_fips": null,
+      "pop2024": 2756
+    },
+    {
+      "fips": "4559020",
+      "name": "Ravenel",
+      "primary_county_fips": "45019",
+      "nav_county_fips": [
+        "45019"
+      ],
+      "bundle_fips": null,
+      "pop2024": 2688
+    },
+    {
+      "fips": "4531885",
+      "name": "Hampton",
+      "primary_county_fips": "45049",
+      "nav_county_fips": [
+        "45049"
+      ],
+      "bundle_fips": null,
+      "pop2024": 2602
+    },
+    {
+      "fips": "4553845",
+      "name": "Pacolet",
+      "primary_county_fips": "45083",
+      "nav_county_fips": [
+        "45083"
+      ],
+      "bundle_fips": null,
+      "pop2024": 2566
+    },
+    {
+      "fips": "4501450",
+      "name": "Andrews",
+      "primary_county_fips": "45043",
+      "nav_county_fips": [
+        "45043",
+        "45089"
+      ],
+      "bundle_fips": null,
+      "pop2024": 2530
+    },
+    {
+      "fips": "4554025",
+      "name": "Pageland",
+      "primary_county_fips": "45025",
+      "nav_county_fips": [
+        "45025"
+      ],
+      "bundle_fips": null,
+      "pop2024": 2522
+    },
+    {
+      "fips": "4500955",
+      "name": "Allendale",
+      "primary_county_fips": "45005",
+      "nav_county_fips": [
+        "45005"
+      ],
+      "bundle_fips": null,
+      "pop2024": 2496
+    },
+    {
+      "fips": "4576165",
+      "name": "Westminster",
+      "primary_county_fips": "45073",
+      "nav_county_fips": [
+        "45073"
+      ],
+      "bundle_fips": null,
+      "pop2024": 2439
+    },
+    {
+      "fips": "4567705",
+      "name": "South Congaree",
+      "primary_county_fips": "45063",
+      "nav_county_fips": [
+        "45063"
+      ],
+      "bundle_fips": null,
+      "pop2024": 2392
+    },
+    {
+      "fips": "4549705",
+      "name": "New Ellenton",
+      "primary_county_fips": "45003",
+      "nav_county_fips": [
+        "45003"
+      ],
+      "bundle_fips": null,
+      "pop2024": 2354
+    },
+    {
+      "fips": "4556950",
+      "name": "Pine Ridge",
+      "primary_county_fips": "45063",
+      "nav_county_fips": [
+        "45063"
+      ],
+      "bundle_fips": null,
+      "pop2024": 2326
+    },
+    {
+      "fips": "4517260",
+      "name": "Cowpens",
+      "primary_county_fips": "45083",
+      "nav_county_fips": [
+        "45083"
+      ],
+      "bundle_fips": null,
+      "pop2024": 2230
+    },
+    {
+      "fips": "4537150",
+      "name": "Johnston",
+      "primary_county_fips": "45037",
+      "nav_county_fips": [
+        "45037"
+      ],
+      "bundle_fips": null,
+      "pop2024": 2214
+    },
+    {
+      "fips": "4564712",
+      "name": "Seabrook Island",
+      "primary_county_fips": "45019",
+      "nav_county_fips": [
+        "45019"
+      ],
+      "bundle_fips": null,
+      "pop2024": 2135
+    },
+    {
+      "fips": "4571980",
+      "name": "Timmonsville",
+      "primary_county_fips": "45041",
+      "nav_county_fips": [
+        "45041"
+      ],
+      "bundle_fips": null,
+      "pop2024": 2117
+    },
+    {
+      "fips": "4526035",
+      "name": "Folly Beach",
+      "primary_county_fips": "45019",
+      "nav_county_fips": [
+        "45019"
+      ],
+      "bundle_fips": null,
+      "pop2024": 2084
+    },
+    {
+      "fips": "4550290",
+      "name": "Ninety Six",
+      "primary_county_fips": "45047",
+      "nav_county_fips": [
+        "45047"
+      ],
+      "bundle_fips": null,
+      "pop2024": 2075
+    },
+    {
+      "fips": "4538095",
+      "name": "Kershaw",
+      "primary_county_fips": "45057",
+      "nav_county_fips": [
+        "45057"
+      ],
+      "bundle_fips": null,
+      "pop2024": 2014
+    },
+    {
+      "fips": "4538162",
+      "name": "Kiawah Island",
+      "primary_county_fips": "45019",
+      "nav_county_fips": [
+        "45019"
+      ],
+      "bundle_fips": null,
+      "pop2024": 2003
+    },
+    {
+      "fips": "4543630",
+      "name": "McColl",
+      "primary_county_fips": "45069",
+      "nav_county_fips": [
+        "45069"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1976
+    },
+    {
+      "fips": "4543720",
+      "name": "McCormick",
+      "primary_county_fips": "45065",
+      "nav_county_fips": [
+        "45065"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1960
+    },
+    {
+      "fips": "4506400",
+      "name": "Blacksburg",
+      "primary_county_fips": "45021",
+      "nav_county_fips": [
+        "45021"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1954
+    },
+    {
+      "fips": "4570090",
+      "name": "Sullivan's Island",
+      "primary_county_fips": "45019",
+      "nav_county_fips": [
+        "45019"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1948
+    },
+    {
+      "fips": "4513150",
+      "name": "Chapin",
+      "primary_county_fips": "45063",
+      "nav_county_fips": [
+        "45063"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1934
+    },
+    {
+      "fips": "4530490",
+      "name": "Great Falls",
+      "primary_county_fips": "45023",
+      "nav_county_fips": [
+        "45023"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1926
+    },
+    {
+      "fips": "4506490",
+      "name": "Blackville",
+      "primary_county_fips": "45011",
+      "nav_county_fips": [
+        "45011"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1906
+    },
+    {
+      "fips": "4562530",
+      "name": "St. George",
+      "primary_county_fips": "45035",
+      "nav_county_fips": [
+        "45035"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1855
+    },
+    {
+      "fips": "4559425",
+      "name": "Reidville",
+      "primary_county_fips": "45083",
+      "nav_county_fips": [
+        "45083"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1842
+    },
+    {
+      "fips": "4562620",
+      "name": "St. Matthews",
+      "primary_county_fips": "45017",
+      "nav_county_fips": [
+        "45017"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1834
+    },
+    {
+      "fips": "4523830",
+      "name": "Estill",
+      "primary_county_fips": "45049",
+      "nav_county_fips": [
+        "45049"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1770
+    },
+    {
+      "fips": "4510720",
+      "name": "Calhoun Falls",
+      "primary_county_fips": "45001",
+      "nav_county_fips": [
+        "45001"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1747
+    },
+    {
+      "fips": "4574680",
+      "name": "Ware Shoals",
+      "primary_county_fips": "45047",
+      "nav_county_fips": [
+        "45047",
+        "45059"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1716
+    },
+    {
+      "fips": "4523245",
+      "name": "Elgin",
+      "primary_county_fips": "45055",
+      "nav_county_fips": [
+        "45055"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1657
+    },
+    {
+      "fips": "4528780",
+      "name": "Gaston",
+      "primary_county_fips": "45063",
+      "nav_county_fips": [
+        "45063"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1641
+    },
+    {
+      "fips": "4536205",
+      "name": "Jackson",
+      "primary_county_fips": "45003",
+      "nav_county_fips": [
+        "45003"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1635
+    },
+    {
+      "fips": "4573600",
+      "name": "Varnville",
+      "primary_county_fips": "45049",
+      "nav_county_fips": [
+        "45049"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1630
+    },
+    {
+      "fips": "4562755",
+      "name": "St. Stephen",
+      "primary_county_fips": "45015",
+      "nav_county_fips": [
+        "45015"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1592
+    },
+    {
+      "fips": "4503385",
+      "name": "Awendaw",
+      "primary_county_fips": "45019",
+      "nav_county_fips": [
+        "45019"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1472
+    },
+    {
+      "fips": "4545790",
+      "name": "Meggett",
+      "primary_county_fips": "45019",
+      "nav_county_fips": [
+        "45019"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1453
+    },
+    {
+      "fips": "4577380",
+      "name": "Whitmire",
+      "primary_county_fips": "45071",
+      "nav_county_fips": [
+        "45071"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1439
+    },
+    {
+      "fips": "4555465",
+      "name": "Pelzer",
+      "primary_county_fips": "45007",
+      "nav_county_fips": [
+        "45007"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1429
+    },
+    {
+      "fips": "4524370",
+      "name": "Fairfax",
+      "primary_county_fips": "45005",
+      "nav_county_fips": [
+        "45005"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1389
+    },
+    {
+      "fips": "4514140",
+      "name": "Chesterfield",
+      "primary_county_fips": "45025",
+      "nav_county_fips": [
+        "45025"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1351
+    },
+    {
+      "fips": "4537105",
+      "name": "Johnsonville",
+      "primary_county_fips": "45041",
+      "nav_county_fips": [
+        "45041"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1350
+    },
+    {
+      "fips": "4521040",
+      "name": "Due West",
+      "primary_county_fips": "45001",
+      "nav_county_fips": [
+        "45001"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1292
+    },
+    {
+      "fips": "4534360",
+      "name": "Holly Hill",
+      "primary_county_fips": "45075",
+      "nav_county_fips": [
+        "45075"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1259
+    },
+    {
+      "fips": "4558705",
+      "name": "Prosperity",
+      "primary_county_fips": "45071",
+      "nav_county_fips": [
+        "45071"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1244
+    },
+    {
+      "fips": "4540480",
+      "name": "Latta",
+      "primary_county_fips": "45033",
+      "nav_county_fips": [
+        "45033"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1242
+    },
+    {
+      "fips": "4560370",
+      "name": "Ridgeville",
+      "primary_county_fips": "45035",
+      "nav_county_fips": [
+        "45035"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1234
+    },
+    {
+      "fips": "4541740",
+      "name": "Lincolnville",
+      "primary_county_fips": "45019",
+      "nav_county_fips": [
+        "45019",
+        "45035"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1212
+    },
+    {
+      "fips": "4536160",
+      "name": "Iva",
+      "primary_county_fips": "45007",
+      "nav_county_fips": [
+        "45007"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1191
+    },
+    {
+      "fips": "4579450",
+      "name": "Yemassee",
+      "primary_county_fips": "45049",
+      "nav_county_fips": [
+        "45049",
+        "45013"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1127
+    },
+    {
+      "fips": "4503430",
+      "name": "Aynor",
+      "primary_county_fips": "45051",
+      "nav_county_fips": [
+        "45051"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1063
+    },
+    {
+      "fips": "4554340",
+      "name": "Pamplico",
+      "primary_county_fips": "45041",
+      "nav_county_fips": [
+        "45041"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1061
+    },
+    {
+      "fips": "4523020",
+      "name": "Edisto Beach",
+      "primary_county_fips": "45029",
+      "nav_county_fips": [
+        "45029"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1060
+    },
+    {
+      "fips": "4573555",
+      "name": "Van Wyck",
+      "primary_county_fips": "45057",
+      "nav_county_fips": [
+        "45057"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1039
+    },
+    {
+      "fips": "4576345",
+      "name": "West Pelzer",
+      "primary_county_fips": "45007",
+      "nav_county_fips": [
+        "45007"
+      ],
+      "bundle_fips": null,
+      "pop2024": 1027
+    },
+    {
+      "fips": "4526845",
+      "name": "Fort Lawn",
+      "primary_county_fips": "45023",
+      "nav_county_fips": [
+        "45023"
+      ],
+      "bundle_fips": null,
+      "pop2024": 980
+    },
+    {
+      "fips": "4508245",
+      "name": "Branchville",
+      "primary_county_fips": "45075",
+      "nav_county_fips": [
+        "45075"
+      ],
+      "bundle_fips": null,
+      "pop2024": 969
+    },
+    {
+      "fips": "4514050",
+      "name": "Chesnee",
+      "primary_county_fips": "45083",
+      "nav_county_fips": [
+        "45083",
+        "45021"
+      ],
+      "bundle_fips": null,
+      "pop2024": 935
+    },
+    {
+      "fips": "4558795",
+      "name": "Quinby",
+      "primary_county_fips": "45041",
+      "nav_county_fips": [
+        "45041"
+      ],
+      "bundle_fips": null,
+      "pop2024": 895
+    },
+    {
+      "fips": "4502125",
+      "name": "Arcadia Lakes",
+      "primary_county_fips": "45079",
+      "nav_county_fips": [
+        "45079"
+      ],
+      "bundle_fips": null,
+      "pop2024": 856
+    },
+    {
+      "fips": "4532965",
+      "name": "Heath Springs",
+      "primary_county_fips": "45057",
+      "nav_county_fips": [
+        "45057"
+      ],
+      "bundle_fips": null,
+      "pop2024": 852
+    },
+    {
+      "fips": "4539805",
+      "name": "Lamar",
+      "primary_county_fips": "45031",
+      "nav_county_fips": [
+        "45031"
+      ],
+      "bundle_fips": null,
+      "pop2024": 851
+    },
+    {
+      "fips": "4537330",
+      "name": "Jonesville",
+      "primary_county_fips": "45087",
+      "nav_county_fips": [
+        "45087"
+      ],
+      "bundle_fips": null,
+      "pop2024": 815
+    },
+    {
+      "fips": "4563790",
+      "name": "Santee",
+      "primary_county_fips": "45075",
+      "nav_county_fips": [
+        "45075"
+      ],
+      "bundle_fips": null,
+      "pop2024": 814
+    },
+    {
+      "fips": "4543495",
+      "name": "McBee",
+      "primary_county_fips": "45025",
+      "nav_county_fips": [
+        "45025"
+      ],
+      "bundle_fips": null,
+      "pop2024": 812
+    },
+    {
+      "fips": "4530355",
+      "name": "Gray Court",
+      "primary_county_fips": "45059",
+      "nav_county_fips": [
+        "45059"
+      ],
+      "bundle_fips": null,
+      "pop2024": 802
+    },
+    {
+      "fips": "4536610",
+      "name": "Jefferson",
+      "primary_county_fips": "45025",
+      "nav_county_fips": [
+        "45025"
+      ],
+      "bundle_fips": null,
+      "pop2024": 788
+    },
+    {
+      "fips": "4570225",
+      "name": "Summerton",
+      "primary_county_fips": "45027",
+      "nav_county_fips": [
+        "45027"
+      ],
+      "bundle_fips": null,
+      "pop2024": 781
+    },
+    {
+      "fips": "4570675",
+      "name": "Swansea",
+      "primary_county_fips": "45063",
+      "nav_county_fips": [
+        "45063"
+      ],
+      "bundle_fips": null,
+      "pop2024": 771
+    },
+    {
+      "fips": "4507840",
+      "name": "Bowman",
+      "primary_county_fips": "45075",
+      "nav_county_fips": [
+        "45075"
+      ],
+      "bundle_fips": null,
+      "pop2024": 767
+    },
+    {
+      "fips": "4511125",
+      "name": "Campobello",
+      "primary_county_fips": "45083",
+      "nav_county_fips": [
+        "45083"
+      ],
+      "bundle_fips": null,
+      "pop2024": 766
+    },
+    {
+      "fips": "4566760",
+      "name": "Six Mile",
+      "primary_county_fips": "45077",
+      "nav_county_fips": [
+        "45077"
+      ],
+      "bundle_fips": null,
+      "pop2024": 761
+    },
+    {
+      "fips": "4539715",
+      "name": "Lake View",
+      "primary_county_fips": "45033",
+      "nav_county_fips": [
+        "45033"
+      ],
+      "bundle_fips": null,
+      "pop2024": 759
+    },
+    {
+      "fips": "4550515",
+      "name": "Norris",
+      "primary_county_fips": "45077",
+      "nav_county_fips": [
+        "45077"
+      ],
+      "bundle_fips": null,
+      "pop2024": 754
+    },
+    {
+      "fips": "4572745",
+      "name": "Turbeville",
+      "primary_county_fips": "45027",
+      "nav_county_fips": [
+        "45027"
+      ],
+      "bundle_fips": null,
+      "pop2024": 743
+    },
+    {
+      "fips": "4532335",
+      "name": "Harleyville",
+      "primary_county_fips": "45035",
+      "nav_county_fips": [
+        "45035"
+      ],
+      "bundle_fips": null,
+      "pop2024": 740
+    },
+    {
+      "fips": "4516990",
+      "name": "Cottageville",
+      "primary_county_fips": "45029",
+      "nav_county_fips": [
+        "45029"
+      ],
+      "bundle_fips": null,
+      "pop2024": 720
+    },
+    {
+      "fips": "4517215",
+      "name": "Coward",
+      "primary_county_fips": "45041",
+      "nav_county_fips": [
+        "45041"
+      ],
+      "bundle_fips": null,
+      "pop2024": 715
+    },
+    {
+      "fips": "4574050",
+      "name": "Wagener",
+      "primary_county_fips": "45003",
+      "nav_county_fips": [
+        "45003"
+      ],
+      "bundle_fips": null,
+      "pop2024": 691
+    },
+    {
+      "fips": "4550560",
+      "name": "North",
+      "primary_county_fips": "45075",
+      "nav_county_fips": [
+        "45075"
+      ],
+      "bundle_fips": null,
+      "pop2024": 677
+    },
+    {
+      "fips": "4564600",
+      "name": "Scranton",
+      "primary_county_fips": "45041",
+      "nav_county_fips": [
+        "45041"
+      ],
+      "bundle_fips": null,
+      "pop2024": 656
+    },
+    {
+      "fips": "4522390",
+      "name": "Eastover",
+      "primary_county_fips": "45079",
+      "nav_county_fips": [
+        "45079"
+      ],
+      "bundle_fips": null,
+      "pop2024": 628
+    },
+    {
+      "fips": "4543585",
+      "name": "McClellanville",
+      "primary_county_fips": "45019",
+      "nav_county_fips": [
+        "45019"
+      ],
+      "bundle_fips": null,
+      "pop2024": 626
+    },
+    {
+      "fips": "4555420",
+      "name": "Pelion",
+      "primary_county_fips": "45063",
+      "nav_county_fips": [
+        "45063"
+      ],
+      "bundle_fips": null,
+      "pop2024": 623
+    },
+    {
+      "fips": "4529050",
+      "name": "Gilbert",
+      "primary_county_fips": "45063",
+      "nav_county_fips": [
+        "45063"
+      ],
+      "bundle_fips": null,
+      "pop2024": 618
+    },
+    {
+      "fips": "4560325",
+      "name": "Ridge Spring",
+      "primary_county_fips": "45081",
+      "nav_county_fips": [
+        "45081"
+      ],
+      "bundle_fips": null,
+      "pop2024": 588
+    },
+    {
+      "fips": "4515310",
+      "name": "Clio",
+      "primary_county_fips": "45069",
+      "nav_county_fips": [
+        "45069"
+      ],
+      "bundle_fips": null,
+      "pop2024": 574
+    },
+    {
+      "fips": "4508830",
+      "name": "Briarcliffe Acres",
+      "primary_county_fips": "45051",
+      "nav_county_fips": [
+        "45051"
+      ],
+      "bundle_fips": null,
+      "pop2024": 568
+    },
+    {
+      "fips": "4545295",
+      "name": "Mayesville",
+      "primary_county_fips": "45085",
+      "nav_county_fips": [
+        "45085"
+      ],
+      "bundle_fips": null,
+      "pop2024": 550
+    },
+    {
+      "fips": "4552540",
+      "name": "Olanta",
+      "primary_county_fips": "45041",
+      "nav_county_fips": [
+        "45041"
+      ],
+      "bundle_fips": null,
+      "pop2024": 550
+    },
+    {
+      "fips": "4523470",
+      "name": "Elloree",
+      "primary_county_fips": "45075",
+      "nav_county_fips": [
+        "45075"
+      ],
+      "bundle_fips": null,
+      "pop2024": 548
+    },
+    {
+      "fips": "4557085",
+      "name": "Pinewood",
+      "primary_county_fips": "45085",
+      "nav_county_fips": [
+        "45085"
+      ],
+      "bundle_fips": null,
+      "pop2024": 501
+    },
+    {
+      "fips": "4565410",
+      "name": "Sharon",
+      "primary_county_fips": "45091",
+      "nav_county_fips": [
+        "45091"
+      ],
+      "bundle_fips": null,
+      "pop2024": 470
+    },
+    {
+      "fips": "4533640",
+      "name": "Hickory Grove",
+      "primary_county_fips": "45091",
+      "nav_county_fips": [
+        "45091"
+      ],
+      "bundle_fips": null,
+      "pop2024": 469
+    },
+    {
+      "fips": "4533145",
+      "name": "Hemingway",
+      "primary_county_fips": "45089",
+      "nav_county_fips": [
+        "45089"
+      ],
+      "bundle_fips": null,
+      "pop2024": 466
+    },
+    {
+      "fips": "4570315",
+      "name": "Summit",
+      "primary_county_fips": "45063",
+      "nav_county_fips": [
+        "45063"
+      ],
+      "bundle_fips": null,
+      "pop2024": 460
+    },
+    {
+      "fips": "4540210",
+      "name": "Lane",
+      "primary_county_fips": "45089",
+      "nav_county_fips": [
+        "45089"
+      ],
+      "bundle_fips": null,
+      "pop2024": 451
+    },
+    {
+      "fips": "4523200",
+      "name": "Ehrhardt",
+      "primary_county_fips": "45009",
+      "nav_county_fips": [
+        "45009"
+      ],
+      "bundle_fips": null,
+      "pop2024": 437
+    },
+    {
+      "fips": "4568470",
+      "name": "Springfield",
+      "primary_county_fips": "45075",
+      "nav_county_fips": [
+        "45075"
+      ],
+      "bundle_fips": null,
+      "pop2024": 437
+    },
+    {
+      "fips": "4507525",
+      "name": "Bonneau",
+      "primary_county_fips": "45015",
+      "nav_county_fips": [
+        "45015"
+      ],
+      "bundle_fips": null,
+      "pop2024": 433
+    },
+    {
+      "fips": "4517890",
+      "name": "Cross Hill",
+      "primary_county_fips": "45059",
+      "nav_county_fips": [
+        "45059"
+      ],
+      "bundle_fips": null,
+      "pop2024": 431
+    },
+    {
+      "fips": "4567435",
+      "name": "Society Hill",
+      "primary_county_fips": "45031",
+      "nav_county_fips": [
+        "45031"
+      ],
+      "bundle_fips": null,
+      "pop2024": 426
+    },
+    {
+      "fips": "4533820",
+      "name": "Hilda",
+      "primary_county_fips": "45011",
+      "nav_county_fips": [
+        "45011"
+      ],
+      "bundle_fips": null,
+      "pop2024": 421
+    },
+    {
+      "fips": "4503205",
+      "name": "Atlantic Beach",
+      "primary_county_fips": "45051",
+      "nav_county_fips": [
+        "45051"
+      ],
+      "bundle_fips": null,
+      "pop2024": 418
+    },
+    {
+      "fips": "4509865",
+      "name": "Brunson",
+      "primary_county_fips": "45049",
+      "nav_county_fips": [
+        "45049"
+      ],
+      "bundle_fips": null,
+      "pop2024": 416
+    },
+    {
+      "fips": "4572520",
+      "name": "Trenton",
+      "primary_county_fips": "45037",
+      "nav_county_fips": [
+        "45037"
+      ],
+      "bundle_fips": null,
+      "pop2024": 409
+    },
+    {
+      "fips": "4576435",
+      "name": "West Union",
+      "primary_county_fips": "45073",
+      "nav_county_fips": [
+        "45073"
+      ],
+      "bundle_fips": null,
+      "pop2024": 389
+    },
+    {
+      "fips": "4510900",
+      "name": "Cameron",
+      "primary_county_fips": "45017",
+      "nav_county_fips": [
+        "45017"
+      ],
+      "bundle_fips": null,
+      "pop2024": 374
+    },
+    {
+      "fips": "4542190",
+      "name": "Lockhart",
+      "primary_county_fips": "45087",
+      "nav_county_fips": [
+        "45087"
+      ],
+      "bundle_fips": null,
+      "pop2024": 370
+    },
+    {
+      "fips": "4530535",
+      "name": "Greeleyville",
+      "primary_county_fips": "45089",
+      "nav_county_fips": [
+        "45089"
+      ],
+      "bundle_fips": null,
+      "pop2024": 359
+    },
+    {
+      "fips": "4563115",
+      "name": "Salley",
+      "primary_county_fips": "45003",
+      "nav_county_fips": [
+        "45003"
+      ],
+      "bundle_fips": null,
+      "pop2024": 351
+    },
+    {
+      "fips": "4506040",
+      "name": "Bethune",
+      "primary_county_fips": "45055",
+      "nav_county_fips": [
+        "45055"
+      ],
+      "bundle_fips": null,
+      "pop2024": 337
+    },
+    {
+      "fips": "4519870",
+      "name": "Donalds",
+      "primary_county_fips": "45001",
+      "nav_county_fips": [
+        "45001"
+      ],
+      "bundle_fips": null,
+      "pop2024": 324
+    },
+    {
+      "fips": "4562080",
+      "name": "Ruby",
+      "primary_county_fips": "45025",
+      "nav_county_fips": [
+        "45025"
+      ],
+      "bundle_fips": null,
+      "pop2024": 322
+    },
+    {
+      "fips": "4511755",
+      "name": "Carlisle",
+      "primary_county_fips": "45087",
+      "nav_county_fips": [
+        "45087"
+      ],
+      "bundle_fips": null,
+      "pop2024": 315
+    },
+    {
+      "fips": "4549390",
+      "name": "Neeses",
+      "primary_county_fips": "45075",
+      "nav_county_fips": [
+        "45075"
+      ],
+      "bundle_fips": null,
+      "pop2024": 315
+    },
+    {
+      "fips": "4543360",
+      "name": "Lynchburg",
+      "primary_county_fips": "45061",
+      "nav_county_fips": [
+        "45061"
+      ],
+      "bundle_fips": null,
+      "pop2024": 309
+    },
+    {
+      "fips": "4543675",
+      "name": "McConnells",
+      "primary_county_fips": "45091",
+      "nav_county_fips": [
+        "45091"
+      ],
+      "bundle_fips": null,
+      "pop2024": 287
+    },
+    {
+      "fips": "4554925",
+      "name": "Patrick",
+      "primary_county_fips": "45025",
+      "nav_county_fips": [
+        "45025"
+      ],
+      "bundle_fips": null,
+      "pop2024": 286
+    },
+    {
+      "fips": "4551550",
+      "name": "Norway",
+      "primary_county_fips": "45075",
+      "nav_county_fips": [
+        "45075"
+      ],
+      "bundle_fips": null,
+      "pop2024": 276
+    },
+    {
+      "fips": "4559920",
+      "name": "Richburg",
+      "primary_county_fips": "45023",
+      "nav_county_fips": [
+        "45023"
+      ],
+      "bundle_fips": null,
+      "pop2024": 271
+    },
+    {
+      "fips": "4541965",
+      "name": "Little Mountain",
+      "primary_county_fips": "45071",
+      "nav_county_fips": [
+        "45071"
+      ],
+      "bundle_fips": null,
+      "pop2024": 262
+    },
+    {
+      "fips": "4529005",
+      "name": "Gifford",
+      "primary_county_fips": "45049",
+      "nav_county_fips": [
+        "45049"
+      ],
+      "bundle_fips": null,
+      "pop2024": 260
+    },
+    {
+      "fips": "4560415",
+      "name": "Ridgeway",
+      "primary_county_fips": "45039",
+      "nav_county_fips": [
+        "45039"
+      ],
+      "bundle_fips": null,
+      "pop2024": 255
+    },
+    {
+      "fips": "4567255",
+      "name": "Snelling",
+      "primary_county_fips": "45011",
+      "nav_county_fips": [
+        "45011"
+      ],
+      "bundle_fips": null,
+      "pop2024": 253
+    },
+    {
+      "fips": "4562035",
+      "name": "Rowesville",
+      "primary_county_fips": "45075",
+      "nav_county_fips": [
+        "45075"
+      ],
+      "bundle_fips": null,
+      "pop2024": 251
+    },
+    {
+      "fips": "4524100",
+      "name": "Eutawville",
+      "primary_county_fips": "45075",
+      "nav_county_fips": [
+        "45075"
+      ],
+      "bundle_fips": null,
+      "pop2024": 241
+    },
+    {
+      "fips": "4513060",
+      "name": "Central Pacolet",
+      "primary_county_fips": "45083",
+      "nav_county_fips": [
+        "45083"
+      ],
+      "bundle_fips": null,
+      "pop2024": 236
+    },
+    {
+      "fips": "4555060",
+      "name": "Paxville",
+      "primary_county_fips": "45027",
+      "nav_county_fips": [
+        "45027"
+      ],
+      "bundle_fips": null,
+      "pop2024": 225
+    },
+    {
+      "fips": "4527835",
+      "name": "Furman",
+      "primary_county_fips": "45049",
+      "nav_county_fips": [
+        "45049"
+      ],
+      "bundle_fips": null,
+      "pop2024": 223
+    },
+    {
+      "fips": "4550110",
+      "name": "Nichols",
+      "primary_county_fips": "45067",
+      "nav_county_fips": [
+        "45067"
+      ],
+      "bundle_fips": null,
+      "pop2024": 221
+    },
+    {
+      "fips": "4555960",
+      "name": "Perry",
+      "primary_county_fips": "45003",
+      "nav_county_fips": [
+        "45003"
+      ],
+      "bundle_fips": null,
+      "pop2024": 209
+    },
+    {
+      "fips": "4547320",
+      "name": "Monetta",
+      "primary_county_fips": "45003",
+      "nav_county_fips": [
+        "45003",
+        "45081"
+      ],
+      "bundle_fips": null,
+      "pop2024": 207
+    },
+    {
+      "fips": "4552585",
+      "name": "Olar",
+      "primary_county_fips": "45009",
+      "nav_county_fips": [
+        "45009"
+      ],
+      "bundle_fips": null,
+      "pop2024": 206
+    },
+    {
+      "fips": "4559380",
+      "name": "Reevesville",
+      "primary_county_fips": "45035",
+      "nav_county_fips": [
+        "45035"
+      ],
+      "bundle_fips": null,
+      "pop2024": 197
+    },
+    {
+      "fips": "4570045",
+      "name": "Stuckey",
+      "primary_county_fips": "45089",
+      "nav_county_fips": [
+        "45089"
+      ],
+      "bundle_fips": null,
+      "pop2024": 189
+    },
+    {
+      "fips": "4542865",
+      "name": "Lowrys",
+      "primary_county_fips": "45023",
+      "nav_county_fips": [
+        "45023"
+      ],
+      "bundle_fips": null,
+      "pop2024": 184
+    },
+    {
+      "fips": "4568875",
+      "name": "Starr",
+      "primary_county_fips": "45007",
+      "nav_county_fips": [
+        "45007"
+      ],
+      "bundle_fips": null,
+      "pop2024": 174
+    },
+    {
+      "fips": "4566400",
+      "name": "Silverstreet",
+      "primary_county_fips": "45071",
+      "nav_county_fips": [
+        "45071"
+      ],
+      "bundle_fips": null,
+      "pop2024": 169
+    },
+    {
+      "fips": "4534225",
+      "name": "Hodges",
+      "primary_county_fips": "45047",
+      "nav_county_fips": [
+        "45047"
+      ],
+      "bundle_fips": null,
+      "pop2024": 165
+    },
+    {
+      "fips": "4564465",
+      "name": "Scotia",
+      "primary_county_fips": "45049",
+      "nav_county_fips": [
+        "45049"
+      ],
+      "bundle_fips": null,
+      "pop2024": 159
+    },
+    {
+      "fips": "4574995",
+      "name": "Waterloo",
+      "primary_county_fips": "45059",
+      "nav_county_fips": [
+        "45059"
+      ],
+      "bundle_fips": null,
+      "pop2024": 156
+    },
+    {
+      "fips": "4578910",
+      "name": "Woodford",
+      "primary_county_fips": "45075",
+      "nav_county_fips": [
+        "45075"
+      ],
+      "bundle_fips": null,
+      "pop2024": 156
+    },
+    {
+      "fips": "4565005",
+      "name": "Sellers",
+      "primary_county_fips": "45067",
+      "nav_county_fips": [
+        "45067"
+      ],
+      "bundle_fips": null,
+      "pop2024": 146
+    },
+    {
+      "fips": "4570900",
+      "name": "Sycamore",
+      "primary_county_fips": "45005",
+      "nav_county_fips": [
+        "45005"
+      ],
+      "bundle_fips": null,
+      "pop2024": 143
+    },
+    {
+      "fips": "4538950",
+      "name": "Kline",
+      "primary_county_fips": "45011",
+      "nav_county_fips": [
+        "45011"
+      ],
+      "bundle_fips": null,
+      "pop2024": 142
+    },
+    {
+      "fips": "4561495",
+      "name": "Rockville",
+      "primary_county_fips": "45019",
+      "nav_county_fips": [
+        "45019"
+      ],
+      "bundle_fips": null,
+      "pop2024": 141
+    },
+    {
+      "fips": "4523335",
+      "name": "Elko",
+      "primary_county_fips": "45011",
+      "nav_county_fips": [
+        "45011"
+      ],
+      "bundle_fips": null,
+      "pop2024": 140
+    },
+    {
+      "fips": "4548355",
+      "name": "Mount Croghan",
+      "primary_county_fips": "45025",
+      "nav_county_fips": [
+        "45025"
+      ],
+      "bundle_fips": null,
+      "pop2024": 135
+    },
+    {
+      "fips": "4555015",
+      "name": "Pawleys Island",
+      "primary_county_fips": "45043",
+      "nav_county_fips": [
+        "45043"
+      ],
+      "bundle_fips": null,
+      "pop2024": 134
+    },
+    {
+      "fips": "4557850",
+      "name": "Pomaria",
+      "primary_county_fips": "45071",
+      "nav_county_fips": [
+        "45071"
+      ],
+      "bundle_fips": null,
+      "pop2024": 132
+    },
+    {
+      "fips": "4516855",
+      "name": "Cordova",
+      "primary_county_fips": "45075",
+      "nav_county_fips": [
+        "45075"
+      ],
+      "bundle_fips": null,
+      "pop2024": 131
+    },
+    {
+      "fips": "4554700",
+      "name": "Parksville",
+      "primary_county_fips": "45065",
+      "nav_county_fips": [
+        "45065"
+      ],
+      "bundle_fips": null,
+      "pop2024": 130
+    },
+    {
+      "fips": "4542100",
+      "name": "Livingston",
+      "primary_county_fips": "45075",
+      "nav_county_fips": [
+        "45075"
+      ],
+      "bundle_fips": null,
+      "pop2024": 128
+    },
+    {
+      "fips": "4562980",
+      "name": "Salem",
+      "primary_county_fips": "45073",
+      "nav_county_fips": [
+        "45073"
+      ],
+      "bundle_fips": null,
+      "pop2024": 127
+    },
+    {
+      "fips": "4573510",
+      "name": "Vance",
+      "primary_county_fips": "45075",
+      "nav_county_fips": [
+        "45075"
+      ],
+      "bundle_fips": null,
+      "pop2024": 124
+    },
+    {
+      "fips": "4574590",
+      "name": "Ward",
+      "primary_county_fips": "45081",
+      "nav_county_fips": [
+        "45081"
+      ],
+      "bundle_fips": null,
+      "pop2024": 124
+    },
+    {
+      "fips": "4542820",
+      "name": "Lowndesville",
+      "primary_county_fips": "45001",
+      "nav_county_fips": [
+        "45001"
+      ],
+      "bundle_fips": null,
+      "pop2024": 122
+    },
+    {
+      "fips": "4578190",
+      "name": "Windsor",
+      "primary_county_fips": "45003",
+      "nav_county_fips": [
+        "45003"
+      ],
+      "bundle_fips": null,
+      "pop2024": 122
+    },
+    {
+      "fips": "4506850",
+      "name": "Blenheim",
+      "primary_county_fips": "45069",
+      "nav_county_fips": [
+        "45069"
+      ],
+      "bundle_fips": null,
+      "pop2024": 107
+    },
+    {
+      "fips": "4543090",
+      "name": "Luray",
+      "primary_county_fips": "45049",
+      "nav_county_fips": [
+        "45049"
+      ],
+      "bundle_fips": null,
+      "pop2024": 99
+    },
+    {
+      "fips": "4567165",
+      "name": "Smoaks",
+      "primary_county_fips": "45029",
+      "nav_county_fips": [
+        "45029"
+      ],
+      "bundle_fips": null,
+      "pop2024": 98
+    },
+    {
+      "fips": "4577785",
+      "name": "Williams",
+      "primary_county_fips": "45029",
+      "nav_county_fips": [
+        "45029"
+      ],
+      "bundle_fips": null,
+      "pop2024": 97
+    },
+    {
+      "fips": "4572655",
+      "name": "Troy",
+      "primary_county_fips": "45047",
+      "nav_county_fips": [
+        "45047"
+      ],
+      "bundle_fips": null,
+      "pop2024": 87
+    },
+    {
+      "fips": "4542280",
+      "name": "Lodge",
+      "primary_county_fips": "45029",
+      "nav_county_fips": [
+        "45029"
+      ],
+      "bundle_fips": null,
+      "pop2024": 82
+    },
+    {
+      "fips": "4557670",
+      "name": "Plum Branch",
+      "primary_county_fips": "45065",
+      "nav_county_fips": [
+        "45065"
+      ],
+      "bundle_fips": null,
+      "pop2024": 82
+    },
+    {
+      "fips": "4536475",
+      "name": "Jamestown",
+      "primary_county_fips": "45015",
+      "nav_county_fips": [
+        "45015"
+      ],
+      "bundle_fips": null,
+      "pop2024": 73
+    },
+    {
+      "fips": "4571305",
+      "name": "Tatum",
+      "primary_county_fips": "45069",
+      "nav_county_fips": [
+        "45069"
+      ],
+      "bundle_fips": null,
+      "pop2024": 70
+    },
+    {
+      "fips": "4572880",
+      "name": "Ulmer",
+      "primary_county_fips": "45005",
+      "nav_county_fips": [
+        "45005"
+      ],
+      "bundle_fips": null,
+      "pop2024": 59
+    },
+    {
+      "fips": "4567210",
+      "name": "Smyrna",
+      "primary_county_fips": "45091",
+      "nav_county_fips": [
+        "45091",
+        "45021"
+      ],
+      "bundle_fips": null,
+      "pop2024": 55
+    },
+    {
+      "fips": "4555150",
+      "name": "Peak",
+      "primary_county_fips": "45071",
+      "nav_county_fips": [
+        "45071"
+      ],
+      "bundle_fips": null,
+      "pop2024": 54
+    },
+    {
+      "fips": "4529950",
+      "name": "Govan",
+      "primary_county_fips": "45009",
+      "nav_county_fips": [
+        "45009"
+      ],
+      "bundle_fips": null,
+      "pop2024": 53
+    },
+    {
+      "fips": "4536655",
+      "name": "Jenkinsville",
+      "primary_county_fips": "45039",
+      "nav_county_fips": [
+        "45039"
+      ],
+      "bundle_fips": null,
+      "pop2024": 39
+    },
+    {
+      "fips": "4516720",
+      "name": "Cope",
+      "primary_county_fips": "45075",
+      "nav_county_fips": [
+        "45075"
+      ],
+      "bundle_fips": null,
+      "pop2024": 32
+    }
+  ],
+  "school_districts": [
+    {
+      "fips": "4500690",
+      "name": "Abbeville County School District",
+      "bundle_fips": "45001"
+    },
+    {
+      "fips": "4500720",
+      "name": "Aiken County School District",
+      "bundle_fips": "45003"
+    },
+    {
+      "fips": "4500750",
+      "name": "Allendale County School District",
+      "bundle_fips": "45005"
+    },
+    {
+      "fips": "4500780",
+      "name": "Anderson School District 1",
+      "bundle_fips": "45007"
+    },
+    {
+      "fips": "4500810",
+      "name": "Anderson School District 2",
+      "bundle_fips": "45007"
+    },
+    {
+      "fips": "4500840",
+      "name": "Anderson School District 3",
+      "bundle_fips": "45007"
+    },
+    {
+      "fips": "4500870",
+      "name": "Anderson School District 4",
+      "bundle_fips": "45007"
+    },
+    {
+      "fips": "4500900",
+      "name": "Anderson School District 5",
+      "bundle_fips": "45007"
+    },
+    {
+      "fips": "4503916",
+      "name": "Bamberg County School District",
+      "bundle_fips": "45009"
+    },
+    {
+      "fips": "4599501",
+      "name": "Barnwell County School District",
+      "bundle_fips": "45011"
+    },
+    {
+      "fips": "4501110",
+      "name": "Beaufort County School District",
+      "bundle_fips": "45013"
+    },
+    {
+      "fips": "4501170",
+      "name": "Berkeley County School District",
+      "bundle_fips": "45015"
+    },
+    {
+      "fips": "4501250",
+      "name": "Calhoun County School District",
+      "bundle_fips": "45017"
+    },
+    {
+      "fips": "4501440",
+      "name": "Charleston County School District",
+      "bundle_fips": "45019"
+    },
+    {
+      "fips": "4501500",
+      "name": "Cherokee County School District",
+      "bundle_fips": "45021"
+    },
+    {
+      "fips": "4501530",
+      "name": "Chester County School District",
+      "bundle_fips": "45023"
+    },
+    {
+      "fips": "4501560",
+      "name": "Chesterfield County School District",
+      "bundle_fips": "45025"
+    },
+    {
+      "fips": "4503915",
+      "name": "Clarendon County School District",
+      "bundle_fips": "45027"
+    },
+    {
+      "fips": "4501830",
+      "name": "Colleton County School District",
+      "bundle_fips": "45029"
+    },
+    {
+      "fips": "4501860",
+      "name": "Darlington County School District",
+      "bundle_fips": "45031"
+    },
+    {
+      "fips": "4501950",
+      "name": "Dillon School District 3",
+      "bundle_fips": "45033"
+    },
+    {
+      "fips": "4501920",
+      "name": "Dillon School District 4",
+      "bundle_fips": "45033"
+    },
+    {
+      "fips": "4502010",
+      "name": "Dorchester School District 2",
+      "bundle_fips": "45035"
+    },
+    {
+      "fips": "4500002",
+      "name": "Dorchester School District 4",
+      "bundle_fips": "45035"
+    },
+    {
+      "fips": "4502070",
+      "name": "Edgefield County School District",
+      "bundle_fips": "45037"
+    },
+    {
+      "fips": "4502100",
+      "name": "Fairfield County School District",
+      "bundle_fips": "45039"
+    },
+    {
+      "fips": "4502130",
+      "name": "Florence School District 1",
+      "bundle_fips": "45041"
+    },
+    {
+      "fips": "4502160",
+      "name": "Florence School District 2",
+      "bundle_fips": "45041"
+    },
+    {
+      "fips": "4502190",
+      "name": "Florence School District 3",
+      "bundle_fips": "45041"
+    },
+    {
+      "fips": "4502250",
+      "name": "Florence School District 5",
+      "bundle_fips": "45041"
+    },
+    {
+      "fips": "4502280",
+      "name": "Georgetown County School District",
+      "bundle_fips": "45043"
+    },
+    {
+      "fips": "4502310",
+      "name": "Greenville County School District",
+      "bundle_fips": "45045"
+    },
+    {
+      "fips": "4502340",
+      "name": "Greenwood School District 50",
+      "bundle_fips": "45047"
+    },
+    {
+      "fips": "4502370",
+      "name": "Greenwood School District 51",
+      "bundle_fips": "45047"
+    },
+    {
+      "fips": "4502400",
+      "name": "Greenwood School District 52",
+      "bundle_fips": "45047"
+    },
+    {
+      "fips": "4503912",
+      "name": "Hampton County School District",
+      "bundle_fips": "45049"
+    },
+    {
+      "fips": "4502490",
+      "name": "Horry County School District",
+      "bundle_fips": "45051"
+    },
+    {
+      "fips": "4502520",
+      "name": "Jasper County School District",
+      "bundle_fips": "45053"
+    },
+    {
+      "fips": "4502550",
+      "name": "Kershaw County School District",
+      "bundle_fips": "45055"
+    },
+    {
+      "fips": "4502580",
+      "name": "Lancaster County School District",
+      "bundle_fips": "45057"
+    },
+    {
+      "fips": "4502610",
+      "name": "Laurens School District 55",
+      "bundle_fips": "45059"
+    },
+    {
+      "fips": "4502640",
+      "name": "Laurens School District 56",
+      "bundle_fips": "45059"
+    },
+    {
+      "fips": "4502670",
+      "name": "Lee County School District",
+      "bundle_fips": "45061"
+    },
+    {
+      "fips": "4502700",
+      "name": "Lexington School District 1",
+      "bundle_fips": "45063"
+    },
+    {
+      "fips": "4502730",
+      "name": "Lexington School District 2",
+      "bundle_fips": "45063"
+    },
+    {
+      "fips": "4502760",
+      "name": "Lexington School District 3",
+      "bundle_fips": "45063"
+    },
+    {
+      "fips": "4502790",
+      "name": "Lexington School District 4",
+      "bundle_fips": "45063"
+    },
+    {
+      "fips": "4502820",
+      "name": "Lexington School District 5",
+      "bundle_fips": "45063"
+    },
+    {
+      "fips": "4503908",
+      "name": "Marion School District 10",
+      "bundle_fips": "45067"
+    },
+    {
+      "fips": "4502970",
+      "name": "Marlboro County School District",
+      "bundle_fips": "45069"
+    },
+    {
+      "fips": "4503000",
+      "name": "McCormick County School District",
+      "bundle_fips": "45065"
+    },
+    {
+      "fips": "4503030",
+      "name": "Newberry County School District",
+      "bundle_fips": "45071"
+    },
+    {
+      "fips": "4503060",
+      "name": "Oconee County School District",
+      "bundle_fips": "45073"
+    },
+    {
+      "fips": "4503910",
+      "name": "Orangeburg County School District",
+      "bundle_fips": "45075"
+    },
+    {
+      "fips": "4503330",
+      "name": "Pickens County School District",
+      "bundle_fips": "45077"
+    },
+    {
+      "fips": "4503360",
+      "name": "Richland School District 1",
+      "bundle_fips": "45079"
+    },
+    {
+      "fips": "4503390",
+      "name": "Richland School District 2",
+      "bundle_fips": "45079"
+    },
+    {
+      "fips": "4503460",
+      "name": "Saluda County School District",
+      "bundle_fips": "45081"
+    },
+    {
+      "fips": "4503480",
+      "name": "Spartanburg School District 1",
+      "bundle_fips": "45083"
+    },
+    {
+      "fips": "4503510",
+      "name": "Spartanburg School District 2",
+      "bundle_fips": "45083"
+    },
+    {
+      "fips": "4503540",
+      "name": "Spartanburg School District 3",
+      "bundle_fips": "45083"
+    },
+    {
+      "fips": "4503570",
+      "name": "Spartanburg School District 4",
+      "bundle_fips": "45083"
+    },
+    {
+      "fips": "4503600",
+      "name": "Spartanburg School District 5",
+      "bundle_fips": "45083"
+    },
+    {
+      "fips": "4503630",
+      "name": "Spartanburg School District 6",
+      "bundle_fips": "45083"
+    },
+    {
+      "fips": "4503660",
+      "name": "Spartanburg School District 7",
+      "bundle_fips": "45083"
+    },
+    {
+      "fips": "4503902",
+      "name": "Sumter County Consolidated School District",
+      "bundle_fips": "45085"
+    },
+    {
+      "fips": "4503750",
+      "name": "Union County School District",
+      "bundle_fips": "45087"
+    },
+    {
+      "fips": "4503780",
+      "name": "Williamsburg County School District",
+      "bundle_fips": "45089"
+    },
+    {
+      "fips": "4503810",
+      "name": "York School District 1",
+      "bundle_fips": "45091"
+    },
+    {
+      "fips": "4503840",
+      "name": "York School District 2",
+      "bundle_fips": "45091"
+    },
+    {
+      "fips": "4503870",
+      "name": "York School District 3",
+      "bundle_fips": "45091"
+    },
+    {
+      "fips": "4503900",
+      "name": "York School District 4",
+      "bundle_fips": "45091"
+    }
+  ]
+}
