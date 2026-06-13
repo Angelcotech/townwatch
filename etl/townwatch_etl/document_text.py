@@ -17,6 +17,8 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import shutil
+import subprocess
 import tempfile
 from pathlib import Path
 
@@ -29,6 +31,17 @@ from .extractors.pdf_text import CONTENT_CHAR_THRESHOLD as _TEXT_LAYER_MIN_CHARS
 # tiny blank PDFs for never-uploaded documents) — there's nothing to OCR, so we
 # don't waste a Mistral page on it. Matches the agenda extractor's stub cutoff.
 _STUB_PDF_SIZE_BYTES = 5_000
+
+# Above this size, pdfplumber/pdfminer's in-memory object graph balloons to
+# many GB on image-heavy government packets (a 196 MB CivicClerk packet peaked
+# ~11 GB; a 238 MB one would exceed the 24 GB container) — page-windowing
+# doesn't help because the whole byte buffer + xref is parsed per open. These
+# documents go to pdftotext (poppler), a streaming C extractor that runs at
+# near-constant memory regardless of size. The threshold sits well above the
+# packets pdfplumber handles fine (~38 MB / 864 pages peaked only ~356 MB) and
+# well below the ones that OOM, so layout fidelity is preserved everywhere it
+# matters and only genuine monsters take the streaming path.
+_LARGE_PDF_BYTES = 60_000_000
 
 
 def content_hash(data: bytes) -> str:
@@ -66,7 +79,38 @@ def put(conn, hash_: str, *, source_url: str | None, method: str, pages: list[st
     _record_url(conn, source_url, hash_)
 
 
+def _pdftotext_pages(data: bytes) -> list[str]:
+    """Stream text from an arbitrarily large PDF via poppler's pdftotext (a C
+    tool that runs at near-constant memory, unlike pdfminer). Pages are split
+    on the form-feed pdftotext emits between pages. Used only for documents too
+    large for pdfplumber to open safely; raises if poppler isn't present so the
+    caller can fall back."""
+    if not shutil.which("pdftotext"):
+        raise RuntimeError("pdftotext (poppler-utils) not installed")
+    with tempfile.NamedTemporaryFile(suffix=".pdf") as f:
+        f.write(data)
+        f.flush()
+        # -enc UTF-8 keeps non-ASCII intact; "-" writes to stdout. A generous
+        # timeout guards a pathological file without unbounded hang.
+        out = subprocess.run(
+            ["pdftotext", "-enc", "UTF-8", f.name, "-"],
+            capture_output=True, timeout=900, check=True,
+        ).stdout.decode("utf-8", errors="replace")
+    # pdftotext separates pages with \x0c (form feed).
+    return [p.strip() for p in out.split("\x0c")]
+
+
 def _text_layer_pages(data: bytes) -> list[str]:
+    # Oversized PDFs go to the streaming extractor — pdfplumber would OOM the
+    # container on them (see _LARGE_PDF_BYTES). Fall back to pdfplumber if
+    # poppler is somehow absent (local dev before the image rebuild), accepting
+    # the memory risk only in that fallback.
+    if len(data) > _LARGE_PDF_BYTES:
+        try:
+            return _pdftotext_pages(data)
+        except Exception:
+            pass  # fall through to pdfplumber as a last resort
+
     # pdfplumber, matching the agenda/minutes extractors' text engine — so every
     # consumer of the store reads the same (higher-fidelity) text it would have
     # extracted itself, not pypdf's weaker output. Identity resolution depends on

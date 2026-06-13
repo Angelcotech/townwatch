@@ -22,10 +22,17 @@ FROM python:3.12-slim
 # handles .doc / .docx → text/pdf conversion. Skip the full GUI cask.
 # fonts-liberation is needed so DOC layout renders correctly during
 # headless conversion.
+# poppler-utils provides pdftotext — a streaming C extractor that pulls text
+# from arbitrarily large PDFs at near-constant memory. pdfplumber/pdfminer
+# (used for layout-fidelity on normal docs) balloons to 10+ GB on big
+# image-heavy government packets (a 196 MB CivicClerk packet peaked ~11 GB),
+# so document_text routes oversized PDFs to pdftotext instead — the permanent,
+# scale-proof path as packets keep growing.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libreoffice-core \
         libreoffice-writer \
         fonts-liberation \
+        poppler-utils \
         ca-certificates \
         curl \
     && rm -rf /var/lib/apt/lists/*
