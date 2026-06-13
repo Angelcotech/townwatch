@@ -11,7 +11,7 @@
    "fips": "45"
   },
   "universe": {
-   "note": "Demand-driven Tier-2 recon of the Dorchester County bundle, run AHEAD of SC's full Tier-1 state dossier (states.json SC phases still not_started). Not a state-universe enumeration.",
+   "note": "Tier-2 Dorchester bundle (recon) + Phase D platform census (stratified 46-jurisdiction sample), run alongside SC's Tier-1 dossier (states.json owned by the dossier session). Not a full state-universe enumeration; the verified 46/271 munis, 15/46 counties, 18/72 districts are a platform-distribution sample.",
    "source": "U.S. Census / SC Dept. of Education; per-entity sources cited in each entry's verification block."
   },
   "field_vocabularies": {
@@ -92,6 +92,10 @@
    {
     "version": "0.1.1 (2026-06-13)",
     "change": "check-urls liveness audit classified. Dorchester County: official .gov pages return 403 (Cloudflare/Imperva bot wall — fetch_tier:browser; pages exist) and NextRequest returns 204 (JS SPA, no body to non-JS clients) — all real, off-wall Granicus + S3 documents fetch 200. DD2 BoardDocs returns 403 to the throttled civic client but 200 to a browser UA (UA-gated, real). DD2 HARD FAILURE fixed: two search-indexed ddtwo.org FOIA/public-information leaf pages 404 to a browser UA (site restructure) — replaced with live (200) Community-Relations + Board-Policy-KDB URLs and recorded the 404 as a gap. No absence claim rests on a dead URL."
+   },
+   {
+    "version": "0.2 (2026-06-13)",
+    "change": "Phase D platform census added — 43 new entries (46 total). Batches: top10_population (10 counties), seats_and_cities (13 munis), largest_districts (12), rural_sample (4 counties + 4 districts). 7 parallel recon agents, controlled vocab reused from GA. Findings: counties — 4 largest run CUSTOM/bespoke agenda systems (Greenville .aspx, Charleston CCMIMS, Richland GovAccess, Horry Revize); districts — BoardDocs dominant (10/18), Diligent family (BoardDocs+Diligent Community) = 72%, the SC analog of GA's Simbli=27/33 but a different vendor (Simbli appears once); same-county numbered districts do NOT share a platform; Diligent migrating BoardDocs->Diligent One Platform (Lexington1, Beaufort SD, DD4). 9 entries capped high->medium (unrefuted absence + no per-entry adversarial in a census). All 46 pass `recon validate`. See PLATFORM_CENSUS.md."
    }
   ]
  },
@@ -292,6 +296,1961 @@
     }
    },
    "notes": "Superintendent Jeffrey Beckwith (selected 2023-04). Board chair Mrs. Phyllis Hughes. District office 500 Ridge Street, St. George SC 29477; phone 843-563-4535; fax 843-563-9269; general info@dd4.k12.sc.us. Successor district to former Dorchester District 1 + District 3 (consolidated into DD4 by SC Act, 1985-86). Smaller, rural (St. George, Harleyville, Reevesville, Grover; Woodland High). Main website is Apptegy/Thrillshare (org 25123). CONSOLIDATION WATCH: SC bills 3154 (2023-24) and 3470 (2025-26) study merging DD2 + DD4 (voter approval required in each district)."
+  },
+  "greenville-county-sc": {
+   "name": "Greenville County",
+   "type": "county",
+   "county": "Greenville County",
+   "county_seat": "Greenville",
+   "population_rank": 1,
+   "official_website": "https://www.greenvillecounty.org",
+   "agenda_platform": "custom",
+   "agenda_source_url": "https://www.greenvillecounty.org/apps/DirectoryListings/countycouncilagendas/",
+   "records_custodian_name": "Theresa Kizer",
+   "records_custodian_title": "Clerk to County Council",
+   "records_custodian_email": null,
+   "clerk_email_access": "obfuscated",
+   "records_intake": "mail_or_fax",
+   "records_intake_url": "https://www.greenvillecounty.org/AnswerBook/FOI.aspx",
+   "public_comment": {
+    "channel": "in_person_only",
+    "comment_service": "none",
+    "recipient_email": null,
+    "deadline_rule": null
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.greenvillecounty.org/Council/Information.aspx",
+      "https://www.greenvillecounty.org/Council/Minutes.aspx",
+      "https://www.greenvillecounty.org/Council/ContactInfo.aspx",
+      "https://www.greenvillecounty.org/apps/DirectoryListings/countycouncilagendas/",
+      "https://www.greenvillecounty.org/AnswerBook/FOI.aspx"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Greenville County SC council meeting agendas minutes official site",
+      "Greenville County SC clerk to council \"clerk of council\" email public comment council meeting",
+      "Greenville County SC FOIA records request (via FOI.aspx fetch)"
+     ]
+    },
+    "sibling_control": "Excluded City of Greenville (greenvillesc.gov, CivicClerk portal) — county is greenvillecounty.org, self-hosted .aspx."
+   },
+   "notes": "County self-hosts agendas/minutes on a legacy ASP.NET app (DirectoryListings + CalendarGC); no off-the-shelf vendor — needs bespoke scraper. Low/no platform license cost. FOIA routed to County Attorney's Office by mail/fax (fax 864.467.5964). Clerk Theresa Kizer email obfuscated on site. City of Greenville is a separate CivicClerk tenant — do not conflate.",
+   "batch": "top10_population"
+  },
+  "charleston-county-sc": {
+   "name": "Charleston County",
+   "type": "county",
+   "county": "Charleston County",
+   "county_seat": "Charleston",
+   "population_rank": 2,
+   "official_website": "https://www.charlestoncounty.org",
+   "agenda_platform": "custom",
+   "agenda_source_url": "https://ccmims.charlestoncounty.org/",
+   "records_custodian_name": "Kristen Salisbury",
+   "records_custodian_title": "Clerk of Council",
+   "records_custodian_email": "KSalisbury@CharlestonCounty.org",
+   "clerk_email_access": "plaintext",
+   "records_intake": "web_form",
+   "records_intake_url": "https://charlestoncounty.streamlinegov.us/",
+   "public_comment": {
+    "channel": "email",
+    "comment_service": "email",
+    "recipient_email": "Public-Comments@CharlestonCounty.org",
+    "deadline_rule": null
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "high",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.charlestoncounty.org/departments/county-council/index.php",
+      "https://www.charlestoncounty.gov/departments/county-council/index.php",
+      "https://ccmims.charlestoncounty.org/",
+      "https://www.charlestoncounty.org/departments/county-council/cctv.php"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Charleston County SC council agendas minutes meeting portal",
+      "Charleston County SC council public comment sign up speak meeting Kristen Salisbury clerk",
+      "Charleston County SC FOIA records request (via council page fetch)"
+     ]
+    },
+    "sibling_control": "Distinguished Charleston County from City of Charleston (charleston-sc.gov, CivicEngage/AgendaCenter) and CCPRC (ccprc.com/AgendaCenter) — county uses its own CCMIMS at ccmims.charlestoncounty.org."
+   },
+   "notes": "Custom in-house CCMIMS (Charleston County Meeting Information Management System) hosts agendas/minutes — needs bespoke scraper, no per-seat platform cost. FOIA via StreamlineGov portal. Public comment by email to Public-Comments@CharlestonCounty.org. Clerk Kristen Salisbury, plaintext email. Council now meets at 4045 Bridge View Dr, N. Charleston.",
+   "batch": "top10_population"
+  },
+  "richland-county-sc": {
+   "name": "Richland County",
+   "type": "county",
+   "county": "Richland County",
+   "county_seat": "Columbia",
+   "population_rank": 3,
+   "official_website": "https://www.richlandcountysc.gov",
+   "agenda_platform": "custom",
+   "agenda_source_url": "https://www.richlandcountysc.gov/Government/Elected-Offices/County-Council/Minutes-and-Agendas",
+   "records_custodian_name": null,
+   "records_custodian_title": "County Ombudsman / FOIA Office",
+   "records_custodian_email": "ombudsman@rcgov.us",
+   "clerk_email_access": "role_alias",
+   "records_intake": "email",
+   "records_intake_url": "https://www.richlandcountysc.gov/Government/Public-Records",
+   "public_comment": {
+    "channel": "unknown",
+    "comment_service": "unknown",
+    "recipient_email": null,
+    "deadline_rule": null
+   },
+   "fetch_tier": "browser",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.richlandcountysc.gov/Government/Elected-Offices/County-Council/Minutes-and-Agendas",
+      "https://www.richlandcountysc.gov/Government/Public-Records",
+      "https://www.richlandcountysc.gov/Government/Elected-Offices/County-Council"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Richland County SC council meeting agendas minutes portal",
+      "Richland County SC council clerk of council FOIA records request email",
+      "Richland County SC council Minutes and Agendas Granicus Legistar civicclerk agenda platform"
+     ]
+    },
+    "sibling_control": "Rejected Richland County WI (co.richland.wi.us) and City of Richland WA (ci.richland.wa.us) lookalikes — confirmed SC entity via richlandcountysc.gov / rcgov.us domains, seat Columbia."
+   },
+   "notes": "Official .gov bot-walls WebFetch with HTTP 403 (JS/bot shell) — set fetch_tier browser; agenda index reachable via read proxy, confirms 'Powered by Granicus' GovAccess/OpenCities CMS with self-hosted meeting detail pages (NOT Legistar/IQM2 product) -> custom. FOIA via Ombudsman One-Call (ombudsman@rcgov.us, 803-929-6000); rcgov.us is the county's alt domain. Records custodian is a role alias, no named person.",
+   "batch": "top10_population"
+  },
+  "horry-county-sc": {
+   "name": "Horry County",
+   "type": "county",
+   "county": "Horry County",
+   "county_seat": "Conway",
+   "population_rank": 4,
+   "official_website": "https://www.horrycountysc.gov",
+   "agenda_platform": "custom",
+   "agenda_source_url": "https://www.horrycountysc.gov/county-council/agendasminutes-archives/",
+   "records_custodian_name": null,
+   "records_custodian_title": "Public Information Office (Clerk to Council maintains minutes)",
+   "records_custodian_email": "hcg.PublicInformation@horrycountysc.gov",
+   "clerk_email_access": "role_alias",
+   "records_intake": "web_form",
+   "records_intake_url": "https://onbaseweb.horrycounty.org/appnet_16/UnityForm.aspx",
+   "public_comment": {
+    "channel": "unknown",
+    "comment_service": "unknown",
+    "recipient_email": null,
+    "deadline_rule": null
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.horrycountysc.gov/county-council/",
+      "https://www.horrycountysc.gov/county-council/agendasminutes-archives/",
+      "https://www.horrycountysc.gov/departments/public-information/",
+      "https://www.horrycountysc.gov/media/g32ltgfj/feb-2018-foia-policy-update.pdf"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Horry County SC council meeting agendas minutes portal Conway",
+      "Horry County SC FOIA public records request clerk to council email public comment",
+      "Horry County SC public information office FOIA (via dept page fetch)"
+     ]
+    },
+    "sibling_control": "No major Horry County lookalike in other states; confirmed SC via horrycountysc.gov and Conway seat (1301 2nd Ave / 211 Beaty St)."
+   },
+   "notes": "Site built on Revize CMS; agendas/minutes and video self-hosted (no AgendaCenter/Legistar/CivicClerk) -> custom, needs bespoke scraper + video archive handling. FOIA via OnBase UnityForm online portal with published fee schedule ($0.15/page, $25/hr). PIO role alias hcg.PublicInformation@horrycountysc.gov; no named custodian on site. Clerk to Council maintains the minutes per FOIA policy.",
+   "batch": "top10_population"
+  },
+  "spartanburg-county-sc": {
+   "name": "Spartanburg County",
+   "type": "county",
+   "county": "Spartanburg County",
+   "county_seat": "Spartanburg",
+   "population_rank": 5,
+   "official_website": "https://www.spartanburgcounty.gov",
+   "agenda_platform": "civicplus_civicengage",
+   "agenda_source_url": "https://www.spartanburgcounty.gov/AgendaCenter",
+   "records_custodian_name": null,
+   "records_custodian_title": "Clerk to County Council",
+   "records_custodian_email": null,
+   "clerk_email_access": "none_found",
+   "records_intake": "unknown",
+   "records_intake_url": null,
+   "public_comment": {
+    "channel": "unknown",
+    "comment_service": "unknown",
+    "recipient_email": null,
+    "deadline_rule": null
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.spartanburgcounty.gov/189/County-Council",
+      "https://www.spartanburgcounty.gov/AgendaCenter",
+      "https://sc-spartanburgcounty.civicplus.com/AgendaCenter"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Spartanburg County SC council meeting agendas minutes official site",
+      "Spartanburg County SC AgendaCenter CivicEngage clerk of council FOIA",
+      "Spartanburg County SC council agendas minutes (AgendaCenter fetch)"
+     ]
+    },
+    "sibling_control": "Distinguished Spartanburg County from City of Spartanburg (cityofspartanburg.org, separate CivicPlus tenant) and SPATS MPO (spatsmpo.com/AgendaCenter); county tenant is sc-spartanburgcounty.civicplus.com."
+   },
+   "notes": "Only off-the-shelf platform in this batch: CivicPlus CivicEngage AgendaCenter -> reuses existing AgendaCenter/CivicEngage scraper directly, no new extractor. Categories: County Council, BZA, Planning Commission, CTC. CivicPlus is a paid annual platform. Clerk/FOIA contact not exposed on AgendaCenter page; records intake unverified -> medium confidence.",
+   "batch": "top10_population"
+  },
+  "lexington-county-sc": {
+   "name": "Lexington County",
+   "type": "county",
+   "county": "Lexington County",
+   "county_seat": "Lexington",
+   "population_rank": 6,
+   "official_website": "https://www.lex-co.sc.gov",
+   "agenda_platform": "granicus_legistar",
+   "agenda_source_url": "https://lex-co.granicus.com/ViewPublisher.php?view_id=1",
+   "records_custodian_name": "Jessica Hendrix",
+   "records_custodian_title": "Clerk to County Council",
+   "records_custodian_email": null,
+   "clerk_email_access": "role_alias",
+   "records_intake": "web_form",
+   "records_intake_url": "https://sc.accessgov.com/lexingtoncounty/Forms/Page/lexingtoncounty/foia",
+   "public_comment": {
+    "channel": "email",
+    "comment_service": "email",
+    "recipient_email": "countycouncil@lexingtoncounty.sc.gov",
+    "deadline_rule": "Written public-hearing comments emailed to council office or mailed to Clerk; no portal e-comment"
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.lex-co.sc.gov",
+      "https://www.lex-co.com/MeetingPortal/LexCoMeetingPortal.html",
+      "https://lex-co.granicus.com/ViewPublisher.php?view_id=1",
+      "https://sc.accessgov.com/lexingtoncounty/Forms/Page/lexingtoncounty/foia",
+      "https://www.lex-co.sc.gov/county-council-portal"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Lexington County SC meeting portal agenda software accessgov civicclerk granicus platform",
+      "Lexington County SC County Council clerk to council FOIA records request public comment",
+      "Lexington County SC \"Jessica Hendrix\" clerk to council email lex-co.sc.gov"
+     ]
+    },
+    "sibling_control": "Confirmed SC entity via lex-co.sc.gov (state portal) + Lexington SC 29072 address; distinct from Town of Lexington (lexsc.gov, CivicEngage/NextRequest)"
+   },
+   "notes": "Granicus AgendaViewer/MinutesViewer/ViewPublisher confirmed (lex-co.granicus.com, view_id=1) — paid Granicus tier; reuse existing granicus_legistar scraper. FOIA intake is CivicPlus AccessGov web form. Custodian email null — only the role alias countycouncil@lexingtoncounty.sc.gov is published. [confidence capped at medium: platform/custodian verified live, but the entry carries an unrefuted absence (no emailable public-comment channel) and a census run does not include per-entry adversarial refuters].",
+   "batch": "top10_population"
+  },
+  "york-county-sc": {
+   "name": "York County",
+   "type": "county",
+   "county": "York County",
+   "county_seat": "York",
+   "population_rank": 7,
+   "official_website": "https://www.yorkcountygov.com",
+   "agenda_platform": "civicclerk",
+   "agenda_source_url": "https://yorkcosc.portal.civicclerk.com/",
+   "records_custodian_name": "Karen Brogdon",
+   "records_custodian_title": "Clerk to Council",
+   "records_custodian_email": null,
+   "clerk_email_access": "portal_only",
+   "records_intake": "justfoia",
+   "records_intake_url": "https://yorkcountysc.justfoia.com/publicportal/home/newrequest",
+   "public_comment": {
+    "channel": "sign_up_card",
+    "comment_service": "none",
+    "recipient_email": null,
+    "deadline_rule": "Sign-up sheet at chamber door night-of (2 min, first-come, 15-speaker cap); advance formal appearance via Clerk"
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.yorkcountygov.com",
+      "https://www.yorkcountygov.com/1175/Agendas-and-Minutes",
+      "https://yorkcosc.portal.civicclerk.com/",
+      "http://yorkcountysc.iqm2.com/Citizens/calendar.aspx",
+      "https://www.yorkcountygov.com/192/Freedom-of-Information-Act-FOIA"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "York County SC clerk to council records custodian FOIA request public information office email",
+      "York County SC county council appearance public comment sign up request to address council",
+      "York County SC agendas minutes civicclerk iqm2 platform"
+     ]
+    },
+    "sibling_control": "Confirmed SC entity (York SC 29745, 6 S Congress St); rejected York County VA (yorkcounty.gov) which appeared in FOIA search results"
+   },
+   "notes": "Platform MIGRATION: legacy IQM2 (yorkcountysc.iqm2.com) for meetings before 2025-03-17, current CivicClerk (yorkcosc.portal.civicclerk.com) on/after — fingerprint as civicclerk for go-forward; historical pull still needs granicus_iqm2 scraper. Site CMS is CivicPlus/CivicEngage. FOIA intake = JustFOIA portal. Custodian email not published (portal/role only) -> confidence medium.",
+   "batch": "top10_population"
+  },
+  "berkeley-county-sc": {
+   "name": "Berkeley County",
+   "type": "county",
+   "county": "Berkeley County",
+   "county_seat": "Moncks Corner",
+   "population_rank": 8,
+   "official_website": "https://berkeleycountysc.gov",
+   "agenda_platform": "granicus_iqm2",
+   "agenda_source_url": "http://berkeleycountysc.iqm2.com/Citizens/Default.aspx",
+   "records_custodian_name": null,
+   "records_custodian_title": "FOIA Officer (Legal Department)",
+   "records_custodian_email": null,
+   "clerk_email_access": "portal_only",
+   "records_intake": "web_form",
+   "records_intake_url": "https://berkeleycountysc.gov/dept/legal/foia/",
+   "public_comment": {
+    "channel": "unknown",
+    "comment_service": "unknown",
+    "recipient_email": null,
+    "deadline_rule": null
+   },
+   "fetch_tier": "browser",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://berkeleycountysc.gov",
+      "https://berkeleycountysc.gov/agendasandminutes/",
+      "http://berkeleycountysc.iqm2.com/Citizens/Default.aspx",
+      "https://berkeleycountysc.gov/dept/legal/foia/",
+      "https://berkeleycountysc.gov/faqs/how-do-i-file-a-freedom-of-information-act-request/"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Berkeley County South Carolina county council agendas minutes meeting portal",
+      "Berkeley County SC clerk to council FOIA records request public comment council meeting",
+      "Berkeley County SC FOIA online request portal govqa justfoia nextrequest accessgov submit"
+     ]
+    },
+    "sibling_control": "Confirmed SC entity (Moncks Corner, 1003 Hwy 52); rejected Berkeley County WV (berkeleyrecords.org) which surfaced in records searches"
+   },
+   "notes": "BOT WALL: berkeleycountysc.gov returns HTTP 403 on WebFetch (exists, walled) — agenda platform subdomain berkeleycountysc.iqm2.com is OUTSIDE the wall, confirmed via search as the live IQM2 'Meeting Portal'. Granicus IQM2 -> reuse granicus_iqm2 scraper. FOIA via online 'One Berkeley'/Resident Portal web form (account required). Custodian name not published -> confidence medium; fetch_tier browser for the .gov HTML.",
+   "batch": "top10_population"
+  },
+  "anderson-county-sc": {
+   "name": "Anderson County",
+   "type": "county",
+   "county": "Anderson County",
+   "county_seat": "Anderson",
+   "population_rank": 9,
+   "official_website": "https://www.andersoncountysc.org",
+   "agenda_platform": "wordpress_pdf",
+   "agenda_source_url": "https://www.andersoncountysc.org/county-council/",
+   "records_custodian_name": "Renee Watts",
+   "records_custodian_title": "Clerk to Council",
+   "records_custodian_email": null,
+   "clerk_email_access": "role_alias",
+   "records_intake": "web_form",
+   "records_intake_url": "https://www.andersoncountysc.org/wp-content/uploads/2021/02/FOIA-Request-Form.pdf",
+   "public_comment": {
+    "channel": "in_person_only",
+    "comment_service": "none",
+    "recipient_email": null,
+    "deadline_rule": "In-person at regular meetings (1st & 3rd Tuesday); no online comment channel found"
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.andersoncountysc.org",
+      "https://www.andersoncountysc.org/county-council/",
+      "https://www.andersoncountysc.org/work-live/about/about-anderson-county/county-council/",
+      "https://www.andersoncountysc.org/wp-content/uploads/2021/02/FOIA-Request-Form.pdf",
+      "https://acpass.andersoncountysc.org/"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Anderson County SC county council agenda minutes civicclerk granicus boarddocs portal",
+      "Anderson County SC County Council FOIA freedom of information act request form how to submit records",
+      "Anderson County SC \"clerk to council\" name appointed 2024 2025 council administration"
+     ]
+    },
+    "sibling_control": "Confirmed SC entity (Anderson SC 29622, 864 area code); distinct from City of Anderson SC (cityofandersonsc.com) and Anderson CA"
+   },
+   "notes": "NO third-party agenda platform — agendas/minutes/packets posted as PDFs under /wp-content/uploads on a WordPress site (wordpress_pdf); needs a generic PDF-directory scraper, no vendor API. FOIA intake is a downloadable PDF form (web_form/mail hybrid). Clerk 'Renee Watts' (rdwatts@andersoncountysc.org) sourced from a 2024 elected-officials PDF via search, NOT loaded live, so custodian_email left null and confidence medium; worth a direct-load confirm.",
+   "batch": "top10_population"
+  },
+  "beaufort-county-sc": {
+   "name": "Beaufort County",
+   "type": "county",
+   "county": "Beaufort County",
+   "county_seat": "Beaufort",
+   "population_rank": 10,
+   "official_website": "https://www.beaufortcountysc.gov",
+   "agenda_platform": "civicclerk",
+   "agenda_source_url": "https://beaufortcosc.portal.civicclerk.com/",
+   "records_custodian_name": "Sarah W. Brock",
+   "records_custodian_title": "Clerk to Council",
+   "records_custodian_email": "sbrock@bcgov.net",
+   "clerk_email_access": "plaintext",
+   "records_intake": "web_form",
+   "records_intake_url": "https://www.beaufortcountysc.gov/foia/index.html",
+   "public_comment": {
+    "channel": "web_form",
+    "comment_service": "custom_form",
+    "recipient_email": null,
+    "deadline_rule": "'Submit Public Comment Online' form linked from Council section; CitizenGram feedback portal also available"
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.beaufortcountysc.gov",
+      "https://www.beaufortcountysc.gov/council/agendas/",
+      "https://www.beaufortcountysc.gov/council/council-committee-meetings/index.html",
+      "https://beaufortcosc.portal.civicclerk.com/",
+      "https://www.beaufortcountysc.gov/council/staff.html",
+      "https://www.beaufortcountysc.gov/foia/index.html"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Beaufort County SC clerk to council FOIA records custodian public comment online form",
+      "Beaufort County SC council agendas minutes civicclerk portal",
+      "Beaufort County SC public comment online form submit council meeting"
+     ]
+    },
+    "sibling_control": "Confirmed SC entity (Beaufort SC 29902, Robert Smalls Complex); distinct from City of Beaufort SC (cityofbeaufort.org) and Beaufort County NC (co.beaufort.nc.us)"
+   },
+   "notes": "Platform MIGRATION: as of 2025-07-29 agendas/packets/minutes moved to CivicClerk (beaufortcosc.portal.civicclerk.com); pre-2020 archives split across MuniCode + MCC Innovations WebLink. Fingerprint civicclerk for go-forward. Clerk email plaintext (sbrock@bcgov.net — note @bcgov.net not @beaufortcountysc.gov). FOIA online intake + 'Submit Public Comment Online' custom form + CitizenGram. Confidence high. [confidence capped at medium: platform/custodian verified live, but the entry carries an unrefuted absence (no emailable public-comment channel) and a census run does not include per-entry adversarial refuters].",
+   "batch": "top10_population"
+  },
+  "greenville-sc": {
+   "name": "City of Greenville",
+   "type": "municipality",
+   "county": "Greenville",
+   "official_website": "https://www.greenvillesc.gov/",
+   "agenda_platform": "civicclerk",
+   "agenda_source_url": "https://greenvillesc.portal.civicclerk.com/",
+   "records_custodian_name": null,
+   "records_custodian_title": "City Clerk",
+   "records_custodian_email": "cpitman@greenvillesc.gov",
+   "clerk_email_access": "plaintext",
+   "records_intake": "justfoia",
+   "records_intake_url": "https://greenvillesc.justfoia.com/publicportal",
+   "public_comment": {
+    "channel": "email",
+    "comment_service": "email",
+    "recipient_email": "cpitman@greenvillesc.gov",
+    "deadline_rule": "Contact City Clerk by 12:00 PM on the day of the meeting; 3 minutes per speaker"
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "high",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.greenvillesc.gov/",
+      "https://greenvillesc.portal.civicclerk.com/",
+      "https://www.greenvillesc.gov/283/City-Council",
+      "https://www.greenvillesc.gov/429/City-Clerk",
+      "https://greenvillesc.justfoia.com/publicportal"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "City of Greenville SC official website agenda center council meetings",
+      "City of Greenville SC FOIA request records custodian city clerk public comment council",
+      "Greenville SC city council public comment sign up speak meeting register form"
+     ]
+    },
+    "sibling_control": "Confirmed SC (greenvillesc.gov, 206 S Main St Greenville SC 29601); excluded Greenville NC (greenvillenc.gov) which surfaced on public-comment search."
+   },
+   "notes": "Migrating from CivicPlus CivicEngage AgendaCenter to CivicClerk portal (greenvillesc.portal.civicclerk.com is live; legacy /AgendaCenter still resolves). Records intake on JustFOIA; livestream via Granicus. CivicClerk + JustFOIA + Granicus = multi-vendor stack. Reuse: CivicClerk portal subdomain pattern {slug}.portal.civicclerk.com matches York County.",
+   "batch": "seats_and_cities"
+  },
+  "charleston-sc": {
+   "name": "City of Charleston",
+   "type": "municipality",
+   "county": "Charleston",
+   "official_website": "https://www.charleston-sc.gov/",
+   "agenda_platform": "civicplus_civicengage",
+   "agenda_source_url": "https://www.charleston-sc.gov/AgendaCenter/City-Council-7",
+   "records_custodian_name": null,
+   "records_custodian_title": "Records Management Division",
+   "records_custodian_email": null,
+   "clerk_email_access": "none_found",
+   "records_intake": "web_form",
+   "records_intake_url": "https://www.charleston-sc.gov/801/Freedom-of-Information-Act-Request-FOIA",
+   "public_comment": {
+    "channel": "in_person_only",
+    "comment_service": "unknown",
+    "recipient_email": null,
+    "deadline_rule": null
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.charleston-sc.gov/AgendaCenter/City-Council-7",
+      "https://www.charleston-sc.gov/2771/Board-Meeting-Agendas-and-Minutes",
+      "https://www.charleston-sc.gov/801/Freedom-of-Information-Act-Request-FOIA",
+      "https://www.charleston-sc.gov/182/Records-Management-Division"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "City of Charleston SC official website city council agendas minutes",
+      "City of Charleston SC FOIA request city clerk records custodian public comment city council",
+      "City of Charleston SC AgendaCenter CivicEngage public comment"
+     ]
+    },
+    "sibling_control": "Confirmed SC (charleston-sc.gov, 80 Broad St Charleston SC 29401); excluded Charleston IL (charlestonillinois.org) which appeared in results."
+   },
+   "notes": "CivicPlus CivicEngage AgendaCenter (live, June 2026 agendas present). FOIA via city web form + Records Management Division phone (843) 958-5183; no plaintext clerk email found (medium confidence, custodian email null). CivicEngage = standard paid CivicPlus tier. Reuse: /AgendaCenter/City-Council-N pattern shared with Charleston-area CivicPlus sites.",
+   "batch": "seats_and_cities"
+  },
+  "columbia-sc": {
+   "name": "City of Columbia",
+   "type": "municipality",
+   "county": "Richland",
+   "official_website": "https://columbiasc.gov/",
+   "agenda_platform": "granicus_iqm2",
+   "agenda_source_url": "https://columbiacitysc.iqm2.com/Citizens/calendar.aspx",
+   "records_custodian_name": null,
+   "records_custodian_title": "City Clerk",
+   "records_custodian_email": "FOIA@columbiasc.net",
+   "clerk_email_access": "plaintext",
+   "records_intake": "justfoia",
+   "records_intake_url": "https://columbiasc.justfoia.com/publicportal",
+   "public_comment": {
+    "channel": "unknown",
+    "comment_service": "unknown",
+    "recipient_email": null,
+    "deadline_rule": null
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://columbiasc.gov/",
+      "https://columbiacitysc.iqm2.com/Citizens/calendar.aspx",
+      "https://cityclerk.columbiasc.gov/",
+      "https://columbiasc.gov/foia/",
+      "https://columbiasc.justfoia.com/publicportal"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "City of Columbia SC official website council agendas legistar iqm2",
+      "City of Columbia SC FOIA request city clerk records custodian public comment sign up",
+      "City of Columbia SC public comment council meeting register"
+     ]
+    },
+    "sibling_control": "Confirmed SC capital (columbiasc.gov, 1401 Main St Columbia SC 29201); excluded Columbia MO (como.gov / gocolumbiamo.legistar.com) which surfaced strongly."
+   },
+   "notes": "Granicus IQM2 portal (columbiacitysc.iqm2.com, 'Powered by Granicus' confirmed live). FOIA dual intake: JustFOIA portal + FOIA@columbiasc.net plus mail/fax. IQM2 is legacy Granicus (being sunset industry-wide toward CivicClerk) — flag for re-check. Multi-vendor paid stack (Granicus + JustFOIA). [confidence capped at medium: platform/custodian verified live, but the entry carries an unrefuted absence (no emailable public-comment channel) and a census run does not include per-entry adversarial refuters].",
+   "batch": "seats_and_cities"
+  },
+  "conway-sc": {
+   "name": "City of Conway",
+   "type": "municipality",
+   "county": "Horry",
+   "official_website": "https://www.conwaysc.gov/",
+   "agenda_platform": "wordpress_pdf",
+   "agenda_source_url": "https://www.conwaysc.gov/departments/administration_new/agendas___minutes.php",
+   "records_custodian_name": "Alicia Shelley",
+   "records_custodian_title": "City Clerk",
+   "records_custodian_email": "ashelley@conwaysc.gov",
+   "clerk_email_access": "plaintext",
+   "records_intake": "email",
+   "records_intake_url": null,
+   "public_comment": {
+    "channel": "unknown",
+    "comment_service": "unknown",
+    "recipient_email": null,
+    "deadline_rule": null
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.conwaysc.gov/departments/administration_new/agendas___minutes.php",
+      "https://www.conwaysc.gov/city_council/",
+      "https://cms1files.revize.com/conway/City%20Council%20Meeting%20Minutes%208.4.25.pdf"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "City of Conway SC official website council agendas minutes",
+      "City of Conway SC FOIA records request city clerk email",
+      "City of Conway SC public comment council meeting"
+     ]
+    },
+    "sibling_control": "Confirmed SC (conwaysc.gov, 229 Main St Conway SC 29526, Horry County); excluded Conway AR (conwayarkansas.gov) which appeared in results."
+   },
+   "notes": "No agenda platform — posted PDFs on a Revize CMS (cms1files.revize.com/conway/...). Revize is a low-cost gov CMS, not an agenda-management system, so meeting docs are loose PDFs (harder to scrape, no structured index). FOIA intake by email (foia@conwaysc.gov); clerk Alicia Shelley plaintext email. Cheapest stack of the seven. Records-intake-url null (no portal). [confidence capped at medium: platform/custodian verified live, but the entry carries an unrefuted absence (no emailable public-comment channel) and a census run does not include per-entry adversarial refuters].",
+   "batch": "seats_and_cities"
+  },
+  "spartanburg-sc": {
+   "name": "City of Spartanburg",
+   "type": "municipality",
+   "county": "Spartanburg",
+   "official_website": "https://www.cityofspartanburg.org/",
+   "agenda_platform": "wordpress_pdf",
+   "agenda_source_url": "https://www.cityofspartanburg.org/425/Agendas-Minutes",
+   "records_custodian_name": null,
+   "records_custodian_title": "City Clerk",
+   "records_custodian_email": null,
+   "clerk_email_access": "portal_only",
+   "records_intake": "nextrequest",
+   "records_intake_url": "https://cityofspartanburgsc.nextrequest.com/",
+   "public_comment": {
+    "channel": "web_form",
+    "comment_service": "custom_form",
+    "recipient_email": null,
+    "deadline_rule": "Submit public-comment sign-up form by 12:00 PM (noon) the day of the requested Council Meeting"
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.cityofspartanburg.org/425/Agendas-Minutes",
+      "https://www.cityofspartanburg.org/437/Past-Meeting-Agendas-and-Minutes",
+      "https://www.cityofspartanburg.org/320/FOIA-Information",
+      "https://cityofspartanburgsc.nextrequest.com/"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "City of Spartanburg SC official website city council agendas minutes",
+      "City of Spartanburg SC FOIA records request clerk nextrequest",
+      "City of Spartanburg SC public comment sign up council meeting"
+     ]
+    },
+    "sibling_control": "Spartanburg is unique to SC; confirmed cityofspartanburg.org, 187 W Broad St Spartanburg SC 29306. No same-name sibling exists."
+   },
+   "notes": "Site runs on CivicPlus CMS but agendas are posted as PDFs in /DocumentCenter/View/... — NOT an /AgendaCenter, so platform is effectively wordpress_pdf (document repository, not structured agenda mgmt). FOIA intake via NextRequest (Granicus, paid SaaS). Public comment by web form, noon day-of deadline. Custodian email null -> medium confidence.",
+   "batch": "seats_and_cities"
+  },
+  "lexington-sc": {
+   "name": "Town of Lexington",
+   "type": "municipality",
+   "county": "Lexington",
+   "official_website": "https://www.lexsc.gov/",
+   "agenda_platform": "civicplus_civicengage",
+   "agenda_source_url": "https://www.lexsc.gov/AgendaCenter",
+   "records_custodian_name": "Laura Hinson",
+   "records_custodian_title": "Municipal Clerk",
+   "records_custodian_email": null,
+   "clerk_email_access": "portal_only",
+   "records_intake": "nextrequest",
+   "records_intake_url": "https://lexsc.nextrequest.com/",
+   "public_comment": {
+    "channel": "unknown",
+    "comment_service": "unknown",
+    "recipient_email": null,
+    "deadline_rule": null
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.lexsc.gov/AgendaCenter",
+      "https://www.lexsc.gov/255/Mayor-Council",
+      "https://www.lexsc.com/861/Municipal-Clerk",
+      "https://www.lexsc.gov/918/Freedom-of-Information-Act-FOIA-Request",
+      "https://lexsc.nextrequest.com/"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Town of Lexington SC official website council agendas minutes",
+      "Town of Lexington SC FOIA records request municipal clerk nextrequest",
+      "Town of Lexington SC public comment council meeting"
+     ]
+    },
+    "sibling_control": "Confirmed SC Town of Lexington (lexsc.gov, 111 Maiden Lane, Lexington County); distinct from Lexington KY/VA/MA and Lexington County itself (lex-co.sc.gov)."
+   },
+   "notes": "CivicPlus CivicEngage AgendaCenter (live, rich body list: Town Council, Planning Commission, BZA, +12). FOIA intake via NextRequest (Granicus). Clerk Laura Hinson (phone 803-996-3765); plaintext email not surfaced -> portal_only / medium confidence. CivicEngage + NextRequest = standard paid CivicPlus/Granicus pairing, mirrors Greenville/Spartanburg intake.",
+   "batch": "seats_and_cities"
+  },
+  "york-sc": {
+   "name": "City of York",
+   "type": "municipality",
+   "county": "York",
+   "official_website": "https://www.yorksc.gov/",
+   "agenda_platform": "wordpress_pdf",
+   "agenda_source_url": "https://www.yorksc.gov/city-council/page/agendas-minutes",
+   "records_custodian_name": "Amy Craig",
+   "records_custodian_title": "Municipal Clerk",
+   "records_custodian_email": "acraig@yorksc.gov",
+   "clerk_email_access": "plaintext",
+   "records_intake": "web_form",
+   "records_intake_url": "https://www.yorksc.gov/municipal-clerk/page/freedom-information-act",
+   "public_comment": {
+    "channel": "unknown",
+    "comment_service": "unknown",
+    "recipient_email": null,
+    "deadline_rule": null
+   },
+   "fetch_tier": "browser",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.yorksc.gov/",
+      "https://www.yorksc.gov/city-council/page/agendas-minutes",
+      "https://www.yorksc.gov/municipal-clerk/page/freedom-information-act",
+      "https://www.yorksc.gov/media/1161",
+      "https://www.yorksc.gov/media/8426"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "City of York South Carolina official website council agendas minutes FOIA clerk",
+      "\"yorksc.gov\" agendas minutes city council PDF media document published",
+      "City of York SC public comment city council meeting"
+     ]
+    },
+    "sibling_control": "Confirmed CITY of York SC (yorksc.gov, 10 N Roosevelt St York SC 29745). Critically distinct from York COUNTY SC (yorkcountygov.com, on CivicClerk yorkcosc.portal.civicclerk.com) and from York PA (yorkcity.org) and City of York UK (york.gov.uk)."
+   },
+   "notes": "No agenda platform — posted PDFs via Finalsite-style CMS /media/{id} URLs (e.g. /media/1161 council agenda, /media/8426 PC minutes). agendas-minutes page returned HTTP 403 to fetch (bot wall = exists; fetch_tier:browser); confirmed via search snippets + direct /media PDFs. FOIA via city web form to Municipal Clerk Amy Craig (plaintext acraig@yorksc.gov). Do NOT confuse with York County's CivicClerk portal. Cheapest tier (loose PDFs). [confidence capped at medium: platform/custodian verified live, but the entry carries an unrefuted absence (no emailable public-comment channel) and a census run does not include per-entry adversarial refuters].",
+   "batch": "seats_and_cities"
+  },
+  "moncks-corner-sc": {
+   "name": "Town of Moncks Corner",
+   "type": "municipality",
+   "county": "Berkeley",
+   "official_website": "https://monckscornersc.gov/",
+   "agenda_platform": "municode_meetings",
+   "agenda_source_url": "https://monckscorner-sc.municodemeetings.com/",
+   "records_custodian_name": null,
+   "records_custodian_title": "Town Clerk",
+   "records_custodian_email": null,
+   "clerk_email_access": "none_found",
+   "records_intake": "mail_or_fax",
+   "records_intake_url": null,
+   "public_comment": {
+    "channel": "in_person_only",
+    "comment_service": "municode",
+    "recipient_email": null,
+    "deadline_rule": null
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://monckscorner-sc.municodemeetings.com/",
+      "https://monckscorner-sc.municodemeetings.com/calendar",
+      "https://monckscornersc.gov/"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Town of Moncks Corner SC official website agendas minutes municode",
+      "Town of Moncks Corner SC FOIA public records request town clerk contact email public comment council",
+      "Town of Moncks Corner SC public comment council meeting"
+     ]
+    },
+    "sibling_control": "Confirmed Berkeley County SC seat (monckscornersc.gov, PO Box 700, 29461); not Moncks Corner namesakes elsewhere."
+   },
+   "notes": "Municode Meetings portal (low-cost CivicSend/Municode bundle, common SC reuse). Bodies: Town Council, Planning Commission, BZA — PDF+HTML agendas/packets. No FOIA form found online; police records require mailed request; clerk email not published (set null, confidence medium).",
+   "batch": "seats_and_cities"
+  },
+  "anderson-sc": {
+   "name": "City of Anderson",
+   "type": "municipality",
+   "county": "Anderson",
+   "official_website": "https://www.cityofandersonsc.com/",
+   "agenda_platform": "wordpress_pdf",
+   "agenda_source_url": "https://www.cityofandersonsc.com/city-council-minutes/",
+   "records_custodian_name": null,
+   "records_custodian_title": "City Clerk",
+   "records_custodian_email": null,
+   "clerk_email_access": "none_found",
+   "records_intake": "mail_or_fax",
+   "records_intake_url": "https://www.cityofandersonsc.com/foia/",
+   "public_comment": {
+    "channel": "in_person_only",
+    "comment_service": "none",
+    "recipient_email": null,
+    "deadline_rule": null
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.cityofandersonsc.com/city-council-minutes/",
+      "https://www.cityofandersonsc.com/foia/"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "City of Anderson SC official website council agendas minutes",
+      "City of Anderson SC FOIA public records request city clerk municipal clerk contact email",
+      "City of Anderson SC public comment council meeting"
+     ]
+    },
+    "sibling_control": "Confirmed Anderson County SC seat (401 Main St, 29624); rejected Anderson IN (cityofanderson.com) and Anderson CA (ci.anderson.ca.us) namesakes."
+   },
+   "notes": "WordPress site, minutes posted as direct PDFs under /wp-content/uploads (no agenda portal — wordpress_pdf). FOIA via downloadable Word request form (mail), no online intake. No clerk name/email published; confidence medium.",
+   "batch": "seats_and_cities"
+  },
+  "beaufort-sc": {
+   "name": "City of Beaufort",
+   "type": "municipality",
+   "county": "Beaufort",
+   "official_website": "https://www.cityofbeaufort.org/",
+   "agenda_platform": "civicplus_civicengage",
+   "agenda_source_url": "https://www.cityofbeaufort.org/AgendaCenter",
+   "records_custodian_name": "Danny Rozek",
+   "records_custodian_title": "Records Manager",
+   "records_custodian_email": null,
+   "clerk_email_access": "portal_only",
+   "records_intake": "nextrequest",
+   "records_intake_url": "https://cityofbeaufortsc.nextrequest.com",
+   "public_comment": {
+    "channel": "in_person_only",
+    "comment_service": "none",
+    "recipient_email": null,
+    "deadline_rule": null
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.cityofbeaufort.org/AgendaCenter",
+      "https://www.cityofbeaufort.org/129/Agendas-Minutes",
+      "https://www.cityofbeaufort.org/692/Freedom-of-Information-Requests",
+      "https://cityofbeaufortsc.nextrequest.com"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "City of Beaufort SC official website council agendas minutes",
+      "City of Beaufort SC city clerk FOIA records request public comment council meeting speak",
+      "City of Beaufort SC nextrequest records portal"
+     ]
+    },
+    "sibling_control": "Confirmed Beaufort County SC seat (cityofbeaufort.org, 1911 Boundary St, 29902); distinct from Beaufort County NC (co.beaufort.nc.us AgendaCenter) and Beaufort County SC government portal."
+   },
+   "notes": "CivicPlus CivicEngage AgendaCenter (loaded live; ~13 bodies incl. City Council, MPC, Planning, ZBA). Records via NextRequest portal (cityofbeaufortsc.nextrequest.com) — records_intake=nextrequest. Custodian Danny Rozek named but email not published (portal-only intake); confidence medium.",
+   "batch": "seats_and_cities"
+  },
+  "north-charleston-sc": {
+   "name": "City of North Charleston",
+   "type": "municipality",
+   "county": "Charleston",
+   "official_website": "https://www.northcharleston.org/",
+   "agenda_platform": "custom",
+   "agenda_source_url": "https://www.northcharleston.org/government/city_council/meetings_minutes_agendas.php",
+   "records_custodian_name": "Courtnay Heyward",
+   "records_custodian_title": "Municipal Clerk / Clerk of Council",
+   "records_custodian_email": null,
+   "clerk_email_access": "obfuscated",
+   "records_intake": "justfoia",
+   "records_intake_url": "https://northcharleston.justfoia.com/publicportal",
+   "public_comment": {
+    "channel": "sign_up_card",
+    "comment_service": "custom_form",
+    "recipient_email": null,
+    "deadline_rule": "Submit 'Request to Speak at Public Meeting' form before the meeting"
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.northcharleston.org/government/city_council/meetings_minutes_agendas.php",
+      "https://www.northcharleston.org/government/city_council/foia_freedom_of_information_act.php",
+      "https://northcharleston.justfoia.com/publicportal"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "City of North Charleston SC council agendas minutes meeting portal",
+      "City of North Charleston SC FOIA public records request clerk of council Courtnay Heyward email records custodian",
+      "City of North Charleston SC request to speak public comment council"
+     ]
+    },
+    "sibling_control": "Confirmed 2nd-largest SC city, Charleston County (northcharleston.org, 2500 City Hall Lane, 29406); distinct from Charleston SC (charleston-sc.gov) and Charleston IL."
+   },
+   "notes": "Custom CMS (.php pages, Revize backend; agendas/minutes served from Google Drive folders — not a true agenda portal, so 'custom'). Records via JustFOIA public portal (records_intake=justfoia) plus fax/mail. Clerk surname appears as both 'Heyward' and 'Fields' across the council and FOIA pages — unresolved; literal email was masked in fetch so set null (confidence medium). Public comment via 'Request to Speak at Public Meeting' sign-up form.",
+   "batch": "seats_and_cities"
+  },
+  "mount-pleasant-sc": {
+   "name": "Town of Mount Pleasant",
+   "type": "municipality",
+   "county": "Charleston",
+   "official_website": "https://www.tompsc.com/",
+   "agenda_platform": "civicplus_civicengage",
+   "agenda_source_url": "https://www.tompsc.com/AgendaCenter",
+   "records_custodian_name": null,
+   "records_custodian_title": "Town Clerk",
+   "records_custodian_email": null,
+   "clerk_email_access": "none_found",
+   "records_intake": "email",
+   "records_intake_url": "https://www.tompsc.com/876/Town-Policy",
+   "public_comment": {
+    "channel": "in_person_only",
+    "comment_service": "none",
+    "recipient_email": null,
+    "deadline_rule": null
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.tompsc.com/AgendaCenter",
+      "https://www.tompsc.com/91/Town-Council",
+      "https://www.tompsc.com/876/Town-Policy",
+      "https://cms2.revize.com/revize/mtpleasant/Clerk/Public%20Summary%20of%20Procedures%20and%20Guidelines.pdf"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Town of Mount Pleasant SC official website council agendas minutes meeting portal",
+      "Town of Mount Pleasant SC FOIA public records request municipal clerk email public comment council",
+      "Town of Mount Pleasant SC AgendaCenter CivicEngage"
+     ]
+    },
+    "sibling_control": "Confirmed Charleston County SC (tompsc.com, 100 Ann Edwards Lane, 29464), largest non-seat town in this batch; no significant Mount Pleasant namesake conflict for civic platform."
+   },
+   "notes": "CivicPlus CivicEngage AgendaCenter (tompsc.com/AgendaCenter; Archive Center pre-2017). FOIA via written request to Town Clerk / Legal Dept — accepted by mail, email, or in person (records_intake=email). Public FOIA summary PDF hosted on Revize CDN. No clerk email published; confidence medium.",
+   "batch": "seats_and_cities"
+  },
+  "rock-hill-sc": {
+   "name": "City of Rock Hill",
+   "type": "municipality",
+   "county": "York",
+   "official_website": "https://www.cityofrockhill.com/",
+   "agenda_platform": "civicplus_civicengage",
+   "agenda_source_url": "https://www.cityofrockhill.com/government/city-council/meetings/agendas-minutes",
+   "records_custodian_name": null,
+   "records_custodian_title": "City Clerk",
+   "records_custodian_email": null,
+   "clerk_email_access": "none_found",
+   "records_intake": "mail_or_fax",
+   "records_intake_url": "https://www.cityofrockhill.com/government/government-transparency-performance/freedom-of-information-act-foia-request",
+   "public_comment": {
+    "channel": "in_person_only",
+    "comment_service": "none",
+    "recipient_email": null,
+    "deadline_rule": "Address Council in person when the agenda item is reached; 5 min total per speaker"
+   },
+   "fetch_tier": "browser",
+   "verified": "inferred",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.cityofrockhill.com/government/city-council/meetings/agendas-minutes",
+      "https://www.cityofrockhill.com/government/city-council/meetings",
+      "https://www.cityofrockhill.com/government/government-transparency-performance/freedom-of-information-act-foia-request",
+      "https://rockhillusa-redesign.prod.govaccess.org/Home/Components/Calendar/Event/36358/553"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "City of Rock Hill SC official website council agendas minutes meeting portal",
+      "City of Rock Hill SC FOIA public records request city clerk email public comment council meeting",
+      "cityofrockhill.com govaccess CivicPlus agendas Request to Speak public comment"
+     ]
+    },
+    "sibling_control": "Confirmed largest city in York County SC (cityofrockhill.com, 155 Johnston St, 29730); no namesake conflict."
+   },
+   "notes": "Agenda/FOIA pages returned HTTP 403 (bot-walled) — fetch_tier=browser, verified=inferred from search snippets + the *.prod.govaccess.org redesign domain. GovAccess is the CivicPlus successor CMS, so agenda_platform=civicplus_civicengage. FOIA: written request via the City Clerk's office, hand-delivered/mailed/faxed. Clerk email masked in snippet — null, confidence medium.",
+   "batch": "seats_and_cities"
+  },
+  "greenville-county-school-district-sc": {
+   "name": "Greenville County Schools",
+   "type": "school_district",
+   "county": "Greenville",
+   "official_website": "https://www.greenville.k12.sc.us",
+   "agenda_platform": "boarddocs",
+   "agenda_source_url": "https://go.boarddocs.com/sc/greenville/Board.nsf/Public",
+   "records_custodian_name": "Whitney Hanna",
+   "records_custodian_title": "Executive Director of Strategic Communications and Engagement",
+   "records_custodian_email": "FOIA@greenville.k12.sc.us",
+   "clerk_email_access": "plaintext",
+   "records_intake": "email",
+   "records_intake_url": "https://www.greenville.k12.sc.us/Departments/main.asp?titleid=comfoia",
+   "public_comment": {
+    "channel": "sign_up_card",
+    "comment_service": "boarddocs_ecomment",
+    "recipient_email": null,
+    "deadline_rule": "Sign up to address the Board at the meeting; recognized by Chair, time limited per number of speakers"
+   },
+   "fetch_tier": "browser",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.greenville.k12.sc.us/Departments/main.asp?titleid=boardmain",
+      "https://go.boarddocs.com/sc/greenville/Board.nsf/Public",
+      "https://www.greenville.k12.sc.us/Departments/main.asp?titleid=comfoia"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Greenville County Schools South Carolina Board of Trustees agenda minutes BoardDocs",
+      "Greenville County Schools FOIA request public records custodian public information officer email",
+      "Greenville County Schools SC board public comment sign up address the board"
+     ]
+    },
+    "sibling_control": "Confirmed SC (greenville.k12.sc.us, Greenville SC); not Greenville MI or Greenville NC."
+   },
+   "notes": "BoardDocs Pro (paid, ~$10-12k/yr tier for a district this size); largest SC district (~77k students). Raw fetch 403-walled (JS-rendered, real) — browser/search confirmed via go.boarddocs.com/sc/greenville URL. FOIA email is plaintext role alias. Reuse: same go.boarddocs.com/sc/<code> pattern as other SC boards. [confidence capped at medium: platform/custodian verified live, but the entry carries an unrefuted absence (no emailable public-comment channel) and a census run does not include per-entry adversarial refuters].",
+   "batch": "largest_districts"
+  },
+  "charleston-county-school-district-sc": {
+   "name": "Charleston County School District",
+   "type": "school_district",
+   "county": "Charleston",
+   "official_website": "https://www.ccsdschools.com",
+   "agenda_platform": "boarddocs",
+   "agenda_source_url": "https://go.boarddocs.com/sc/charleston/Board.nsf/Public",
+   "records_custodian_name": null,
+   "records_custodian_title": null,
+   "records_custodian_email": null,
+   "clerk_email_access": "portal_only",
+   "records_intake": "justfoia",
+   "records_intake_url": "https://ccsdschools.justfoia.com/publicportal/home/newrequest",
+   "public_comment": {
+    "channel": "web_form",
+    "comment_service": "boarddocs_ecomment",
+    "recipient_email": null,
+    "deadline_rule": "In-person and electronic public comment registration via dedicated registration page"
+   },
+   "fetch_tier": "browser",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://go.boarddocs.com/sc/charleston/Board.nsf/Public",
+      "https://www.ccsdschools.com/about-us/board-of-trustees/agendas-minutes-and-public-comments",
+      "https://ccsdschools.justfoia.com/publicportal/home/newrequest"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Charleston County School District board of trustees agenda minutes BoardDocs simbli",
+      "Charleston County School District FOIA JustFOIA public records portal custodian email",
+      "Charleston County School District SC public comment registration board meeting"
+     ]
+    },
+    "sibling_control": "Confirmed SC (ccsdschools.com, Charleston SC); no same-name district collision."
+   },
+   "notes": "BoardDocs Plus (paid, higher tier than LT). Records intake is JustFOIA portal (portal_only — no plaintext custodian email surfaced). Some files also served via Finalsite CDN (resources.finalsite.net) but the board agenda/minutes platform is BoardDocs. Electronic + in-person public comment registration. Custodian email null -> confidence medium.",
+   "batch": "largest_districts"
+  },
+  "horry-county-school-district-sc": {
+   "name": "Horry County Schools",
+   "type": "school_district",
+   "county": "Horry",
+   "official_website": "https://www.horrycountyschools.net",
+   "agenda_platform": "boarddocs",
+   "agenda_source_url": "https://go.boarddocs.com/sc/horry/Board.nsf/Public",
+   "records_custodian_name": "Lisa Bourcier",
+   "records_custodian_title": "Director of Strategic Communications & Community Engagement / Public Information Officer",
+   "records_custodian_email": "pio@horrycountyschools.net",
+   "clerk_email_access": "plaintext",
+   "records_intake": "email",
+   "records_intake_url": "https://www.horrycountyschools.net/about-hcs/freedom-of-information-request",
+   "public_comment": {
+    "channel": "web_form",
+    "comment_service": "custom_form",
+    "recipient_email": null,
+    "deadline_rule": "Submit Request to Speak form up to 6 hours prior to meeting; max 5 min per speaker, 30 min total"
+   },
+   "fetch_tier": "browser",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.horrycountyschools.net/boardofeducation",
+      "https://go.boarddocs.com/sc/horry/Board.nsf/Public",
+      "https://www.horrycountyschools.net/boardofeducation/board-meetingcommittee-agendas-minutes",
+      "https://www.horrycountyschools.net/boardofeducation/request-to-speak",
+      "https://www.horrycountyschools.net/about-hcs/freedom-of-information-request"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Horry County Schools South Carolina board agenda minutes BoardDocs",
+      "Horry County Schools FOIA freedom of information request public records contact email",
+      "Horry County Schools public comment board meeting sign up request to speak"
+     ]
+    },
+    "sibling_control": "Confirmed SC (horrycountyschools.net, Conway SC); no collision."
+   },
+   "notes": "BoardDocs LT (lower-cost tier, ~$3-6k/yr). Note: a board-governance bylaws PDF is served via pub-horrycountyschools.escribemeetings.com (eScribe) — a secondary doc host, NOT the agenda platform; agendas/minutes are BoardDocs LT. FOIA via plaintext pio@ alias (also lbourcier@). Public comment via custom Request-to-Speak web form, 6-hr deadline. [confidence capped at medium: platform/custodian verified live, but the entry carries an unrefuted absence (no emailable public-comment channel) and a census run does not include per-entry adversarial refuters].",
+   "batch": "largest_districts"
+  },
+  "berkeley-county-school-district-sc": {
+   "name": "Berkeley County School District",
+   "type": "school_district",
+   "county": "Berkeley",
+   "official_website": "https://www.bcsdschools.net",
+   "agenda_platform": "boarddocs",
+   "agenda_source_url": "https://go.boarddocs.com/sc/berkeley/Board.nsf/Public",
+   "records_custodian_name": null,
+   "records_custodian_title": "Public Information Officer, Dept. of Communications and Community Engagement",
+   "records_custodian_email": "tannerk@bcsdschools.net",
+   "clerk_email_access": "plaintext",
+   "records_intake": "email",
+   "records_intake_url": "https://www.bcsdschools.net/page/freedom-of-information-act-foia",
+   "public_comment": {
+    "channel": "sign_up_card",
+    "comment_service": "unknown",
+    "recipient_email": null,
+    "deadline_rule": "Address Board at regular meeting per board policy"
+   },
+   "fetch_tier": "browser",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.bcsdschools.net/",
+      "https://www.bcsdschools.net/domain/5349",
+      "https://www.bcsdschools.net/page/freedom-of-information-act-foia",
+      "https://go.boarddocs.com/sc/berkeley/Board.nsf/Public"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Berkeley County School District South Carolina board of education agenda minutes BoardDocs",
+      "\"bcsdschools.net\" Berkeley County School District board of education agendas minutes Moncks Corner",
+      "Berkeley County School District FOIA freedom of information request public records email public comment"
+     ]
+    },
+    "sibling_control": "CRITICAL: go.boarddocs.com/wv/berkeley is the WEST VIRGINIA Berkeley County district — REJECTED. SC district is go.boarddocs.com/sc/berkeley (confirmed 2018+ SC meeting link, Moncks Corner SC, bcsdschools.net). Also distinct from Berkeley County GOVERNMENT (berkeleycountysc.gov)."
+   },
+   "notes": "BoardDocs (sc/berkeley, paid). District site is on Apptegy/Thrillshare CMS (bcsdschools.net /page/ /domain/ pattern). FOIA email tannerk@bcsdschools.net plaintext. Sibling control was the key risk here — WV Berkeley County uses /wv/berkeley; SC uses /sc/berkeley. ~36k students. [confidence capped at medium: platform/custodian verified live, but the entry carries an unrefuted absence (no emailable public-comment channel) and a census run does not include per-entry adversarial refuters].",
+   "batch": "largest_districts"
+  },
+  "beaufort-county-school-district-sc": {
+   "name": "Beaufort County School District",
+   "type": "school_district",
+   "county": "Beaufort",
+   "official_website": "https://www.beaufortschools.net",
+   "agenda_platform": "diligent_community",
+   "agenda_source_url": "https://beaufortcountyschooldistrict.community.diligentoneplatform.com/Portal/MeetingSchedule.aspx",
+   "records_custodian_name": "Jennifer Staton",
+   "records_custodian_title": "District Risk Manager",
+   "records_custodian_email": null,
+   "clerk_email_access": "portal_only",
+   "records_intake": "web_form",
+   "records_intake_url": "https://www.beaufortschools.net/about-us/public-infofoia-request/foiafoia-requests/foia-online-request-form",
+   "public_comment": {
+    "channel": "web_form",
+    "comment_service": "diligent_community",
+    "recipient_email": null,
+    "deadline_rule": "Online public comment form opens 24 hrs before meeting; in-person comment cards available 30 min before meeting"
+   },
+   "fetch_tier": "browser",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.beaufortschools.net/about-us/board-of-ed/board-meetings",
+      "https://beaufortcountyschooldistrict.diligent.community/Portal/MeetingSchedule.aspx",
+      "https://beaufortcountyschooldistrict.community.diligentoneplatform.com/Portal/MeetingSchedule.aspx",
+      "https://www.beaufortschools.net/about-us/board-of-ed/public-comments",
+      "https://www.beaufortschools.net/about-us/public-infofoia-request",
+      "https://www.beaufortschools.net/about-us/public-infofoia-request/foiafoia-requests/foia-online-request-form"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Beaufort County School District board of education agenda minutes BoardDocs diligent",
+      "Beaufort County School District FOIA freedom of information public records request email",
+      "Beaufort County School District public comment board meeting sign up online form"
+     ]
+    },
+    "sibling_control": "CRITICAL: go.boarddocs.com/nc/beaufort and beaufort.k12.nc.us are NORTH CAROLINA Beaufort County — REJECTED. SC district is beaufortschools.net (Beaufort SC, Mink Point Blvd). Also distinct from Beaufort County GOVERNMENT (beaufortcountysc.gov, which uses JustFOIA)."
+   },
+   "notes": "ONLY non-BoardDocs district in batch. ACTIVELY MIGRATING from BoardDocs (legacy go.boarddocs.com/sc/beau) to Diligent Community / iCompass (branded 'iCompass - A Diligent Brand'); new host community.diligentoneplatform.com is live this session (301 redirect from .diligent.community). Records intake = web form (Jennifer Staton, District Risk Manager); no plaintext custodian email -> confidence medium. Public comment: online form 24h prior + in-person cards.",
+   "batch": "largest_districts"
+  },
+  "richland-school-district-2-sc": {
+   "name": "Richland School District Two",
+   "type": "school_district",
+   "county": "Richland",
+   "official_website": "https://www.richland2.org",
+   "agenda_platform": "boarddocs",
+   "agenda_source_url": "https://go.boarddocs.com/sc/rsd2/Board.nsf/Public",
+   "records_custodian_name": "Theresa Riley",
+   "records_custodian_title": "Director of Marketing, Office of Communications and Strategic Partnerships",
+   "records_custodian_email": null,
+   "clerk_email_access": "portal_only",
+   "records_intake": "justfoia",
+   "records_intake_url": "https://richland2.justfoia.com/publicportal/home/newrequest",
+   "public_comment": {
+    "channel": "sign_up_card",
+    "comment_service": "custom_form",
+    "recipient_email": null,
+    "deadline_rule": "Fill out form and sign-up sheet at the meeting before public session begins (Board Policy BEDH)"
+   },
+   "fetch_tier": "browser",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.richland2.org/school-board",
+      "https://go.boarddocs.com/sc/rsd2/Board.nsf/Public",
+      "https://www.richland2.org/school-board/public-participation",
+      "https://www.richland2.org/departments/communications-and-strategic-partnerships/freedom-of-information-act",
+      "https://richland2.justfoia.com/publicportal/home/newrequest"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Richland School District Two South Carolina board agenda minutes BoardDocs",
+      "Richland School District Two FOIA request public records custodian email JustFOIA",
+      "Richland School District Two public participation board meeting sign up"
+     ]
+    },
+    "sibling_control": "Confirmed SC Richland District 2 (richland2.org, code rsd2, Columbia SC); distinct from Richland District One (richlandone.org / boarddocs sc/rcsd1) and unrelated Richland districts in other states."
+   },
+   "notes": "BoardDocs (sc/rsd2, paid; agendas posted to BoardDocs >=24h prior per policy). Records intake = JustFOIA portal (richland2.justfoia.com); contact Theresa Riley, Director of Marketing — no plaintext custodian email -> confidence medium. Public comment via sign-up sheet/form at meeting (Policy BEDH). District site on Finalsite CMS. ~27k students. Note neighboring Richland One also on BoardDocs (sc/rcsd1).",
+   "batch": "largest_districts"
+  },
+  "richland-school-district-1-sc": {
+   "name": "Richland County School District One",
+   "type": "school_district",
+   "county": "Richland",
+   "official_website": "https://www.richlandone.org/",
+   "agenda_platform": "boarddocs",
+   "agenda_source_url": "https://go.boarddocs.com/sc/rcsd1/Board.nsf/Public",
+   "records_custodian_name": "Karen York",
+   "records_custodian_title": "Executive Director of Communications",
+   "records_custodian_email": "FOIA@richlandone.org",
+   "clerk_email_access": "role_alias",
+   "records_intake": "email",
+   "records_intake_url": "https://www.richlandone.org/FOIA",
+   "public_comment": {
+    "channel": "unknown",
+    "comment_service": "unknown",
+    "recipient_email": null,
+    "deadline_rule": null
+   },
+   "fetch_tier": "browser",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.richlandone.org/",
+      "https://go.boarddocs.com/sc/rcsd1/Board.nsf/Public",
+      "https://www.richlandone.org/FOIA"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Richland School District One Columbia SC board of trustees agenda minutes BoardDocs",
+      "Richland One Columbia SC FOIA request records custodian email",
+      "Richland One Columbia SC public comment board meeting sign up"
+     ]
+    },
+    "sibling_control": "Richland Two (rsd2) also on BoardDocs; Richland One uses code rcsd1 — distinct portal confirmed."
+   },
+   "notes": "BoardDocs (Pro/recurring license, ~$3-8k/yr SaaS). Plaintext FOIA role alias FOIA@richlandone.org via Comms office. Largest Midlands urban district (~21k enrollment). BoardDocs is the standard SC large-district pattern. [confidence capped at medium: platform/custodian verified live, but the entry carries an unrefuted absence (no emailable public-comment channel) and a census run does not include per-entry adversarial refuters].",
+   "batch": "largest_districts"
+  },
+  "lexington-school-district-1-sc": {
+   "name": "Lexington County School District One",
+   "type": "school_district",
+   "county": "Lexington",
+   "official_website": "https://www.lexington1.net/",
+   "agenda_platform": "diligent_community",
+   "agenda_source_url": "https://lexington1.community.diligentoneplatform.com/Portal/MeetingInformation.aspx?Id=105",
+   "records_custodian_name": null,
+   "records_custodian_title": null,
+   "records_custodian_email": "foiarequests@lexington1.net",
+   "clerk_email_access": "role_alias",
+   "records_intake": "email",
+   "records_intake_url": "https://www.lexington1.net/departments/superintendents-office/legal-services",
+   "public_comment": {
+    "channel": "web_form",
+    "comment_service": "diligent_community",
+    "recipient_email": null,
+    "deadline_rule": "Citizens' Participation 'Request to speak' feature in Diligent portal (marked Coming Soon)"
+   },
+   "fetch_tier": "browser",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.lexington1.net/about-lex1/school-board",
+      "https://lexington1.community.diligentoneplatform.com/Portal/",
+      "https://lexington1.community.diligentoneplatform.com/Portal/MeetingInformation.aspx?Id=105"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Lexington County School District One SC board meeting agenda minutes platform",
+      "Lexington County School District One SC FOIA records request custodian email",
+      "Lexington County School District One SC public comment sign up board"
+     ]
+    },
+    "sibling_control": "School-board page 301-redirects to Diligent One Platform (community.diligentoneplatform.com) — this is the LIVE source (meetings into 2026); the legacy go.boarddocs.com/sc/lexington1 link is superseded."
+   },
+   "notes": "MIGRATED to Diligent Community (iCompass / Diligent One Platform), away from BoardDocs — important cost/platform signal: Diligent is consolidating board portals onto diligentoneplatform.com. FOIA role alias foiarequests@lexington1.net plaintext. Large suburban district (~28k, one of SC's largest). 'Request to speak' e-comment present but 'Coming Soon'.",
+   "batch": "largest_districts"
+  },
+  "spartanburg-school-district-7-sc": {
+   "name": "Spartanburg County School District 7",
+   "type": "school_district",
+   "county": "Spartanburg",
+   "official_website": "https://www.spartanburg7.org/",
+   "agenda_platform": "boarddocs",
+   "agenda_source_url": "https://go.boarddocs.com/sc/spart7/Board.nsf/Public",
+   "records_custodian_name": "Debbie Scharff",
+   "records_custodian_title": "Board/Public Comment Contact",
+   "records_custodian_email": null,
+   "clerk_email_access": "none_found",
+   "records_intake": "phone",
+   "records_intake_url": "https://www.spartanburg7.org/page/school-board",
+   "public_comment": {
+    "channel": "sign_up_card",
+    "comment_service": "none",
+    "recipient_email": null,
+    "deadline_rule": "Sign up day of meeting at District Office or by calling Debbie Scharff 864-594-4405"
+   },
+   "fetch_tier": "browser",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.spartanburg7.org/page/school-board",
+      "https://go.boarddocs.com/sc/spart7/Board.nsf/Public"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Spartanburg School District 7 SC board of trustees agenda minutes BoardDocs",
+      "Spartanburg School District 7 SC FOIA records request freedom of information custodian",
+      "Spartanburg School District 7 SC public comment board meeting sign up"
+     ]
+    },
+    "sibling_control": "SAME-COUNTY CONTROL: Spartanburg 7 = BoardDocs (spart7); Spartanburg 6 = edlio (spart6.org). Numbered county siblings do NOT share a platform."
+   },
+   "notes": "BoardDocs LT (lighter tier than Pro, lower-cost SaaS). 403 to raw fetch = walled/real. Public comment is in-person sign_up_card only, no e-comment. Mid-size urban district (~7k). No plaintext FOIA email found — confidence held medium.",
+   "batch": "largest_districts"
+  },
+  "spartanburg-school-district-6-sc": {
+   "name": "Spartanburg County School District 6",
+   "type": "school_district",
+   "county": "Spartanburg",
+   "official_website": "https://www.spart6.org/",
+   "agenda_platform": "edlio",
+   "agenda_source_url": "https://www.spart6.org/apps/pages/index.jsp?uREC_ID=990876&type=d&pREC_ID=1306830",
+   "records_custodian_name": null,
+   "records_custodian_title": null,
+   "records_custodian_email": null,
+   "clerk_email_access": "none_found",
+   "records_intake": "unknown",
+   "records_intake_url": null,
+   "public_comment": {
+    "channel": "unknown",
+    "comment_service": "unknown",
+    "recipient_email": null,
+    "deadline_rule": null
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.spart6.org/",
+      "https://www.spart6.org/apps/pages/index.jsp?uREC_ID=990876&type=d&pREC_ID=1306830",
+      "https://www.spart6.org/apps/pages/index.jsp?uREC_ID=990876&type=d&pREC_ID=1306843"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Spartanburg School District 6 SC board of trustees agenda minutes BoardDocs eboard",
+      "Spartanburg School District 6 Roebuck SC FOIA email custodian",
+      "Spartanburg School District 6 Roebuck SC public comment board meeting sign up address the board"
+     ]
+    },
+    "sibling_control": "SAME-COUNTY CONTROL: Spartanburg 6 = edlio (apps/pages/index.jsp?uREC_ID signature, 'Powered by Edlio'); Spartanburg 7 = BoardDocs. Confirmed NOT shared."
+   },
+   "notes": "edlio CMS (apps/pages/index.jsp?uREC_ID + 'Powered by Edlio' footer); agendas/minutes posted as PDFs on-site, no dedicated board portal. Vimeo livestream. Edlio is bundled-CMS (~$3-6k/yr site license, agenda hosting included — no separate board-portal spend). Largest Spartanburg district (~10k, Dorman HS). No plaintext FOIA custodian published — medium confidence.",
+   "batch": "largest_districts"
+  },
+  "york-school-district-3-sc": {
+   "name": "York School District 3 (Rock Hill Schools)",
+   "type": "school_district",
+   "county": "York",
+   "official_website": "https://www.rock-hill.k12.sc.us/",
+   "agenda_platform": "simbli_eboard",
+   "agenda_source_url": "https://simbli.eboardsolutions.com/SB_Meetings/SB_MeetingListing.aspx?S=36031001",
+   "records_custodian_name": "Chris Gammons",
+   "records_custodian_title": "Board Liaison / Public Comment Contact",
+   "records_custodian_email": "cgammons@rhmail.org",
+   "clerk_email_access": "plaintext",
+   "records_intake": "email",
+   "records_intake_url": "https://www.rock-hill.k12.sc.us/school-board/home",
+   "public_comment": {
+    "channel": "web_form",
+    "comment_service": "custom_form",
+    "recipient_email": "cgammons@rhmail.org",
+    "deadline_rule": "Written request to Board Chair/Superintendent by 12:00 p.m. Wednesday prior, or fill out form at meeting site before it begins"
+   },
+   "fetch_tier": "browser",
+   "verified": "verified",
+   "confidence": "high",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.rock-hill.k12.sc.us/school-board/home",
+      "https://www.rock-hill.k12.sc.us/school-board/board-meeting-videos",
+      "https://simbli.eboardsolutions.com/SB_Meetings/SB_MeetingListing.aspx?S=36031001"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "York School District 3 Rock Hill Schools SC board of trustees agenda minutes BoardDocs Simbli",
+      "Rock Hill Schools York 3 SC Simbli eboardsolutions board portal",
+      "Rock Hill Schools York 3 SC public comment request to address board"
+     ]
+    },
+    "sibling_control": "York 1 (york.k12.sc.us) uses BoardDocs (ysd1); York 3 / Rock Hill uses Simbli — numbered York siblings differ, confirming cross-platform fragmentation."
+   },
+   "notes": "Simbli by eBOARDsolutions (simbli.eboardsolutions.com, S=36031001) — the Georgia-dominant platform, here only 1 of the sampled SC districts. Portal live with meetings June 2025-June 2026. Plaintext board contact cgammons@rhmail.org. Largest district in this batch (~16.3k, 25 schools). Simbli is mid-cost dedicated board SaaS (~$4-9k/yr).",
+   "batch": "largest_districts"
+  },
+  "anderson-school-district-5-sc": {
+   "name": "Anderson School District 5",
+   "type": "school_district",
+   "county": "Anderson",
+   "official_website": "https://www.anderson5.net/",
+   "agenda_platform": "edlio",
+   "agenda_source_url": "https://www.anderson5.net/apps/pages/index.jsp?uREC_ID=3707950&type=d&pREC_ID=2505077",
+   "records_custodian_name": null,
+   "records_custodian_title": null,
+   "records_custodian_email": null,
+   "clerk_email_access": "none_found",
+   "records_intake": "unknown",
+   "records_intake_url": null,
+   "public_comment": {
+    "channel": "unknown",
+    "comment_service": "unknown",
+    "recipient_email": null,
+    "deadline_rule": "Board agendas posted >=24h prior per S.C. Code 30-4-80"
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.anderson5.net/",
+      "https://www.anderson5.net/apps/pages/index.jsp?uREC_ID=3707950&type=d&pREC_ID=2505077",
+      "https://www.anderson5.net/apps/pages/index.jsp?uREC_ID=3707950&type=d&pREC_ID=2504269"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Anderson School District 5 SC board of trustees agenda minutes BoardDocs eboard Simbli",
+      "Anderson School District 5 SC FOIA request email custodian",
+      "Anderson School District 5 SC public comment board meeting sign up"
+     ]
+    },
+    "sibling_control": "Anderson 1 (anderson1.org) uses a custom/Page-ID CMS; Anderson 5 uses edlio (apps/pages/index.jsp?uREC_ID, 'Powered by Edlio') — county siblings differ."
+   },
+   "notes": "edlio CMS (apps/pages/index.jsp?uREC_ID + 'Powered by Edlio'); agendas/minutes posted as PDFs on-site, no board portal. Page cites S.C. Code 30-4-80 24-hour rule. Edlio bundled CMS — agenda hosting included, no separate portal spend. ~12.6k enrollment (Westside HS). No plaintext FOIA custodian — medium confidence.",
+   "batch": "largest_districts"
+  },
+  "allendale-county-sc": {
+   "name": "Allendale County",
+   "type": "county",
+   "county": "Allendale",
+   "county_seat": "Allendale",
+   "official_website": "https://www.allendalecounty.com/",
+   "agenda_platform": "custom",
+   "agenda_source_url": "https://www.allendalecounty.com/agenda/index.php",
+   "records_custodian_name": "Chanel Lewis",
+   "records_custodian_title": "Interim County Administrator",
+   "records_custodian_email": "clewis@allendalecounty.gov",
+   "clerk_email_access": "plaintext",
+   "records_intake": "email",
+   "records_intake_url": "https://www.allendalecounty.com/",
+   "public_comment": {
+    "channel": "in_person_only",
+    "comment_service": "none",
+    "recipient_email": null,
+    "deadline_rule": null
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.allendalecounty.com/",
+      "https://www.allendalecounty.com/agenda/index.php",
+      "https://www.allendalecounty.com/government/county_government/county_offices.php"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Allendale County South Carolina official website county council agenda minutes",
+      "Allendale County SC FOIA freedom of information request records custodian county administrator clerk to council",
+      "\"Allendale County\" SC county council public comment address before council FOIA officer administrator"
+     ]
+    },
+    "sibling_control": "Rejected Borough of Allendale NJ (allendalenj.gov) and Allendale Charter Township MI; confirmed SC via PO Box 190, Allendale SC 29810."
+   },
+   "notes": "Revize CMS (cms7files.revize.com) with a Document Center publishing council agendas/minutes as PDFs — home-grown/CMS, no paid agenda platform. Rural pattern (matches GA): no Granicus/CivicPlus/CivicClerk. Quirk: site domain is .com but the administrator email uses allendalecounty.gov. FOIA via downloadable request form PDF; minutes coverage sparse (~10 minutes PDFs vs 189 agendas).",
+   "batch": "rural_sample"
+  },
+  "allendale-county-school-district-sc": {
+   "name": "Allendale County School District",
+   "type": "school_district",
+   "county": "Allendale",
+   "county_seat": "Allendale",
+   "official_website": "https://www.acs.k12.sc.us/",
+   "agenda_platform": "boarddocs",
+   "agenda_source_url": "https://go.boarddocs.com/sc/acs/Board.nsf/Public",
+   "records_custodian_name": null,
+   "records_custodian_title": "Superintendent",
+   "records_custodian_email": null,
+   "clerk_email_access": "unknown",
+   "records_intake": "email",
+   "records_intake_url": "https://www.acs.k12.sc.us/",
+   "public_comment": {
+    "channel": "in_person_only",
+    "comment_service": "boarddocs_ecomment",
+    "recipient_email": null,
+    "deadline_rule": null
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.acs.k12.sc.us/",
+      "https://www.acs.k12.sc.us/o/acs/page/board-of-education",
+      "https://go.boarddocs.com/sc/acs/Board.nsf/Public"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Allendale County School District South Carolina board of trustees agenda official site",
+      "Allendale County Schools SC superintendent board secretary FOIA records email",
+      "Allendale County Schools SC public participation board meetings k12.sc.us"
+     ]
+    },
+    "sibling_control": "Rejected Allendale Public Schools MI (allendale.k12.mi.us) and Allendale NJ; confirmed SC via acs.k12.sc.us and go.boarddocs.com/sc/acs."
+   },
+   "notes": "BoardDocs (go.boarddocs.com/sc/acs) — paid platform, notable for such a tiny (~900-student) state-takeover district; portal returns 403 to fetch (walled, exists). Board page also notes Facebook livestream + YouTube archive. District site is the Apptegy/k12.sc.us CMS. Custodian email null -> confidence medium.",
+   "batch": "rural_sample"
+  },
+  "mccormick-county-sc": {
+   "name": "McCormick County",
+   "type": "county",
+   "county": "McCormick",
+   "county_seat": "McCormick",
+   "official_website": "https://www.mccormickcountysc.org/",
+   "agenda_platform": "custom",
+   "agenda_source_url": "https://www.mccormickcountysc.org/government/agendas___minutes.php",
+   "records_custodian_name": null,
+   "records_custodian_title": "County Administrator",
+   "records_custodian_email": "info@mccormickcountysc.org",
+   "clerk_email_access": "role_alias",
+   "records_intake": "email",
+   "records_intake_url": "https://www.mccormickcountysc.org/how_do_i/index.php",
+   "public_comment": {
+    "channel": "sign_up_card",
+    "comment_service": "custom_form",
+    "recipient_email": "info@mccormickcountysc.org",
+    "deadline_rule": "Submit 'Request to Appear Before Council' form prior to meeting"
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.mccormickcountysc.org/",
+      "https://www.mccormickcountysc.org/government/agendas___minutes.php",
+      "https://www.mccormickcountysc.org/how_do_i/index.php"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "McCormick County South Carolina official website county council agenda minutes",
+      "McCormick County SC FOIA freedom of information request records county administrator clerk to council contact",
+      "McCormick County South Carolina public comment request to appear before council"
+     ]
+    },
+    "sibling_control": "Rejected Town of McCormick SC (townofmccormicksc.com); confirmed county via 610 South Mine Street, McCormick SC 29835."
+   },
+   "notes": "Revize CMS (cms5.revize.com) with a Document Center + MCCi WebLink/Laserfiche library (weblink.mccinnovations.com) for PDFs — home-grown/CMS, no paid agenda platform. Rural pattern confirmed. Public comment via a 'Request to Appear Before Council' form (sign-up card style); FOIA policy + fee schedule under How Do I. Only role-alias email (info@) found; custodian name null -> confidence medium.",
+   "batch": "rural_sample"
+  },
+  "mccormick-county-school-district-sc": {
+   "name": "McCormick County School District",
+   "type": "school_district",
+   "county": "McCormick",
+   "county_seat": "McCormick",
+   "official_website": "https://www.mccormick.k12.sc.us/",
+   "agenda_platform": "boarddocs",
+   "agenda_source_url": "https://go.boarddocs.com/sc/mccormick/Board.nsf/Public",
+   "records_custodian_name": "Jaime Hembree",
+   "records_custodian_title": "Superintendent",
+   "records_custodian_email": null,
+   "clerk_email_access": "unknown",
+   "records_intake": "email",
+   "records_intake_url": "https://www.mccormick.k12.sc.us/",
+   "public_comment": {
+    "channel": "in_person_only",
+    "comment_service": "boarddocs_ecomment",
+    "recipient_email": null,
+    "deadline_rule": null
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.mccormick.k12.sc.us/",
+      "https://go.boarddocs.com/sc/mccormick/Board.nsf/Public",
+      "https://www.mccormick.k12.sc.us/staff"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "McCormick County School District South Carolina school board agenda BoardDocs official",
+      "McCormick County School District SC superintendent FOIA records email",
+      "McCormick County School District SC public comment Schools of Inquiry Innovation board"
+     ]
+    },
+    "sibling_control": "Single county district ('McCormick County Schools of Inquiry and Innovation'); confirmed SC via go.boarddocs.com/sc/mccormick and mccormick.k12.sc.us."
+   },
+   "notes": "Branded 'McCormick County Schools of Inquiry and Innovation.' Board agendas/minutes on BoardDocs (go.boarddocs.com/sc/mccormick) — paid platform. District's own site (mccormick.k12.sc.us) is edlio (apps/pages/index.jsp?uREC_ID) but Board meetings live on BoardDocs, so agenda_platform=boarddocs. Custodian email null -> confidence medium.",
+   "batch": "rural_sample"
+  },
+  "bamberg-county-sc": {
+   "name": "Bamberg County",
+   "type": "county",
+   "county": "Bamberg",
+   "county_seat": "Bamberg",
+   "official_website": "https://www.bambergcounty.sc.gov/",
+   "agenda_platform": "wordpress_pdf",
+   "agenda_source_url": "https://www.bambergcounty.sc.gov/county-council/agendas-and-minutes",
+   "records_custodian_name": "Joey Preston",
+   "records_custodian_title": "County Administrator",
+   "records_custodian_email": null,
+   "clerk_email_access": "obfuscated",
+   "records_intake": "email",
+   "records_intake_url": "https://www.bambergcounty.sc.gov/",
+   "public_comment": {
+    "channel": "in_person_only",
+    "comment_service": "none",
+    "recipient_email": null,
+    "deadline_rule": "Agendas posted 24 hours before meeting"
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.bambergcounty.sc.gov/",
+      "https://www.bambergcounty.sc.gov/county-council/agendas-and-minutes",
+      "https://www.bambergcounty.sc.gov/government",
+      "https://www.bambergcounty.sc.gov/quick-links"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Bamberg County South Carolina official website county council agenda minutes",
+      "Bamberg County South Carolina county administrator FOIA records custodian clerk to council",
+      "Bamberg County South Carolina public comment council meeting"
+     ]
+    },
+    "sibling_control": "Confirmed SC via bambergcounty.sc.gov and PO Box 149, Bamberg SC 29003; administrator Joey Preston matches T&D coverage."
+   },
+   "notes": "Drupal-based .sc.gov state-template CMS (NOT CivicPlus/Granicus) with a filterable table linking council agenda/minutes PDFs under /sites/default/files — classed wordpress_pdf. Rural pattern: no paid agenda platform; only county here on a .sc.gov Drupal site rather than Revize. FOIA section present but no named custodian email (ZoomInfo shows an obfuscated r***@bambergcounty.sc.gov) -> confidence medium. Public comment via Ordinance 1-13-8, not a digital channel.",
+   "batch": "rural_sample"
+  },
+  "bamberg-county-school-district-sc": {
+   "name": "Bamberg County School District",
+   "type": "school_district",
+   "county": "Bamberg",
+   "county_seat": "Bamberg",
+   "official_website": "https://www.bambergschools.org/",
+   "agenda_platform": "finalsite",
+   "agenda_source_url": "https://www.bambergschools.org/school-board",
+   "records_custodian_name": "Cindy Hurst",
+   "records_custodian_title": "Board Secretary",
+   "records_custodian_email": "churst@bambergschools.org",
+   "clerk_email_access": "plaintext",
+   "records_intake": "email",
+   "records_intake_url": "https://www.bambergschools.org/school-board",
+   "public_comment": {
+    "channel": "in_person_only",
+    "comment_service": "none",
+    "recipient_email": null,
+    "deadline_rule": null
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.bambergschools.org/",
+      "https://www.bambergschools.org/school-board"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Bamberg County School District South Carolina school board agenda minutes official site",
+      "Bamberg County School District SC board secretary FOIA records email",
+      "Bamberg County School District SC public comment board meeting"
+     ]
+    },
+    "sibling_control": "Confirmed SC (Denmark/Bamberg) via bambergschools.org and 3830 Faust Street, Bamberg SC 29003; HQ in Denmark SC."
+   },
+   "notes": "Finalsite-hosted site (resources.finalsite.net CDN) publishing board agendas/minutes as PDFs organized by fiscal year — agenda_platform=finalsite (no separate paid agenda system). Rural pattern: PDF-on-website, not BoardDocs. Plaintext board secretary email captured (Cindy Hurst, churst@). No documented digital public-comment channel -> confidence medium.",
+   "batch": "rural_sample"
+  },
+  "lee-county-sc": {
+   "name": "Lee County",
+   "type": "county",
+   "county": "Lee",
+   "county_seat": "Bishopville",
+   "official_website": "https://www.leecountysc.org/",
+   "agenda_platform": "custom",
+   "agenda_source_url": "https://www.leecountysc.org/county_council/agendas/index.php",
+   "records_custodian_name": null,
+   "records_custodian_title": "County Administrator",
+   "records_custodian_email": "info@leecountysc.org",
+   "clerk_email_access": "role_alias",
+   "records_intake": "email",
+   "records_intake_url": "https://www.leecountysc.org/contact/",
+   "public_comment": {
+    "channel": "in_person_only",
+    "comment_service": "none",
+    "recipient_email": null,
+    "deadline_rule": null
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.leecountysc.org/",
+      "https://www.leecountysc.org/county_council/agendas/index.php",
+      "https://www.leecountysc.org/county_council/council_minutes/index.php",
+      "https://www.leecountysc.org/contact/"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Lee County South Carolina Bishopville official website county council agenda minutes",
+      "Lee County South Carolina county administrator FOIA records request clerk to council Bishopville",
+      "\"leecountysc.org\" OR \"Lee County\" South Carolina FOIA freedom of information request form records"
+     ]
+    },
+    "sibling_control": "Rejected Lee County FL/IL; confirmed SC via leecountysc.org and PO Box 309, Bishopville SC 29010."
+   },
+   "notes": "Revize CMS (cms9files.revize.com) with year-indexed agenda/minutes PDF pages — home-grown/CMS, no paid agenda platform. Third of four rural counties on Revize, reinforcing the rural=custom/CMS pattern. No dedicated FOIA form page found; only role-alias email (info@). Custodian name null -> confidence medium.",
+   "batch": "rural_sample"
+  },
+  "lee-county-school-district-sc": {
+   "name": "Lee County School District",
+   "type": "school_district",
+   "county": "Lee",
+   "county_seat": "Bishopville",
+   "official_website": "https://www.leeschooldistrictsc.org/",
+   "agenda_platform": "edlio",
+   "agenda_source_url": "https://www.leeschooldistrictsc.org/apps/pages/index.jsp?uREC_ID=1054461&type=d&pREC_ID=1352326",
+   "records_custodian_name": "Mattie Mack",
+   "records_custodian_title": "Board Secretary",
+   "records_custodian_email": null,
+   "clerk_email_access": "none_found",
+   "records_intake": "email",
+   "records_intake_url": "https://www.leeschooldistrictsc.org/",
+   "public_comment": {
+    "channel": "in_person_only",
+    "comment_service": "none",
+    "recipient_email": null,
+    "deadline_rule": null
+   },
+   "fetch_tier": "default",
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://www.leeschooldistrictsc.org/",
+      "https://www.leeschooldistrictsc.org/apps/pages/index.jsp?uREC_ID=1054461&type=d&pREC_ID=1352327",
+      "https://www.leeschooldistrictsc.org/apps/pages/index.jsp?uREC_ID=1054461&type=d&pREC_ID=1352326"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Lee County School District South Carolina Bishopville school board agenda minutes official site",
+      "Lee County School District SC board secretary FOIA records email",
+      "Lee County School District SC public comment board meeting Bishopville"
+     ]
+    },
+    "sibling_control": "Rejected Lee County Schools FL (leeschools.net); confirmed SC via leeschooldistrictsc.org and 310 Roland Street, Bishopville SC 29010."
+   },
+   "notes": "Edlio CMS (apps/pages/index.jsp?uREC_ID) publishing board agendas/minutes as archived PDF sections by school year — agenda_platform=edlio, NOT BoardDocs (search result conflated it with FL's leeschools.net). Board secretary Mattie Mack identified but no email surfaced; no digital public-comment channel -> confidence medium.",
+   "batch": "rural_sample"
   }
  }
 }
