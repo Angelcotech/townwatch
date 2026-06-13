@@ -34,12 +34,41 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import ctypes
+import ctypes.util
+import gc
 import time
 from collections import Counter
 
 from ..db import connect
 from ..http_client import civic_get
 from .. import document_text
+
+
+# Big-packet text extraction frees its Python objects between documents, but
+# glibc keeps the freed arenas mapped, so RSS RATCHETS up across a multi-doc
+# run until the container OOM-kills the process (the 2026-06-13 signature:
+# single 455p/864p docs succeed at ~356MB peak, but the run dies on doc 3 of
+# 100 — issue #18/#26). gc.collect() drops the Python refs; malloc_trim(0)
+# hands the freed arenas back to the OS. No-op on non-glibc (macOS dev), so
+# it is always safe to call.
+try:
+    _LIBC = ctypes.CDLL(ctypes.util.find_library("c") or "libc.so.6", use_errno=True)
+    _HAS_MALLOC_TRIM = hasattr(_LIBC, "malloc_trim")
+except OSError:
+    _LIBC = None
+    _HAS_MALLOC_TRIM = False
+
+
+def _release_memory() -> None:
+    """Return freed heap to the OS between documents — bounds peak RSS to
+    roughly one document's footprint regardless of how many a run processes."""
+    gc.collect()
+    if _HAS_MALLOC_TRIM:
+        try:
+            _LIBC.malloc_trim(0)
+        except Exception:
+            pass
 
 
 # Each kind maps to the meeting column that holds its document URL. The store is
@@ -153,6 +182,10 @@ def run(kinds: list[str], *, limit: int | None, dry_run: bool, force: bool,
         methods[method] += 1
         chars = sum(len(p) for p in pages)
         print(f"  ✓ [{i}/{len(todo)}] {kind} {method:<10} {len(pages):>4}p {chars:>8,}c  {url}")
+        # Drop this document's bytes + pages and hand the freed arenas back to
+        # the OS, so RSS doesn't ratchet into an OOM across the run.
+        del data, pages
+        _release_memory()
 
     summary = "  ".join(f"{m}={n}" for m, n in sorted(methods.items()))
     print(f"\ndone: recovered={sum(methods.values())}  failures={failures}  [{summary}]")

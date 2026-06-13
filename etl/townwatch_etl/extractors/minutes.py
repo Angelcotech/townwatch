@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Literal
 
 import anthropic
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from ..config import ANTHROPIC_API_KEY, VISION_RENDER_DPI
 from .chunking import extend_unique
@@ -139,6 +139,23 @@ class AgendaItem(BaseModel):
         description="1-2 sentence plain-English explanation of what this decision does"
     )
     motion_type: MotionType
+
+    @field_validator("motion_type", mode="before")
+    @classmethod
+    def _coerce_motion_type(cls, v):
+        """The controlled vocabulary has 8 values with 'other' as the designed
+        escape hatch. The model legitimately names finer categories — planning
+        commissions produce 'conditional_use_permit', 'variance', 'plat_approval'
+        — which are correct English but outside the enum. Coerce any unknown to
+        'other' rather than letting one out-of-enum value raise ValidationError
+        and fail the whole document. The verbatim text + summary still carry the
+        real category, so no signal is lost. (Previously only the recovery
+        ladder's per-window catch saved this; the single-window embedded-minutes
+        path had no net — issue #25.)"""
+        from typing import get_args
+        if isinstance(v, str) and v not in get_args(MotionType):
+            return "other"
+        return v
 
     # Upstream attribution — who brought this item and who recommended it
     petitioner: str | None = Field(
