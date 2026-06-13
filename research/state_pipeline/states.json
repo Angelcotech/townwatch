@@ -1333,8 +1333,8 @@
         "E_pipeline_delta": "done"
       },
       "tier2_recon": {
-        "batches": 1,
-        "registry_entries": 3,
+        "batches": 2,
+        "registry_entries": 8,
         "onboarded": 0
       },
       "readiness": "ready_for_tier2",
@@ -1411,6 +1411,10 @@
         {
           "date": "2026-06-13",
           "signal": "Operator-directed onboarding prep for Dorchester County (Charleston/Lowcountry metro). Tier-2 recon run AHEAD of SC's Tier-1 dossier as a demand pull; reorders away from the original Augusta/CSRA adjacency rationale for SC's queue slot."
+        },
+        {
+          "date": "2026-06-13",
+          "signal": "CSRA spillover Tier-2 recon batch executed (Aiken, Edgefield, North Augusta — 5 registry entries, all validated; Dorchester bundle re-audited with errata applied). Realizes the STANDING adjacency-first queue logic (Augusta-metro spillover from the GA CSRA footprint) as recon — not an external adopt-funnel pull. Onboarding remains demand/funding-gated. Recon session, registry.json (commit 19cf9a7)."
         }
       ],
       "artifacts": {
@@ -1424,7 +1428,7 @@
         "platform_census": "research/sc_recon/PLATFORM_CENSUS.md",
         "pipeline_delta": "research/sc_recon/PIPELINE_DELTA.md"
       },
-      "notes": "SC Tier-1 dossier COMPLETE — ALL phases done (2026-06-13), readiness=ready_for_tier2. A law dossier FULLY done: FOIA core + campaign finance + finance-transparency layer (§ 6-1-80 budget/millage hearing, § 4-9-150 county audit [state-collected], § 5-7-240 municipal audit [public-inspection], § 6-1-50 RFA report, SC DOE/RFA school finance) — 11 finding categories, adversarial 3/3; deliberate exclusions recorded (no rollback/public-works/council-comp advertisement analogs to GA). Tier-0 + B + C + D + E done. Universe 46/271/72; bundle map clean; platform census 46 jurisdictions; pipeline-delta memo done. NEXT: Tier-2 (demand-gated) — recon session; Dorchester bundle reconned; CSRA adjacency is standing queue logic. No finance OBSERVER active (no finance ingestion — catalog/state-published only); fiscal-dependency split (~22 county-levy districts) sets the levying-authority target when finance ingestion lands. WATCH: Bill 3470 forces ~46 countywide districts by 2027/2032."
+      "notes": "SC Tier-1 dossier COMPLETE — ALL phases done (2026-06-13), readiness=ready_for_tier2. A law dossier FULLY done: FOIA core + campaign finance + finance-transparency layer (§ 6-1-80 budget/millage hearing, § 4-9-150 county audit [state-collected], § 5-7-240 municipal audit [public-inspection], § 6-1-50 RFA report, SC DOE/RFA school finance) — 11 finding categories, adversarial 3/3; deliberate exclusions recorded (no rollback/public-works/council-comp advertisement analogs to GA). Tier-0 + B + C + D + E done. Universe 46/271/72; bundle map clean; platform census 46 jurisdictions; pipeline-delta memo done. TIER-2 recon underway (recon session, registry.json): 8 onboarding-track entries across 2 batches reconned & validated — Dorchester bundle (3) + CSRA spillover Aiken/Edgefield/North Augusta (5); onboarding itself remains demand/funding-gated. No finance OBSERVER active (no finance ingestion — catalog/state-published only); fiscal-dependency split (~22 county-levy districts) sets the levying-authority target when finance ingestion lands. WATCH: Bill 3470 forces ~46 countywide districts by 2027/2032."
     },
     "SD": {
       "name": "South Dakota",
