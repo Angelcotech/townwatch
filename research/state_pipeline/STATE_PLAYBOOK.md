@@ -121,9 +121,24 @@ Per state, the inventory requires:
    `etl/townwatch_etl/jobs/refresh_findings.py`).
 
 Inventory status: **GA complete** (`_open_records_laws.json`, citations
-re-verified against the AG's Act text 2026-06-11). **SC partially started**
-(the § 30-4-80/-90 facts above, verified 2026-06-11) — finish it as the
-first act of SC's Phase A.
+re-verified against the AG's Act text 2026-06-11). **SC FOIA core complete**
+(`_open_records_laws.json` `SC` block + `_state_defaults/sc.json`, verified
+2026-06-13 against scstatehouse.gov Title 30 Ch. 4 / Title 8 Ch. 13;
+adversarial 3-of-3, all upheld). Finding categories derived: `agenda_missing`
+(SC's sharpest signal — pre-meeting 24h website posting, § 30-4-80),
+`minutes_missing` (§ 30-4-90 — NO numeric deadline, NO summary tier; GA's
+hard-clock observer does NOT transfer), `meeting_notice_missing`,
+`agenda_amended_without_notice` (SC-specific, catalog-reference-only —
+needs agenda-vs-minutes diff ingestion), `member_roster_missing`,
+`campaign_finance_missing` (state_published — filings centralized at the SC
+State Ethics Commission, not a local clerk). Residency posture: **no
+requester restriction** (§ 30-4-30 "a person") → direct-send lane; but
+enforcement standing is "citizen of the State" (§ 30-4-100), so ORR-to-suit
+escalation needs a SC-citizen requester of record. **Remaining Phase-A work:**
+the finance-transparency layer (budget / millage / audit — SC Titles 4/5/6/12/59)
+is inventoried as TODO in the `SC._sc_finance_layer_todo` block, deferred (no
+finance ingestion exists, so nothing is activated by deferring); do NOT port
+GA's OCGA finance citations.
 
 ### Phase B — Universe verification
 What: reconcile Tier-0 counts against state authorities; enumerate

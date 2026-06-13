@@ -1,0 +1,297 @@
+{
+ "schema_version": "0.2",
+ "registry_meta": {
+  "name": "South Carolina Jurisdiction Recon Registry",
+  "purpose": "Pre-onboarding recon. Captures the components that drive onboarding cost/feasibility for SC jurisdictions BEFORE onboarding begins. NOT a jurisdiction config; an entry graduates into jurisdictions/{slug}.json only when actually onboarded. Mirrors the GA registry shape and reuses its field vocabularies (research/ga_recon/METHODOLOGY.md).",
+  "generated_at": "2026-06-13",
+  "generated_by": "manual_recon (web search + government-site verification + adversarial refuter pass)",
+  "methodology_doc": "research/ga_recon/METHODOLOGY.md",
+  "state": {
+   "name": "South Carolina",
+   "fips": "45"
+  },
+  "universe": {
+   "note": "Demand-driven Tier-2 recon of the Dorchester County bundle, run AHEAD of SC's full Tier-1 state dossier (states.json SC phases still not_started). Not a state-universe enumeration.",
+   "source": "U.S. Census / SC Dept. of Education; per-entity sources cited in each entry's verification block."
+  },
+  "field_vocabularies": {
+   "agenda_platform": [
+    "civicplus_civicengage",
+    "civicclerk",
+    "granicus_legistar",
+    "granicus_iqm2",
+    "boarddocs",
+    "edlio",
+    "simbli_eboard",
+    "diligent_community",
+    "municode_meetings",
+    "custom",
+    "wordpress_pdf",
+    "none_found",
+    "unknown",
+    "finalsite"
+   ],
+   "clerk_email_access": [
+    "plaintext",
+    "role_alias",
+    "obfuscated",
+    "portal_only",
+    "none_found",
+    "unknown"
+   ],
+   "records_intake": [
+    "email",
+    "nextrequest",
+    "govqa",
+    "justfoia",
+    "web_form",
+    "mail_or_fax",
+    "phone",
+    "unknown"
+   ],
+   "verified": [
+    "verified",
+    "inferred"
+   ],
+   "confidence": [
+    "high",
+    "medium",
+    "low"
+   ],
+   "public_comment_channel": [
+    "email",
+    "web_form",
+    "portal_ecomment",
+    "sign_up_card",
+    "in_person_only",
+    "none_found",
+    "unknown",
+    "mail"
+   ],
+   "comment_service": [
+    "boarddocs_ecomment",
+    "granicus_speakup",
+    "civicclerk",
+    "simbli",
+    "swagit",
+    "municode",
+    "custom_form",
+    "email",
+    "none",
+    "unknown",
+    "qualtrics",
+    "diligent_community",
+    "droplet"
+   ]
+  },
+  "changelog": [
+   {
+    "version": "0.1 (2026-06-13)",
+    "change": "SC registry created. First batch 'demand_lowcountry': Dorchester County bundle — Dorchester County (Granicus), Dorchester School District Two (BoardDocs), Dorchester School District Four (Diligent Community). Adversarial refuter pass overturned 3 draft absence claims pre-write: county FOIA email (dcfoia@) + clerk email (LConrad@) are published; DD4 has a named FOIA custodian (asanders@dd4.k12.sc.us). DD2 absences (no records-custodian email, in-person-only comment) survived refutation, capped at medium. Field vocabularies reused verbatim from GA registry 0.2."
+   },
+   {
+    "version": "0.1.1 (2026-06-13)",
+    "change": "check-urls liveness audit classified. Dorchester County: official .gov pages return 403 (Cloudflare/Imperva bot wall — fetch_tier:browser; pages exist) and NextRequest returns 204 (JS SPA, no body to non-JS clients) — all real, off-wall Granicus + S3 documents fetch 200. DD2 BoardDocs returns 403 to the throttled civic client but 200 to a browser UA (UA-gated, real). DD2 HARD FAILURE fixed: two search-indexed ddtwo.org FOIA/public-information leaf pages 404 to a browser UA (site restructure) — replaced with live (200) Community-Relations + Board-Policy-KDB URLs and recorded the 404 as a gap. No absence claim rests on a dead URL."
+   }
+  ]
+ },
+ "jurisdictions": {
+  "dorchester-county-sc": {
+   "name": "Dorchester County",
+   "type": "county",
+   "batch": "demand_lowcountry",
+   "county": "Dorchester County",
+   "county_seat": "St. George",
+   "fips": "45035",
+   "official_website": "https://www.dorchestercountysc.gov",
+   "agenda_platform": "granicus_legistar",
+   "agenda_source_url": "https://dorchester.granicus.com/ViewPublisher.php?view_id=1",
+   "records_custodian_name": "Dorchester County FOIA Coordinator (County Attorney's Office)",
+   "records_custodian_title": "FOIA Coordinator, County Attorney's Office",
+   "records_custodian_email": "dcfoia@dorchestercountysc.gov",
+   "clerk_email_access": "plaintext",
+   "records_intake": "nextrequest",
+   "records_intake_url": "https://dorchestercountysc.nextrequest.com/",
+   "fetch_tier": "browser",
+   "notable_gaps": [
+    "Official .gov HTML site (dorchestercountysc.gov) is bot-walled — returns HTTP 403 to raw fetching; nav/listing pages need the browser fetch tier. Mitigations: the Granicus agenda/minutes platform (dorchester.granicus.com), the NextRequest FOIA portal, and Granicus S3 document attachments all sit OUTSIDE the wall and fetch normally.",
+    "Constitutional officers (Sheriff, Coroner, etc.) run separate records-request pages, not modeled as council bodies."
+   ],
+   "public_comment": {
+    "channel": "sign_up_card",
+    "comment_service": "email",
+    "submit_url": null,
+    "recipient_email": "LConrad@dorchestercountysc.gov",
+    "deadline_rule": "Citizens addressing agenda items complete the online 'Request to Address Council' form; the Clerk to Council (Lona R. Conrad) administers it. Council meets 1st & 3rd Mondays 6:00 PM (one meeting only in Aug & Dec).",
+    "max_comment_chars": null,
+    "accepts_attachment": null,
+    "automatable": true,
+    "captcha_or_tos": null,
+    "verified": "verified",
+    "confidence": "high",
+    "notes": "Meetings at Willie R. Davis County Council Chambers, 201 Johnston Street, St. George, SC 29477. Live-streamed/archived on Granicus (dorchester.granicus.com) and the Dorchester County Council YouTube channel. Written contact to council also reachable via Clerk LConrad@dorchestercountysc.gov and the 7 published councilmember mailboxes (e.g. PSmith@, DChinnis@, RMRanck@, SFriddle@, ECrosby@, FStaropoli@, JByars2@ dorchestercountysc.gov). The exact Request-to-Address form URL lives behind the bot wall; not captured this session (submit_url left null)."
+   },
+   "verified": "verified",
+   "confidence": "high",
+   "verification": {
+    "session_date": "2026-06-13",
+    "method": "web-search structure sweep + search-engine pass + adversarial refuter (reader-proxy used to read the bot-walled .gov FOIA/council pages; Granicus + NextRequest read directly)",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://dorchester.granicus.com/ViewPublisher.php?view_id=1",
+      "https://www.dorchestercountysc.gov/government/county-council/agendas-minutes",
+      "https://www.dorchestercountysc.gov/how-do-i/request/foia-records-request",
+      "https://www.dorchestercountysc.gov/government/county-council",
+      "https://www.dorchestercountysc.gov/how-do-i/contact/county-council",
+      "https://dorchestercountysc.nextrequest.com/"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Dorchester County South Carolina official website council agendas minutes",
+      "Dorchester County SC council meeting video granicus OR swagit OR viebit agenda packet pdf",
+      "Dorchester County SC FOIA request records custodian email clerk to council Lona Conrad",
+      "\"dorchestercountysc.gov\" county council public comment sign up speak meeting",
+      "Dorchester County SC FOIA Coordinator County Attorney email \"@dorchestercountysc.gov\" records request"
+     ]
+    },
+    "sibling_control": "Granicus (dorchester.granicus.com, view_id=1) hosts BOTH Agendas and Minutes for all 9 bodies (County Council + 8 committees) back to 2017 — agenda/minutes coverage parses cleanly; no absence claimed on documents.",
+    "adversarial": {
+     "votes": "1 refuter, both email-absence claims REFUTED — FOIA email dcfoia@dorchestercountysc.gov (mailto on the FOIA page) and Clerk LConrad@dorchestercountysc.gov (council + agendas pages, corroborated by SC Assoc. of Counties live directory) are published in plaintext; entry corrected before write."
+    }
+   },
+   "notes": "Granicus platform: agendas at dorchester.granicus.com/AgendaViewer.php?view_id=1&event_id=<id>; minutes at /services/minutes/reports/<uuid>/attachment; packet PDFs on granicus_production_attachments.s3.amazonaws.com/dorchester/. Archives to 2017. 9 bodies: County Council + Water & Sewer, Planning Development & Building, Budget Finance & Purchasing, Public Safety Health & Human Services, Public Works Property & Utilities, Agenda & Rules, Administrative & Intergovernmental Affairs, Audit committees. FOIA: Coordinator in County Attorney's Office, mail to 500 N. Main St., Summerville SC 29483, phone 843-563-0100; SC Code 30-4-30(C) response min 10 business days (records <=2yr) / 20 (>2yr); per-page copy fees published. Population 161,540 (2020). DATA CAVEAT: a stale SC Assoc. of Counties clerks PDF lists lconrad@dorchestercounty.sc.gov (wrong domain) / 843-563-0196 — the county's own site domain dorchestercountysc.gov and 843-832-0196 are authoritative."
+  },
+  "dorchester-school-district-two-sc": {
+   "name": "Dorchester School District Two",
+   "type": "school_district",
+   "batch": "demand_lowcountry",
+   "county": "Dorchester County",
+   "fips": "45035",
+   "official_website": "https://www.ddtwo.org",
+   "agenda_platform": "boarddocs",
+   "agenda_source_url": "https://go.boarddocs.com/sc/ddtw/Board.nsf/Public",
+   "records_custodian_name": "Public Information Officer (Jennifer Passmore)",
+   "records_custodian_title": "Public Information Officer",
+   "records_custodian_email": null,
+   "clerk_email_access": "none_found",
+   "records_intake": "web_form",
+   "records_intake_url": "https://www.ddtwo.org/district/departments/community-relations",
+   "fetch_tier": "browser",
+   "notable_gaps": [
+    "No plaintext records-custodian/FOIA email is published; FOIA intake is an online FOIA form or a written request mailed to the Public Information Officer at 815 South Main Street, Summerville SC 29483.",
+    "SITE RESTRUCTURE: the search-indexed FOIA page (/district/departments/community-engagement/freedom-of-information-act-requests) and the /community-relations/public-information leaf now return HTTP 404 even to a browser UA — DD2 reorganized its Finalsite site and Google has not re-crawled. FOIA procedure is governed by Board Policy KDB (https://boardpolicyonline.com/?b=dorchester); intake is in writing / online FOIA Request Form via the Community Relations department. Locate the current FOIA-form URL at onboarding.",
+    "No written/email public-comment channel — board public comment is an in-person sign-in card only.",
+    "Email mailbox domain is @dorchester2.k12.sc.us (ddtwo.org is web hosting only). The address jpassmore@dorchester2.k12.sc.us is an UNVERIFIED naming-convention inference — NOT published; do not use as a records channel."
+   ],
+   "public_comment": {
+    "channel": "sign_up_card",
+    "comment_service": "none",
+    "submit_url": null,
+    "recipient_email": null,
+    "deadline_rule": "Complete an in-person sign-in card five minutes before the meeting; 3 minutes per speaker; agenda-item comments plus a separate 3-minute general public-comment period at the end of the meeting; chairman's discretion on total time.",
+    "max_comment_chars": null,
+    "accepts_attachment": null,
+    "automatable": false,
+    "captcha_or_tos": null,
+    "verified": "verified",
+    "confidence": "high",
+    "notes": "Board meets 2nd & 4th Mondays 6:00 PM at the DD2 Administrative Offices, 815 South Main Street, Summerville SC 29483; live-streamed at ddtwo.org/live; agendas on BoardDocs. Trustee emails ARE published in plaintext (chair Ashley Wimberly awimberly@dorchester2.k12.sc.us; secretary Justin Farnsworth jufarnsworth@dorchester2.k12.sc.us) but none is presented as a public-comment intake channel. No bot can file written comment of record."
+   },
+   "verified": "verified",
+   "confidence": "medium",
+   "verification": {
+    "session_date": "2026-06-13",
+    "method": "web-search structure sweep + search-engine pass + 1 adversarial refuter; live ddtwo.org FOIA/PIO pages intermittently 404 to automated fetchers (Finalsite) — read via search snippets + BoardDocs; BoardDocs UA-gates the throttled civic client (403) but returns 200 to a browser UA — real platform, not dead.",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://go.boarddocs.com/sc/ddtw/Board.nsf/Public",
+      "https://www.ddtwo.org/district/departments/community-relations",
+      "https://www.ddtwo.org/district/board-of-trustees",
+      "https://www.ddtwo.org/welcome/connect-with-us",
+      "https://boardpolicyonline.com/?b=dorchester"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Dorchester School District Two DD2 Summerville SC board of education agendas minutes BoardDocs",
+      "Dorchester School District Two ddtwo.org FOIA public records request custodian email public comment board meeting speak",
+      "ddtwo.org FOIA \"Public Information Officer\" email contact Dorchester School District Two records request address",
+      "Dorchester School District Two Public Information Officer name \"@ddtwo\" OR \"@dorchester2\" email community relations"
+     ]
+    },
+    "sibling_control": "BoardDocs (go.boarddocs.com/sc/ddtw) hosts BOTH agendas and minutes for the Board of Trustees — document publication is NOT in question. The absence is narrowly the records-custodian email + a written public-comment channel, confirmed by two methods (FOIA page text + search pass), not a mis-navigated section.",
+    "adversarial": {
+     "votes": "1 refuter, both absence claims COULD-NOT-REFUTE (survived) — no published FOIA/PIO email; in-person sign-in card only. Capped entry confidence at medium (single refuter + live FOIA page not directly loadable)."
+    }
+   },
+   "notes": "Superintendent Chad Daugherty. PIO Jennifer Passmore (named 2024-03-13). Regular meetings 2nd & 4th Mondays 6PM. Wikipedia/Census: largest district in the county (Summerville, Ladson, North Charleston portions). CONSOLIDATION WATCH: SC bills 3154 (2023-24) and 3470 (2025-26) study merging DD2 + DD4; barred without approval by registered electors of each district — track for jurisdiction-structure changes."
+  },
+  "dorchester-school-district-four-sc": {
+   "name": "Dorchester School District Four",
+   "type": "school_district",
+   "batch": "demand_lowcountry",
+   "county": "Dorchester County",
+   "fips": "45035",
+   "official_website": "https://www.dorchester4.k12.sc.us",
+   "agenda_platform": "diligent_community",
+   "agenda_source_url": "https://dorchester4-k12-sc.community.highbond.com/Portal/MeetingTypeList.aspx",
+   "records_custodian_name": "Dr. April Sanders",
+   "records_custodian_title": "Chief Human Resources Officer (FOIA coordinator)",
+   "records_custodian_email": "asanders@dd4.k12.sc.us",
+   "clerk_email_access": "plaintext",
+   "records_intake": "email",
+   "records_intake_url": "https://www.dorchester4.k12.sc.us/page/human-resources",
+   "fetch_tier": "default",
+   "notable_gaps": [
+    "No dedicated published FOIA procedure, request form, or fee schedule — FOIA handling is surfaced only as a duty bullet on the Chief HR Officer's page ('Freedom of Information Act (FOIA) Requests: Coordinating requests in accordance with state law'). Intake is the named custodian email asanders@dd4.k12.sc.us or postal mail.",
+    "No written/email public-comment channel — public comment is an in-person 'Public Forum' segment at board meetings only; the portal's only 'Sign up' is meeting-notification subscription, not comment.",
+    "Migrated agendas/minutes from BoardDocs (2016-2024 archive) to Diligent Community (iCompass)."
+   ],
+   "public_comment": {
+    "channel": "in_person_only",
+    "comment_service": "none",
+    "submit_url": null,
+    "recipient_email": null,
+    "deadline_rule": "In-person 'Public Forum' segment during board meetings; no published written/email channel or online sign-up.",
+    "max_comment_chars": null,
+    "accepts_attachment": null,
+    "automatable": false,
+    "captcha_or_tos": null,
+    "verified": "verified",
+    "confidence": "high",
+    "notes": "Board meets monthly (~7:30 PM) at the SGMS Administrative Office Board Room, 600 Minus Street, St. George SC 29477. Board-member emails are published in plaintext (phughes@, tfolk@, jhodges@, einfinger@, vinfinger@, info@dd4.k12.sc.us) but none is presented as a comment-of-record channel."
+   },
+   "verified": "verified",
+   "confidence": "high",
+   "verification": {
+    "session_date": "2026-06-13",
+    "method": "web-search structure sweep + search-engine pass + 1 adversarial refuter (refuter verified custodian/platform/board emails from raw page HTML; main site is Apptegy/Thrillshare and inlines content as escaped JSON that truncates summarizers)",
+    "structure_sweep": {
+     "sections_enumerated": [
+      "https://dorchester4-k12-sc.community.highbond.com/Portal/Welcome.aspx",
+      "https://dorchester4-k12-sc.community.highbond.com/Portal/MeetingTypeList.aspx",
+      "https://www.dorchester4.k12.sc.us/page/human-resources",
+      "https://www.dorchester4.k12.sc.us/page/board-of-trustees",
+      "https://hrm.dorchester4.k12.sc.us/page/superintendent"
+     ]
+    },
+    "search_pass": {
+     "engine": "web_search",
+     "queries": [
+      "Dorchester School District Four DD4 St. George Harleyville SC board agendas minutes",
+      "Dorchester School District Four St George FOIA records request public comment board meeting address public participation",
+      "\"dorchester4\" OR \"Dorchester School District Four\" St. George SC FOIA freedom of information records request email public comment board policy"
+     ]
+    },
+    "sibling_control": "Diligent Community portal (dorchester4-k12-sc.community.highbond.com/Portal) lists real dated meetings (e.g. Regular Board Meeting May 19 2026) carrying both Agenda (HTML+PDF) and Minutes documents, plus a 'BoardDocs Archive (2016-2024)' entry — document publication is NOT in question; the absence is only the written public-comment channel.",
+    "adversarial": {
+     "votes": "1 refuter: Claim A (no FOIA custodian email) PARTIALLY REFUTED — named custodian Dr. April Sanders asanders@dd4.k12.sc.us found on HR page (entry corrected to populate it); Claim B (in-person-only comment) COULD-NOT-REFUTE — survived, confirmed by positive 'Public Forum' evidence + notification-only portal sign-up."
+    }
+   },
+   "notes": "Superintendent Jeffrey Beckwith (selected 2023-04). Board chair Mrs. Phyllis Hughes. District office 500 Ridge Street, St. George SC 29477; phone 843-563-4535; fax 843-563-9269; general info@dd4.k12.sc.us. Successor district to former Dorchester District 1 + District 3 (consolidated into DD4 by SC Act, 1985-86). Smaller, rural (St. George, Harleyville, Reevesville, Grover; Woodland High). Main website is Apptegy/Thrillshare (org 25123). CONSOLIDATION WATCH: SC bills 3154 (2023-24) and 3470 (2025-26) study merging DD2 + DD4 (voter approval required in each district)."
+  }
+ }
+}

@@ -212,5 +212,133 @@
         "confidence": "high"
       }
     }
+  },
+  "SC": {
+    "state_name": "South Carolina",
+    "_provenance": {
+      "phase": "Tier 1 / Phase A — statute inventory (FOIA core)",
+      "session_verified_at": "2026-06-13",
+      "primary_sources": [
+        "https://www.scstatehouse.gov/code/t30c004.php (FOIA — Title 30, Ch. 4)",
+        "https://www.scstatehouse.gov/code/t08c013.php (Ethics & Campaign Reform — Title 8, Ch. 13)",
+        "https://ethics.sc.gov/campaigns/election-material",
+        "https://ethicsfiling.sc.gov/public/home"
+      ],
+      "verification": "Adversarial 3-of-3 (independent agents prompted to refute; all upheld) on: requester-residency posture, § 30-4-30(C) deadlines, § 30-4-80 agenda/notice, § 30-4-90 minutes, centralized campaign-finance filing. Corroborated by SC Press Association + RCFP SC guide.",
+      "scope_note": "FOIA core (open records + open meetings) + campaign-finance pointer are COMPLETE and verified. The finance-transparency layer (county/municipal budget-adoption hearings, millage / property-tax advertisement, annual-audit publication — SC Titles 4/5/6/59) is NOT yet inventoried; see _sc_finance_layer_todo. No observer for those exists or is activated (statute-inventory + ingestion both required per STATE_PLAYBOOK Phase-A rule 4)."
+    },
+    "body_type_classes": {
+      "all_agencies": ["city_council", "county_commission", "board_of_education", "planning_commission", "board_of_zoning_appeals", "other"],
+      "all_elected": ["city_council", "county_commission", "board_of_education"],
+      "all_appointed": ["planning_commission", "board_of_zoning_appeals", "other"],
+      "all_levying_authorities": ["city_council", "county_commission", "board_of_education"],
+      "all_local_governments": ["city_council", "county_commission", "board_of_education"],
+      "general_purpose_local_governments": ["city_council", "county_commission"]
+    },
+    "open_records_act": {
+      "title": "South Carolina Freedom of Information Act",
+      "citation": "S.C. Code § 30-4-10 et seq.",
+      "url": "https://www.scstatehouse.gov/code/t30c004.php",
+      "requester_residency_restriction": false,
+      "requester_residency_citation": "S.C. Code § 30-4-30(A)",
+      "requester_residency_note": "Access runs to 'A person' — no citizenship/residency limit, so records requests use the DIRECT-SEND lane (no citizen-proxy needed, unlike VA/TN/AL/AR). NOTE the asymmetry: standing to SUE to enforce FOIA is limited to 'a citizen of the State' (§ 30-4-100), so an ORR non-response escalation to litigation needs a SC-citizen requester of record. Confirmed by SC Press Association ('Does South Carolina's FOIA end at the border?').",
+      "response_determination_business_days": 10,
+      "response_determination_business_days_old_records": 20,
+      "response_determination_citation": "S.C. Code § 30-4-30(C)",
+      "response_determination_note": "Public body must notify the requester of its determination to comply within 10 business days (excepting Saturdays, Sundays, and legal public holidays); 20 business days if the record is more than 24 months old at the date of request.",
+      "production_calendar_days": 30,
+      "production_calendar_days_old_records": 35,
+      "production_citation": "S.C. Code § 30-4-30(C)",
+      "production_note": "After the determination, records must be furnished no later than 30 calendar days from the date the deposit is received (35 calendar days for records more than 24 months old). A public body may require a deposit of up to 25% of the reasonably anticipated cost before searching/producing.",
+      "fee_citation": "S.C. Code § 30-4-30(B)",
+      "fee_note": "Fees may not exceed the actual cost of search, retrieval, and redaction. Search/retrieval is capped at the prorated hourly salary of the lowest-paid employee with the skill to fulfill the request; no charge for the first two hours for records produced within those two hours.",
+      "verified_at": "2026-06-13"
+    },
+    "open_meetings_act": {
+      "title": "South Carolina Freedom of Information Act (open-meetings provisions)",
+      "citation": "S.C. Code §§ 30-4-60 through 30-4-110",
+      "url": "https://www.scstatehouse.gov/code/t30c004.php",
+      "structural_note": "SC's open-records and open-meetings law are ONE statute (Title 30, Ch. 4), unlike Georgia's two acts. SC's sharpest, most observable transparency trigger is PRE-meeting (the § 30-4-80 24-hour agenda posting incl. the body's website), whereas Georgia's is POST-meeting (the (e)(2)(A) summary). SC has NO post-meeting summary tier and NO numeric minutes deadline."
+    },
+    "campaign_finance_act": {
+      "title": "South Carolina Ethics, Government Accountability, and Campaign Reform Act",
+      "citation": "S.C. Code § 8-13-1308 (certified campaign reports); § 8-13-365 (mandatory electronic filing); § 8-13-100(2) (supervisory office)",
+      "url": "https://www.scstatehouse.gov/code/t08c013.php",
+      "filing_destination": "South Carolina State Ethics Commission (centralized; NOT a local clerk)",
+      "filing_destination_note": "Under § 8-13-100(2) the 'appropriate supervisory office' is the State Ethics Commission for ALL filers except candidates for State Senator/Representative — so county and municipal candidates file with the SEC, not a local clerk. § 8-13-365 mandates Internet-based electronic filing that is publicly accessible and searchable. This is the post-2018 consolidated regime (Act 184 of 2018); pre-reform, local candidates filed with county/municipal clerks.",
+      "public_search_url": "https://ethicsfiling.sc.gov/public/home",
+      "public_search_note": "SEC Public Disclosure & Accountability Reporting portal for candidate campaign-disclosure reports (apps.sc.gov/PublicReporting is the legacy committee/lobbyist portal). Because filings are centralized, candidate non-filing is verifiable at ONE state source for the whole state — a strong centralized audit signal once elections/candidate ingestion exists.",
+      "verified_at": "2026-06-13"
+    },
+    "finding_categories": {
+      "agenda_missing": {
+        "statute_label": "S.C. Code § 30-4-80(A)",
+        "statute_url": "https://www.scstatehouse.gov/code/t30c004.php",
+        "statute_text": "An agenda for regularly scheduled or special meetings must be posted on a bulletin board in a publicly accessible place at the office or meeting place of the public body and on a public website maintained by the body, if any, at least twenty-four hours prior to such meetings.",
+        "applies_to_body_types": ["all_agencies"],
+        "disclosure_mode": "proactive_post",
+        "observer_note": "SC's STRONGEST gap signal and the inverse of Georgia: the duty is PRE-meeting, the deadline is a hard 24 hours, and the statute explicitly names the body's own public website as a posting venue — exactly what our daily inventory cadence observes. A body that maintains a website but posts no agenda within the 24-hour window is a clean, statute-cited finding. This is SC's primary Tier-2 recon dimension (agenda-posting timeliness).",
+        "verified_at": "2026-06-13",
+        "confidence": "high"
+      },
+      "minutes_missing": {
+        "statute_label": "S.C. Code § 30-4-90(A), (B)",
+        "statute_url": "https://www.scstatehouse.gov/code/t30c004.php",
+        "statute_text": "All public bodies shall keep written minutes of all of their public meetings, recording the date/time/place, members present and absent, the substance of all matters proposed, discussed, or decided, and any votes taken. The minutes are public records and shall be available within a reasonable time after the meeting except where inconsistent with Section 30-4-70.",
+        "applies_to_body_types": ["all_agencies"],
+        "disclosure_mode": "proactive_post",
+        "observer_note": "CRITICAL cross-state difference: SC sets NO numeric minutes deadline ('within a reasonable time') and has NO post-meeting written-summary tier — so Georgia's hard-clock minutes-overdue observer (next-regular-meeting trigger) DOES NOT transfer. An SC minutes observer cannot fire on a fixed clock; absence must be judged against the body's own historical cadence (pattern-of-practice), never an asserted statutory deadline. Do NOT port the GA _MINUTES_APPROVAL_GRACE_DAYS logic to SC.",
+        "verified_at": "2026-06-13",
+        "confidence": "high"
+      },
+      "meeting_notice_missing": {
+        "statute_label": "S.C. Code § 30-4-80(A), (E)",
+        "statute_url": "https://www.scstatehouse.gov/code/t30c004.php",
+        "statute_text": "All public bodies must give written public notice of their regular meetings at the beginning of each calendar year, including the dates, times, and places of such meetings. Notice of called, special, or rescheduled meetings must be posted as early as is practicable but not later than twenty-four hours before the meeting.",
+        "applies_to_body_types": ["all_agencies"],
+        "disclosure_mode": "proactive_post",
+        "verified_at": "2026-06-13",
+        "confidence": "high"
+      },
+      "agenda_amended_without_notice": {
+        "statute_label": "S.C. Code § 30-4-80(A)",
+        "statute_url": "https://www.scstatehouse.gov/code/t30c004.php",
+        "statute_text": "Once an agenda for a regularly scheduled or special meeting is posted, no items may be added to the agenda without an additional twenty-four hours notice to the public. An item upon which final action will be taken, or for which there has been no prior opportunity for public comment, may be added only by a two-thirds vote of the members present and voting and upon a finding by the body that an emergency or an exigent circumstance exists.",
+        "applies_to_body_types": ["all_agencies"],
+        "disclosure_mode": "proactive_post",
+        "observer_note": "CATALOG REFERENCE ONLY — no observer. This SC-specific duty (a distinct recon dimension: action taken on items absent from the posted agenda without the 2/3-vote + emergency finding) is observable only by diffing the posted agenda against the actions recorded in the minutes — an ingestion capability we do not yet have. Recorded now so a future agenda-vs-minutes observer cites the statute it was built for; never assert this gap from agenda data alone.",
+        "verified_at": "2026-06-13",
+        "confidence": "high"
+      },
+      "member_roster_missing": {
+        "statute_label": "S.C. Code § 30-4-30(A) / § 30-4-50(A)",
+        "statute_url": "https://www.scstatehouse.gov/code/t30c004.php",
+        "statute_text": "A person has a right to inspect, copy, or receive an electronic transmission of any public record of a public body. Without limiting this right, the names, position, title, and gross compensation of public officers and employees, and final votes and minutes of public bodies, are declared to be public information. The membership of a public body — its elected and appointed officials — is therefore a public record.",
+        "applies_to_body_types": ["all_appointed"],
+        "disclosure_mode": "proactive_post",
+        "verified_at": "2026-06-13",
+        "confidence": "high"
+      },
+      "campaign_finance_missing": {
+        "statute_label": "S.C. Code § 8-13-1308 / § 8-13-365",
+        "statute_url": "https://ethicsfiling.sc.gov/public/home",
+        "statute_text": "Candidates and committees must file certified campaign disclosure reports (initial, quarterly, and pre-election reports) electronically with the South Carolina State Ethics Commission, which maintains an Internet-based filing system that is publicly accessible and searchable. County and municipal candidates file with the Commission, not a local clerk.",
+        "applies_to_body_types": ["all_elected"],
+        "disclosure_mode": "state_published",
+        "observer_note": "Filings are CENTRALIZED at the State Ethics Commission (§ 8-13-100(2)), so — unlike Georgia's pre-2027 City-Clerk model — this is never a per-jurisdiction website gap. We link to the state portal; a candidate-level non-filing finding is detectable from the single state source once elections/candidate ingestion exists.",
+        "verified_at": "2026-06-13",
+        "confidence": "high"
+      }
+    },
+    "_sc_finance_layer_todo": {
+      "_doc": "Remaining Phase-A statute-inventory work for SC, deferred (no finance ingestion or observer exists, so no category is activated by deferring — STATE_PLAYBOOK Phase-A rule 4). Do NOT port Georgia's OCGA budget/millage/audit citations; SC's analogs live in different titles and must be read from primary sources before any category is added.",
+      "items": [
+        "County budget adoption & public-hearing requirements — S.C. Code Title 4 (county government) / Title 6 (local-government finance); confirm hearing-notice + ordinance-reading duties.",
+        "Municipal budget adoption & hearing — S.C. Code Title 5 (municipal government).",
+        "Property-tax / millage advertisement & rollback — S.C. Code Title 12 (taxation) / Title 6; SC has no verified TABOR-style millage-advertisement analog to OCGA § 48-5-32.1 — research before asserting one.",
+        "School district budget & finance transparency — S.C. Code Title 59; many SC districts are fiscally dependent (county council sets the levy) — structure affects who the levying authority is (resolve in Phase C bundle map).",
+        "Annual independent audit publication — confirm SC statute + whether a state dashboard (e.g. SC Revenue & Fiscal Affairs / Comptroller General) publishes it (state_published, like GA's DOAA)."
+      ]
+    }
   }
 }

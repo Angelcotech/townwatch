@@ -1,0 +1,67 @@
+{
+  "_schema_notes": [
+    "State-level defaults for South Carolina jurisdictions.",
+    "Values here are inherited by every SC jurisdiction config via deep-merge in load_config().",
+    "Per-jurisdiction values OVERRIDE these defaults when present.",
+    "Law-specific citations live in jurisdictions/_open_records_laws.json (loaded by audit.py) — the SC FOIA statute inventory is COMPLETE and verified there (2026-06-13).",
+    "This file holds non-law state defaults: body taxonomy, scraper hints, form-of-government norms.",
+    "",
+    "PROVENANCE / STATUS (Tier 1 / Phase A, 2026-06-13): only structurally-safe defaults are populated.",
+    "Body aliases and records-custodian titles below reflect SC's statutory government structure",
+    "(Title 4 counties = 'County Council' + 'Clerk to Council'; Title 5 municipalities; school 'Board of",
+    "Trustees') and are CONVENTIONS to confirm in Phase C, not live-verified this session.",
+    "",
+    "DELIBERATELY OMITTED — graduate in later phases, do NOT fabricate:",
+    "  - election_cycle_defaults (term lengths, qualifying windows): Phase B. SC municipal elections",
+    "    vary by charter (partisan/nonpartisan, odd/even-year) — no single default is honest yet.",
+    "  - form_of_government default beyond the conservative stub: SC has multiple statutory forms",
+    "    (Title 5 municipal: Mayor-Council / Council / Council-Manager; Title 4 county: Council /",
+    "    Council-Administrator / Council-Manager / Council-Supervisor / Board of Commissioners). Phase C.",
+    "  - platform_conventions (agenda/property platform typicals): Phase D platform census not yet run.",
+    "  - SC does NOT use Clarity Elections (that is GA's certified-results vendor); SC results are",
+    "    published by the SC Election Commission. Certified-results provider/URL to confirm in Phase D."
+  ],
+  "state_meta": {
+    "state_abbr": "SC",
+    "state_name": "South Carolina",
+    "state_fips": "45"
+  },
+  "common_body_aliases": {
+    "_doc": "Maps clerk-vocabulary variations to canonical body_type enum values. SC-specific: counties are governed by 'County Council' (Title 4); school districts by a 'Board of Trustees' (Title 59). Structural conventions — confirm in Phase C.",
+    "city council": "city_council",
+    "town council": "city_council",
+    "mayor and council": "city_council",
+    "mayor and aldermen": "city_council",
+    "council": "city_council",
+    "county council": "county_commission",
+    "board of commissioners": "county_commission",
+    "planning commission": "planning_commission",
+    "planning and zoning commission": "planning_commission",
+    "planning & zoning": "planning_commission",
+    "board of zoning appeals": "board_of_zoning_appeals",
+    "zoning board of appeals": "board_of_zoning_appeals",
+    "bza": "board_of_zoning_appeals",
+    "board of trustees": "board_of_education",
+    "board of education": "board_of_education",
+    "school board": "school_board"
+  },
+  "election_results_sources": {
+    "_doc": "Where SC election results are published. SC does NOT use Clarity Elections (GA's vendor). The SC Election Commission publishes statewide results; per-county Boards of Voter Registration & Elections run local races. Certified-results base URL to confirm in Phase D.",
+    "state_certified_provider": "sc_election_commission",
+    "state_sos_elections_portal": "https://scvotes.gov",
+    "city_results_typically_at": "county_board_of_voter_registration_and_elections",
+    "certified_results_base_url": null,
+    "_certified_results_base_url_status": "to_confirm_phase_d"
+  },
+  "ethics_filings": {
+    "_doc": "SC campaign-finance disclosure is centralized at the State Ethics Commission (county and municipal candidates file there, not with a local clerk — S.C. Code § 8-13-100(2), § 8-13-365). Verified 2026-06-13.",
+    "campaign_finance_filing_destination": "South Carolina State Ethics Commission",
+    "campaign_finance_public_search_url": "https://ethicsfiling.sc.gov/public/home"
+  },
+  "records_custodian_conventions": {
+    "_doc": "Default custodian title by jurisdiction type. SC counties statutorily have a 'Clerk to Council' (Title 4); municipalities a 'Municipal Clerk'/'City Clerk'. Names are always per-jurisdiction. Structural conventions — confirm in Phase C.",
+    "city_default_title": "Municipal Clerk",
+    "county_default_title": "Clerk to Council",
+    "honorific_default": "Hon."
+  }
+}

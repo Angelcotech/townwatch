@@ -1326,24 +1326,85 @@
       "fips": "45",
       "phases": {
         "tier0_universe_seeded": "not_started",
-        "A_law_dossier": "not_started",
+        "A_law_dossier": "in_progress",
         "B_universe_verified": "not_started",
         "C_structure_bundles": "not_started",
         "D_platform_census": "not_started",
         "E_pipeline_delta": "not_started"
       },
       "tier2_recon": {
-        "batches": 0,
-        "registry_entries": 0,
+        "batches": 1,
+        "registry_entries": 3,
         "onboarded": 0
       },
-      "readiness": "unmapped",
+      "readiness": "dossier_in_progress",
       "queue_position": 1,
       "priority_reason": "Adjacency-first: the Augusta metro spills into Aiken and Edgefield counties (North Augusta) — the existing CSRA footprint already wants it.",
-      "quirks": [],
-      "demand_signals": [],
-      "artifacts": {},
-      "notes": "Start with Tier 0 seeding + the Aiken/Edgefield/North Augusta footprint batch in Tier 2 once the dossier clears. SC quirk to confirm in Phase B: school districts are sub-county in places (multiple districts per county, e.g. Aiken is unified but several counties split) — verify district structure against CCD."
+      "quirks": [
+        {
+          "tag": "foia_unified_records_and_meetings",
+          "status": "verified",
+          "note": "SC's open-records AND open-meetings law are ONE statute (Title 30, Ch. 4 FOIA), unlike GA's two acts. Verified scstatehouse.gov 2026-06-13."
+        },
+        {
+          "tag": "transparency_trigger_is_pre_meeting",
+          "status": "verified",
+          "note": "SC's sharpest, most observable duty is PRE-meeting: § 30-4-80 agenda must be posted on the body's public website (if any) >=24h before the meeting. Inverse of GA (post-meeting summary). agenda_missing is SC's primary Tier-2 recon dimension."
+        },
+        {
+          "tag": "no_minutes_deadline_no_summary_tier",
+          "status": "verified",
+          "note": "§ 30-4-90 minutes due only 'within a reasonable time'; NO numeric deadline and NO post-meeting summary tier. GA's hard-clock minutes-overdue observer does NOT transfer to SC — judge against the body's own cadence, never an asserted statutory deadline."
+        },
+        {
+          "tag": "requester_residency_not_restricted",
+          "status": "verified",
+          "note": "§ 30-4-30 grants records access to 'a person' (no residency limit) -> direct-send lane. BUT enforcement standing (§ 30-4-100) is 'a citizen of the State' -> ORR-to-suit escalation needs a SC-citizen requester."
+        },
+        {
+          "tag": "campaign_finance_centralized_at_state",
+          "status": "verified",
+          "note": "County & municipal candidates file campaign-disclosure reports electronically & centrally with the SC State Ethics Commission (§ 8-13-100(2), § 8-13-365), public at ethicsfiling.sc.gov — NOT a local clerk. Post-Act-184 (2018) regime."
+        },
+        {
+          "tag": "sub_county_school_districts",
+          "status": "prior",
+          "note": "School districts are sub-county in places (multiple districts per county); some districts fiscally dependent (county council sets the levy). Confirm structure against CCD in Phase B/C — affects bundle map + who the levying authority is."
+        },
+        {
+          "tag": "multi_district_counties",
+          "status": "verified",
+          "note": "Confirmed in Dorchester County (2026-06-13): a single county can hold multiple independent unified school districts. Dorchester has TWO active — Dorchester School District Two (Summerville) and Dorchester School District Four (St. George); former Districts 1 & 3 were consolidated into District 4 by SC Act, 1985-86. Bundle rule: county fund covers county + BOTH districts riding it."
+        },
+        {
+          "tag": "granicus_legacy_agendaviewer",
+          "status": "verified",
+          "note": "Dorchester County runs the legacy Granicus stack (dorchester.granicus.com/AgendaViewer.php + /services/minutes/reports/<uuid>/attachment + granicus S3 packets), bucketed as granicus_legistar in the recon vocab. Not Legistar/IQM2. Existing Granicus client work should cover it."
+        },
+        {
+          "tag": "dd2_dd4_consolidation_watch",
+          "status": "verified",
+          "note": "SC bills 3154 (2023-24) and 3470 (2025-26) study merging Dorchester DD2 + DD4; barred without approval by registered electors of each district. Track for jurisdiction-structure changes before/after onboarding."
+        },
+        {
+          "tag": "gov_site_botwall",
+          "status": "verified",
+          "note": "Dorchester County's official .gov (Granicus govAccess CMS) is bot-walled (HTTP 403) — needs the browser fetch tier for nav/listing pages. Mitigations confirmed: Granicus agenda/minutes platform, NextRequest FOIA portal, and granicus S3 document attachments all sit OUTSIDE the wall."
+        }
+      ],
+      "demand_signals": [
+        {
+          "date": "2026-06-13",
+          "signal": "Operator-directed onboarding prep for Dorchester County (Charleston/Lowcountry metro). Tier-2 recon run AHEAD of SC's Tier-1 dossier as a demand pull; reorders away from the original Augusta/CSRA adjacency rationale for SC's queue slot."
+        }
+      ],
+      "artifacts": {
+        "law_block": "jurisdictions/_open_records_laws.json#SC",
+        "state_defaults": "jurisdictions/_state_defaults/sc.json",
+        "finance_layer_todo": "jurisdictions/_open_records_laws.json#SC._sc_finance_layer_todo",
+        "recon_registry": "research/sc_recon/registry.json"
+      },
+      "notes": "Phase A statute inventory: FOIA CORE COMPLETE & verified 2026-06-13 (primary sources scstatehouse.gov Title 30 Ch.4 + Title 8 Ch.13; adversarial 3-of-3 all upheld). 6 finding categories derived. REMAINING Phase-A: finance-transparency layer (budget/millage/audit, SC Titles 4/5/6/12/59) deferred as TODO in the SC._sc_finance_layer_todo block — no finance ingestion exists so nothing activated by deferring; do NOT port GA OCGA finance cites. EXECUTION NOTE: Tier-2 recon went DEMAND-FIRST (Dorchester County / Lowcountry — see demand_signals + artifacts.recon_registry) AHEAD of the Tier-1 dossier; priority_reason (Augusta/CSRA adjacency) remains the standing structural rationale and the eventual dossier batch still starts there. Phase B universe verification (statewide CCD reconciliation of sub-county district structure + the fiscal-dependency clause, neither yet verified) still pending before broad Tier-2."
     },
     "SD": {
       "name": "South Dakota",
