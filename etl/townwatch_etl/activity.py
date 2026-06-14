@@ -58,13 +58,27 @@ def record(conn, jurisdiction_id: int | None, action_type: str, *, title: str,
 
 
 def record_jurisdiction_added(conn, jurisdiction_id: int, display_name: str,
-                              occurred_at: Any = None) -> None:
+                              occurred_at: Any = None, *,
+                              founder_name: str | None = None,
+                              founder_user_id: str | None = None,
+                              founder_number: int | None = None) -> None:
     """The genesis event: a town joined TownWatch. Idempotent (once-only); the
     first row in every jurisdiction's timeline. occurred_at should be the
-    jurisdiction's created_at when backfilling so the timeline reads true."""
+    jurisdiction's created_at when backfilling so the timeline reads true.
+
+    When a town is adopted by an operator, pass the founder so the genesis reads
+    "Founded by <name>" and the actor is recorded — the founder becomes the
+    permanent first line of the town's record. Backfilled/unfounded towns keep
+    the plain "<name> added to TownWatch" genesis."""
+    if founder_name:
+        title = f"Founded by {founder_name}"
+        meta = {"founder_user_id": founder_user_id, "founder_number": founder_number}
+    else:
+        title = f"{display_name} added to TownWatch"
+        meta = None
     record(conn, jurisdiction_id, "jurisdiction_added",
-           title=f"{display_name} added to TownWatch", once=True,
-           occurred_at=occurred_at)
+           title=title, once=True, occurred_at=occurred_at,
+           actor_user_id=None, meta=meta)
 
 
 def backfill_genesis(conn) -> int:

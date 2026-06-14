@@ -83,7 +83,9 @@ def _record_summary(slug: str, jid: int | None, steps: list[dict]) -> None:
         )
 
 
-def scaffold(slug: str) -> int:
+def scaffold(slug: str, *, founder_name: str | None = None,
+             founder_user_id: str | None = None,
+             founder_number: int | None = None) -> int:
     print(f"=== scaffold: {slug} ===")
     steps: list[dict] = []
 
@@ -129,7 +131,9 @@ def scaffold(slug: str) -> int:
                 "SELECT display_name, created_at FROM jurisdiction WHERE id = %s", (jid,)
             ).fetchone()
             activity.record_jurisdiction_added(
-                conn, jid, row["display_name"], occurred_at=row["created_at"])
+                conn, jid, row["display_name"], occurred_at=row["created_at"],
+                founder_name=founder_name, founder_user_id=founder_user_id,
+                founder_number=founder_number)
             activity.record(
                 conn, jid, "scaffold_complete",
                 title=f"{row['display_name']} is live on TownWatch", once=True,
