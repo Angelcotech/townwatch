@@ -1,0 +1,117 @@
+{
+  "schema_version": "0.1",
+  "config_meta": {
+    "generated_at": "2026-06-13",
+    "generated_by": "authored from research/sc_recon/registry.json (Dorchester County Tier-2 recon)",
+    "last_verified": "2026-06-13",
+    "review_frequency_days": 90
+  },
+  "jurisdiction": {
+    "name": "Dorchester County",
+    "display_name": "Dorchester County",
+    "type": "county",
+    "state": "SC",
+    "state_fips": "45",
+    "county": "Dorchester County",
+    "county_fips": "45035",
+    "population": 161540,
+    "population_year": 2020,
+    "official_website": "https://www.dorchestercountysc.gov",
+    "city_hall_address": "500 N. Main Street, Summerville, SC 29483",
+    "city_hall_phone": "(843) 832-0100",
+    "form_of_government": "county_commission",
+    "parent_type": "state"
+  },
+  "records_custodian": {
+    "name": "Lona Conrad",
+    "honorific": "Ms.",
+    "title": "Clerk to Council",
+    "email": "lconrad@dorchestercountysc.gov",
+    "source_url": "https://dorchestercountysc.nextrequest.com/",
+    "mailing_address": [
+      "Office of the Clerk to Council",
+      "Dorchester County",
+      "500 N. Main Street",
+      "Summerville, SC 29483"
+    ]
+  },
+  "governing_bodies": [
+    {
+      "name": "County Council",
+      "body_type": "county_commission",
+      "seat_count": 7,
+      "election_cycle_pattern": "staggered_4yr",
+      "meeting_frequency": "biweekly",
+      "website_url": "https://www.dorchestercountysc.gov/government/county-council",
+      "granicus": { "view_id": 1 }
+    }
+  ],
+  "platform_hints": {
+    "agenda_platform": "granicus",
+    "granicus_subdomain": "dorchester",
+    "granicus_view_id": 1,
+    "agenda_base_url": "https://dorchester.granicus.com/"
+  },
+  "data_sources": {
+    "officials_roster": {
+      "status": "found",
+      "source": "county_website",
+      "url": "https://www.dorchestercountysc.gov/government/county-council",
+      "ingest_method": "scrape_or_vision",
+      "format": "html",
+      "fetch_tier": "browser",
+      "notes": "County Council directory (7 members). The .gov site is bot-walled (HTTP 403 to raw fetch) — needs the browser fetch tier. Verify member count + districts during the first onboarding pass."
+    },
+    "meeting_agendas_minutes": {
+      "status": "found",
+      "source": "granicus",
+      "url": "https://dorchester.granicus.com/ViewPublisher.php?view_id=1",
+      "ingest_method": "scrape",
+      "format": "html+pdf",
+      "fetch_tier": "default",
+      "notes": "Granicus ViewPublisher hosts agendas + minutes for County Council and its committees back to 2017 (default landing view starts Dec 2019; 2017-18 via the 'Available Archives' dropdown). Agendas: AgendaViewer.php?view_id=1&event_id=<id>; minutes: /services/minutes/reports/<uuid>/attachment; packet PDFs on granicus_production_attachments.s3.amazonaws.com/dorchester/. Granicus + its S3 attachments fetch normally (outside the .gov bot wall). Granicus lists ~13 meeting bodies (Council + committees + Special/Emergency/Joint variants) — a per-body scraper must enumerate all of them, not a fixed 9."
+    },
+    "records_request": {
+      "status": "found",
+      "source": "nextrequest",
+      "url": "https://dorchestercountysc.nextrequest.com/",
+      "ingest_method": "portal",
+      "notes": "NextRequest FOIA portal (outside the .gov bot wall). SC FOIA (S.C. Code 30-4-30(C)): the body must determine within 10 business days (20 if the record is >24 months old); records furnished within 30 calendar days of deposit. FOIA Coordinator in the County Attorney's Office, 500 N. Main St., Summerville SC 29483."
+    },
+    "campaign_finance": {
+      "status": "state_published",
+      "source": "sc_state_ethics_commission",
+      "url": "https://ethicsfiling.sc.gov/public/home",
+      "ingest_method": "state_portal",
+      "notes": "SC centralizes candidate campaign-disclosure filings at the State Ethics Commission (S.C. Code 8-13-100(2) / 8-13-365) — county candidates file there, not with a local clerk."
+    }
+  },
+  "public_comment": {
+    "channel": "sign_up_card",
+    "comment_service": "email",
+    "submit_url": null,
+    "recipient_email": "LConrad@dorchestercountysc.gov",
+    "automatable": true,
+    "notes": "Citizens addressing agenda items complete the online 'Request to Address Council' form (administered by the Clerk to Council); the exact form URL sits behind the .gov bot wall (not captured). Council meets 1st & 3rd Mondays at 6:00 PM (one meeting only in Aug & Dec). Meetings ROTATE venues between St. George (Willie R. Davis County Council Chambers, 201 Johnston St) and Summerville (500 N. Main St) — single-address automation is wrong."
+  },
+  "known_gaps": [
+    {
+      "category": "bot_walled_gov_site",
+      "explanation": "The official .gov (dorchestercountysc.gov, Granicus govAccess CMS) returns HTTP 403 to raw fetching — nav/listing pages need the browser fetch tier. The agenda/minutes platform (Granicus), the NextRequest FOIA portal, and Granicus S3 attachments sit OUTSIDE the wall and fetch normally.",
+      "user_facing_message": "Some county pages load through a verification step; agendas, minutes, and records requests are unaffected.",
+      "remediation": "Use the browser fetch tier for .gov nav pages; prefer the Granicus + NextRequest sources."
+    },
+    {
+      "category": "school_district_separation",
+      "explanation": "Dorchester County has two independent unified school districts — Dorchester School District Two (Summerville) and Dorchester School District Four (St. George) — each its own elected Board of Trustees. They bundle to Dorchester County for funding but are separate type=school_district jurisdictions.",
+      "user_facing_message": "Dorchester's two school districts are separate jurisdictions — their records live at their own pages when added.",
+      "remediation": "Onboard dorchester-school-district-two-sc and dorchester-school-district-four-sc as separate jurisdictions (both bundle_fips = 45035)."
+    },
+    {
+      "category": "constitutional_officers",
+      "explanation": "Sheriff, Coroner, and other constitutional officers run separate records-request pages and are individually elected — not council bodies. Not modeled here.",
+      "user_facing_message": "Pages for the Sheriff, Coroner, and other elected officers are not yet indexed.",
+      "remediation": "Add a constitutional-officer model (shared with the GA constitutional-officers gap)."
+    }
+  ]
+}
