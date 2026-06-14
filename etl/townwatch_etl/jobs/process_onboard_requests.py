@@ -22,6 +22,7 @@ Run:
 
 from __future__ import annotations
 
+import argparse
 import sys
 
 from ..db import connect
@@ -41,13 +42,18 @@ def _set_status(req_id: int, status: str, *, jurisdiction_id: int | None = None,
         )
 
 
-def process_pending() -> dict:
+def process_pending(slug: str | None = None) -> dict:
+    """Process pending/awaiting onboard requests. When slug is given (a scoped
+    daily_refresh run, e.g. --jurisdiction grovetown-ga), only that town's request
+    is considered, so a single-town run never stands up unrelated pending towns."""
     with connect() as conn:
         reqs = conn.execute(
             "SELECT id, slug, display_name, founder_name, founder_user_id, founder_number "
             "FROM onboard_request "
             "WHERE status IN ('pending', 'awaiting_config') "
-            "ORDER BY requested_at"
+            "  AND (%s IS NULL OR slug = %s) "
+            "ORDER BY requested_at",
+            (slug, slug),
         ).fetchall()
 
     done = failed = waiting = 0
@@ -99,7 +105,10 @@ def process_pending() -> dict:
 
 
 def main() -> int:
-    process_pending()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--jurisdiction", help="Only process this config slug's request (scoped run)")
+    args = parser.parse_args()
+    process_pending(args.jurisdiction)
     return 0
 
 

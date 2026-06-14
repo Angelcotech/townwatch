@@ -100,6 +100,8 @@ SPENDING_STEPS = {"extract_agendas", "extract_packets", "extract_minutes",
                   "ingest_campaign_finance"}
 
 JURISDICTION_AGNOSTIC_STEPS = [
+    "process_onboard_requests",  # stand up any town adopted since the last run (runs
+                                 # scaffold for it + writes the "Founded by <name>" genesis)
     "refresh_findings",
     "sync_capabilities",   # cheap: persist build-phase state + emit phase_indexed milestones
     "monitor_clerk_contact",  # cheap: keep the clerk email (requests/digests target) deliverable
